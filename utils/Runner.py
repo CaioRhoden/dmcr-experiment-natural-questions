@@ -59,6 +59,9 @@ class InferenceRunner(BaseRunner):
                 
                 ## Setup logging
 
+                input_question = questions.filter(pl.col("example_id") == input).select("question").item()
+                self.config["question"] = input_question
+
                 wandb.init(
                     project = f"{project}", 
                     dir = self.config["wandb_configs"]["wandb_dir"],
@@ -68,10 +71,11 @@ class InferenceRunner(BaseRunner):
                 )
 
                 if not skip_inference:
+
                     self._inference(
                         docs = docs,
                         wiki = wiki,
-                        questions = questions,
+                        input_question= input_question,
                         example_id = input,
                         instruction = instruction,
                         experiment_name = experiment_name
@@ -103,7 +107,7 @@ class InferenceRunner(BaseRunner):
         self,
         docs: list,
         wiki: pl.DataFrame,
-        questions: pl.DataFrame,
+        input_question: str,
         example_id: str,
         instruction: str,
         experiment_name: str
@@ -133,7 +137,6 @@ class InferenceRunner(BaseRunner):
             context_prompt += f"Document[{c_idx}](Title: {_doc_title}){_doc_text}\n\n"
 
         # Build question prompt
-        input_question = questions.filter(pl.col("example_id") == example_id).select("question").item()
         question_prompt = f"\nQuestion: {input_question}\nAnswer: "
         prompt = context_prompt + question_prompt
 
