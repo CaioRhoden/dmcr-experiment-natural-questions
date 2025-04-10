@@ -61,7 +61,7 @@ class InferenceRunner(BaseRunner):
 
                 wandb.init(
                     project = f"{project}", 
-                    dir = "logs",
+                    dir = self.config["wandb_configs"]["wandb_dir"],
                     id = f"{experiment_name}_{input}_{str(uuid.uuid4())}", 
                     name = f"{experiment_name}_{input}",
                     config = self.config,
