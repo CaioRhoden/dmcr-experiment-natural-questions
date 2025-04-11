@@ -4,7 +4,11 @@
 import polars as pl
 import os
 import argparse
-
+from dmcr.datamodels.setter import StratifiedSetter
+from dmcr.datamodels.pipeline import DatamodelsNQPipeline
+from dmcr.datamodels.config import DatamodelConfig, LogConfig
+from dmcr.models import GenericInstructModelHF
+from dmcr.datamodels.evaluator import Rouge_L_evaluator
 
 
 def setup():
@@ -84,8 +88,69 @@ def setup():
         target.write_ipc(f"question_{i}_datamodels/target.feather")
         random.write_ipc(f"question_{i}_datamodels/random.feather")
 
-def setter(step: str, question: int):
-    pass
+def setter(question: int):
+    DATAMODEL_PATH = f"question_{question}_datamodels"
+    setter = StratifiedSetter(
+            load_path_target=f"{DATAMODEL_PATH}/target.feather",
+            load_path_random=f"{DATAMODEL_PATH}/random.feather",
+            save_path=f"{DATAMODEL_PATH}",
+            k=4,
+            n_samples_target=50,
+            n_test_target=5,
+            n_samples_mix=50,
+            n_test_mix=5,
+            n_samples_random=50,
+            n_test_random=5,
+            index_col="idx",
+            seed=42
+        )
+
+    setter.set()
+
+def create_pre_collections(question: int):
+
+    DATAMODEL_PATH = f"question_{question}_datamodels"
+    model = GenericInstructModelHF("../models/Llama-3.2-3B-Instruct")
+
+    config = DatamodelConfig(
+        k = 4,
+        num_models= 1,
+        datamodels_path = f"{DATAMODEL_PATH}",
+        train_collections_idx = None,
+        test_collections_idx = None,
+        test_set = None,
+        train_set = None,
+        instructions= None,
+        llm = model,
+        evaluator=Rouge_L_evaluator(),
+    )
+
+    log_config = LogConfig(
+        project="bbh_pre_collection",
+        dir="log",
+        id="bbh_pre_collection",
+        name="bbh_pre_collection",
+        config={
+            "k": 8,
+            "num_models": 40,
+            "evaluator": "GleuEvaluator",
+            "llm": "Llama-3.1-8B-Instruct",
+            "gpu": "Quadro RTX500",
+        },
+        tags=["bbh", "dl-28", "pre_collections"],
+    )
+
+
+
+    datamodel = DatamodelPipeline(config)
+    datamodel.set_collections_index()
+    datamodel.set_dataframes()
+    datamodel.set_instructions_from_path()
+
+    print("Start Creating Pre Collection")
+    datamodel.create_pre_collection(start_idx = start_idx, end_idx = end_idx, type=type, log=True, log_config=log_config, checkpoint=25)
+
+
 
 if __name__ == "__main__":
 
@@ -101,5 +166,5 @@ if __name__ == "__main__":
             setup()
 
         case "setter":
-            setter(step, args.id)
+            setter(args.id)
 
