@@ -4,11 +4,35 @@
 import polars as pl
 import os
 import argparse
+import torch
+import numpy as np
+import random
 from dmcr.datamodels.setter import StratifiedSetter
 from dmcr.datamodels.pipeline import DatamodelsNQPipeline
 from dmcr.datamodels.config import DatamodelConfig, LogConfig
 from dmcr.models import GenericInstructModelHF
-from dmcr.datamodels.evaluator import Rouge_L_evaluator
+from dmcr.evaluators import Rouge_L_evaluator
+import datetime
+
+seed = 42
+# NumPy
+np.random.seed(seed)
+random.seed(seed)
+pl.set_random_seed(seed)
+
+# PyTorch
+torch.manual_seed(seed)
+if torch.cuda.is_available():
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+
+if torch.cuda.is_available():
+    print(f"Number of GPUs available: {torch.cuda.device_count()}")
+    for i in range(torch.cuda.device_count()):
+        print(f"GPU {i}: {torch.cuda.get_device_name(i)}")
 
 
 def setup():
@@ -110,7 +134,7 @@ def setter(question: int):
 def create_pre_collections(question: int):
 
     DATAMODEL_PATH = f"question_{question}_datamodels"
-    model = GenericInstructModelHF("../models/Llama-3.2-3B-Instruct")
+    model = GenericInstructModelHF("../models/llms/Llama-3.2-3B-Instruct")
 
     config = DatamodelConfig(
         k = 4,
@@ -120,35 +144,32 @@ def create_pre_collections(question: int):
         test_collections_idx = None,
         test_set = None,
         train_set = None,
-        instructions= None,
+        instructions= "You are given a question and you MUST respond in 5 tokens, there are documents that can or cannot be helpful, and you MUST respond",
         llm = model,
         evaluator=Rouge_L_evaluator(),
     )
 
     log_config = LogConfig(
-        project="bbh_pre_collection",
-        dir="log",
-        id="bbh_pre_collection",
+        project="nq_stratified_datamodels",
+        dir="../logs",
+        id=f"pre_collections_question_0_{str(datetime.datetime.now)}",
         name="bbh_pre_collection",
         config={
-            "k": 8,
-            "num_models": 40,
-            "evaluator": "GleuEvaluator",
-            "llm": "Llama-3.1-8B-Instruct",
-            "gpu": "Quadro RTX500",
+            "k": 4,
+            "num_models": 1,
+            "evaluator": "Rouge_L_evaluator",
+            "llm": "Llama-3.2-3B-Instruct",
+            "gpu": f"{torch.cuda.get_device_name(0)}",
         },
-        tags=["bbh", "dl-28", "pre_collections"],
+        tags=["question_0"]
     )
 
 
 
-    datamodel = DatamodelPipeline(config)
-    datamodel.set_collections_index()
-    datamodel.set_dataframes()
-    datamodel.set_instructions_from_path()
+    datamodel = DatamodelsNQPipeline(config)
 
     print("Start Creating Pre Collection")
-    datamodel.create_pre_collection(start_idx = start_idx, end_idx = end_idx, type=type, log=True, log_config=log_config, checkpoint=25)
+    datamodel.create_pre_collection(start_idx = 0, end_idx = 2, type="train", log=False, log_config=log_config, checkpoint=150)
 
 
 
@@ -168,3 +189,5 @@ if __name__ == "__main__":
         case "setter":
             setter(args.id)
 
+        case "pre_collections":
+            create_pre_collections(args.id)
