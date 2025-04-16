@@ -79,7 +79,7 @@ def setup():
     for i in range(len(selected_ids)):
         os.mkdir(f"question_{i}_datamodels")
         test = train.filter(pl.col("example_id") == selected_ids[i])
-        test.explode("answers").write_csv(f"question_{i}_datamodels/test.csv")
+        test.explode("answers").write_csv(f"question_{i}_datamodels/test_set.csv")
     
 
         ### Partition
@@ -99,6 +99,8 @@ def setup():
             wiki
             .join(filter_wiki_titles, on="title", how="inner")
             .join(filter_wiki_titles, on="idx", how="anti")
+            .drop("idx")
+            .with_row_index("idx")
         )
 
         random = (
@@ -106,6 +108,8 @@ def setup():
             .join(filter_wiki_titles, on="idx", how="anti")
             .join(filter_wiki_titles, on="title", how="anti")
             .sample(n=15, shuffle=True, seed=42)
+            .drop("idx")
+            .with_row_index("idx")
         )
 
 
@@ -136,6 +140,13 @@ def create_pre_collections(question: int):
     DATAMODEL_PATH = f"question_{question}_datamodels"
     model = GenericInstructModelHF("../models/llms/Llama-3.2-3B-Instruct")
 
+    model_configs = {
+            "temperature": 0.7,
+            "top_p": 0.95,
+            "max_length": 2048,
+            "max_new_tokens": 10
+    }
+
     config = DatamodelConfig(
         k = 4,
         num_models= 1,
@@ -147,13 +158,14 @@ def create_pre_collections(question: int):
         instructions= "You are given a question and you MUST respond in 5 tokens, there are documents that can or cannot be helpful, and you MUST respond",
         llm = model,
         evaluator=Rouge_L_evaluator(),
+        model_configs=model_configs
     )
 
     log_config = LogConfig(
         project="nq_stratified_datamodels",
         dir="../logs",
-        id=f"pre_collections_question_0_{str(datetime.datetime.now)}",
-        name="bbh_pre_collection",
+        id=f"pre_collections_question_{question}_{str(datetime.datetime.now)}",
+        name=f"pre_collection_question_{question}",
         config={
             "k": 4,
             "num_models": 1,
@@ -161,7 +173,7 @@ def create_pre_collections(question: int):
             "llm": "Llama-3.2-3B-Instruct",
             "gpu": f"{torch.cuda.get_device_name(0)}",
         },
-        tags=["question_0"]
+        tags=[f"question_{question}"]
     )
 
 
@@ -169,7 +181,7 @@ def create_pre_collections(question: int):
     datamodel = DatamodelsNQPipeline(config)
 
     print("Start Creating Pre Collection")
-    datamodel.create_pre_collection(start_idx = 0, end_idx = 2, type="train", log=False, log_config=log_config, checkpoint=150)
+    datamodel.create_pre_collection(start_idx = 0, end_idx = -1, type="train", log=True, log_config=log_config, checkpoint=150, output_column="answers")
 
 
 
