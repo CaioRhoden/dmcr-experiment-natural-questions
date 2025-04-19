@@ -142,7 +142,7 @@ def create_pre_collections(question: int):
 
     model_configs = {
             "temperature": 0.7,
-            "top_p": 0.95,
+            "top_p": 0.9,
             "max_length": 2048,
             "max_new_tokens": 10
     }
@@ -151,14 +151,6 @@ def create_pre_collections(question: int):
         k = 4,
         num_models= 1,
         datamodels_path = f"{DATAMODEL_PATH}",
-        train_collections_idx = None,
-        test_collections_idx = None,
-        test_set = None,
-        train_set = None,
-        instructions= "You are given a question and you MUST respond in 5 tokens, there are documents that can or cannot be helpful, and you MUST respond",
-        llm = model,
-        evaluator=Rouge_L_evaluator(),
-        model_configs=model_configs
     )
 
     log_config = LogConfig(
@@ -173,15 +165,112 @@ def create_pre_collections(question: int):
             "llm": "Llama-3.2-3B-Instruct",
             "gpu": f"{torch.cuda.get_device_name(0)}",
         },
-        tags=[f"question_{question}"]
+        tags=[f"question_{question}", "pre_collections"]
     )
 
 
 
     datamodel = DatamodelsNQPipeline(config)
 
-    print("Start Creating Pre Collection")
-    datamodel.create_pre_collection(start_idx = 0, end_idx = -1, type="train", log=True, log_config=log_config, checkpoint=150, output_column="answers")
+    print("Start Creating Train Pre Collection")
+    datamodel.create_pre_collection(
+        instruction= "You are given a question and you MUST respond in 5 tokens, there are documents that can or cannot be helpful, and you MUST respond",
+        llm = model,
+        start_idx = 0, 
+        end_idx = -1, 
+        mode = "train", 
+        log = True, 
+        log_config = log_config, 
+        checkpoint = 150, 
+        output_column = "answers",
+        model_configs = model_configs 
+    )
+
+    print("Start Creating Test Pre Collection")
+    datamodel.create_pre_collection(
+        instruction= "You are given a question and you MUST respond in 5 tokens, there are documents that can or cannot be helpful, and you MUST respond",
+        llm = model,
+        start_idx = 0, 
+        end_idx = 15, 
+        mode = "test", 
+        log = True, 
+        log_config = log_config, 
+        checkpoint = 150, 
+        output_column = "answers",
+        model_configs = model_configs 
+    )
+
+def create_collections(question: int):
+
+    DATAMODEL_PATH = f"question_{question}_datamodels"
+
+    config = DatamodelConfig(
+        k = 4,
+        num_models= 1,
+        datamodels_path = f"{DATAMODEL_PATH}",
+    )
+
+    log_config = LogConfig(
+        project="nq_stratified_datamodels",
+        dir="../logs",
+        id=f"collections_question_{question}_{str(datetime.datetime.now)}",
+        name=f"collection_question_{question}",
+        config={
+            "k": 4,
+            "num_models": 1,
+            "evaluator": "Rouge_L_evaluator",
+            "llm": "Llama-3.2-3B-Instruct",
+            "gpu": f"{torch.cuda.get_device_name(0)}",
+        },
+        tags=[f"question_{question}", "collections"]
+    )
+
+    evaluator = Rouge_L_evaluator()
+
+    datamodel = DatamodelsNQPipeline(config)
+
+    print("Start Creating Train Collection")
+    datamodel.create_collection(
+        evaluator = evaluator,
+        mode = "train",
+        collection_name = f"collection_quiestion_{question}",
+    )
+
+
+    print("Start Creating Test Collection")
+    datamodel.create_collection(
+        evaluator = evaluator,
+        mode = "test",
+        collection_name = f"collection_quiestion_{question}",
+    )
+
+def train_datamodel(question: int):
+
+    DATAMODEL_PATH = f"question_{question}_datamodels"
+    config = DatamodelConfig(
+        k = 4,
+        num_models= 1,
+        datamodels_path = f"{DATAMODEL_PATH}",
+    )
+
+    log_config = LogConfig(
+        project="nq_stratified_datamodels",
+        dir="../logs",
+        id=f"collections_question_{question}_{str(datetime.datetime.now)}",
+        name=f"collection_question_{question}",
+        config={
+            "k": 4,
+            "num_models": 1,
+            "evaluator": "Rouge_L_evaluator",
+            "llm": "Llama-3.2-3B-Instruct",
+            "gpu": f"{torch.cuda.get_device_name(0)}",
+        },
+        tags=[f"question_{question}", "training"]
+    )
+
+    datamodel = DatamodelsNQPipeline(config)
+
+    datamodel.tra
 
 
 
@@ -203,3 +292,6 @@ if __name__ == "__main__":
 
         case "pre_collections":
             create_pre_collections(args.id)
+
+        case "collections":
+            create_collections(args.id)
