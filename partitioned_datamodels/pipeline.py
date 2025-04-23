@@ -233,7 +233,7 @@ def create_collections(question: int):
     datamodel.create_collection(
         evaluator = evaluator,
         mode = "train",
-        collection_name = f"collection_quiestion_{question}",
+        collection_name = f"collection_question_{question}",
     )
 
 
@@ -241,7 +241,7 @@ def create_collections(question: int):
     datamodel.create_collection(
         evaluator = evaluator,
         mode = "test",
-        collection_name = f"collection_quiestion_{question}",
+        collection_name = f"collection_question_{question}",
     )
 
 def train_datamodel(question: int):
@@ -256,13 +256,16 @@ def train_datamodel(question: int):
     log_config = LogConfig(
         project="nq_stratified_datamodels",
         dir="../logs",
-        id=f"collections_question_{question}_{str(datetime.datetime.now)}",
-        name=f"collection_question_{question}",
+        id=f"training_question_{question}_{str(datetime.datetime.now)}",
+        name=f"training_question_{question}",
         config={
             "k": 4,
             "num_models": 1,
-            "evaluator": "Rouge_L_evaluator",
-            "llm": "Llama-3.2-3B-Instruct",
+            "epochs": 100,
+            "train_batches": 3,
+            "val_batches": 1,
+            "lr": 1e-4,
+            "patience": 10,
             "gpu": f"{torch.cuda.get_device_name(0)}",
         },
         tags=[f"question_{question}", "training"]
@@ -270,7 +273,50 @@ def train_datamodel(question: int):
 
     datamodel = DatamodelsNQPipeline(config)
 
-    datamodel.tra
+    datamodel.train_datamodels(
+        collection_name=f"collection_question_{question}",
+        epochs=100,
+        train_batches=3,
+        val_batches=1,
+        val_size=0.1,
+        lr=1e-4,
+        patience=10,
+        log=True,
+        log_config=log_config,
+        log_epochs=10,
+        run_id=f"regression_question_{question}",
+    )
+
+def evaluate_datamodel(question: int):
+
+    DATAMODEL_PATH = f"question_{question}_datamodels"
+    config = DatamodelConfig(
+        k = 4,
+        num_models= 1,
+        datamodels_path = f"{DATAMODEL_PATH}",
+    )
+
+    log_config = LogConfig(
+        project="nq_stratified_datamodels",
+        dir="../logs",
+        id=f"evaluation_question_{question}_{str(datetime.datetime.now)}",
+        name=f"evaluation_question_{question}",
+        config={
+            "k": 4,
+            "num_models": 1,
+            "metrics": "mse"
+        },
+        tags=[f"question_{question}", "evaluation"]
+    )
+
+    datamodel = DatamodelsNQPipeline(config)
+    datamodel.evaluate_test_collections(
+        evaluation_id=f"evaluation_question_{question}",
+        collection_name=f"collection_question_{question}",
+        model_id=f"regression_question_{question}",
+        log=True,
+        log_config=log_config
+    )
 
 
 
@@ -295,3 +341,9 @@ if __name__ == "__main__":
 
         case "collections":
             create_collections(args.id)
+
+        case "train":
+            train_datamodel(args.id)
+
+        case "evaluate":
+            evaluate_datamodel(args.id)
