@@ -59,8 +59,8 @@ def setup():
     8. Save the random data to a file called random.feather.
     """
     
-    GOLDEN_PATH = "../data/nq_open_gold/processed/train.feather"
-    WIKI_PATH = "../data/wiki_dump2018_nq_open/processed/wiki.feather"
+    GOLDEN_PATH = "../../data/nq_open_gold/processed/train.feather"
+    WIKI_PATH = "../../data/wiki_dump2018_nq_open/processed/wiki.feather"
     train  = pl.read_ipc(GOLDEN_PATH)
     wiki = pl.read_ipc(WIKI_PATH).with_row_index("idx")
 
@@ -109,7 +109,7 @@ def setup():
             .with_columns(
                 pl.lit(None).alias("idx_right")
             )
-            .sample(n=15, shuffle=True, seed=42)
+            .sample(n=len(target), shuffle=True, seed=42)
             .drop("idx")
             .with_row_index("idx")
         )
@@ -124,12 +124,12 @@ def setter(question: int):
             load_path_random=f"{DATAMODEL_PATH}/random.feather",
             save_path=f"{DATAMODEL_PATH}",
             k=4,
-            n_samples_target=50,
-            n_test_target=5,
-            n_samples_mix=50,
-            n_test_mix=5,
-            n_samples_random=50,
-            n_test_random=5,
+            n_samples_target=200,
+            n_test_target=20,
+            n_samples_mix=200,
+            n_test_mix=20,
+            n_samples_random=200,
+            n_test_random=20,
             index_col="idx",
             seed=42
         )
@@ -139,7 +139,7 @@ def setter(question: int):
 def create_pre_collections(question: int):
 
     DATAMODEL_PATH = f"question_{question}_datamodels"
-    model = GenericInstructModelHF("../models/llms/Llama-3.2-3B-Instruct")
+    model = GenericInstructModelHF("../../models/llms/Llama-3.2-3B-Instruct")
 
     model_configs = {
             "temperature": 0.7,
@@ -156,9 +156,9 @@ def create_pre_collections(question: int):
 
     log_config = LogConfig(
         project="nq_stratified_datamodels",
-        dir="../logs",
-        id=f"pre_collections_question_{question}_{str(datetime.datetime.now)}",
-        name=f"pre_collection_question_{question}",
+        dir="logs",
+        id=f"increasing_training_numeber_pre_collections_question_{question}_{str(datetime.datetime.now)}",
+        name=f"increasing_training_numeber_pre_collection_question_{question}",
         config={
             "k": 4,
             "num_models": 1,
@@ -166,7 +166,7 @@ def create_pre_collections(question: int):
             "llm": "Llama-3.2-3B-Instruct",
             "gpu": f"{torch.cuda.get_device_name(0)}",
         },
-        tags=[f"question_{question}", "pre_collections"]
+        tags=[f"question_{question}", "pre_collections", "increasing_training_number"]
     )
 
 
@@ -213,9 +213,9 @@ def create_collections(question: int):
 
     log_config = LogConfig(
         project="nq_stratified_datamodels",
-        dir="../logs",
-        id=f"instruction_variation_1_collections_question_{question}_{str(datetime.datetime.now)}",
-        name=f"instruction_variation_1_collection_question_{question}",
+        dir="logs",
+        id=f"increasing_training_numeber_collections_question_{question}_{str(datetime.datetime.now)}",
+        name=f"increasing_training_numeber_collection_question_{question}",
         config={
             "k": 4,
             "num_models": 1,
@@ -223,7 +223,7 @@ def create_collections(question: int):
             "llm": "Llama-3.2-3B-Instruct",
             "gpu": f"{torch.cuda.get_device_name(0)}",
         },
-        tags=[f"question_{question}", "collections", "instruction_variation_1"]
+        tags=[f"question_{question}", "collections", "increasing_training_numeber"]
     )
 
     evaluator = Rouge_L_evaluator()
@@ -256,9 +256,9 @@ def train_datamodel(question: int):
 
     log_config = LogConfig(
         project="nq_stratified_datamodels",
-        dir="../logs",
-        id=f"training_question_{question}_{str(datetime.datetime.now)}",
-        name=f"training_question_{question}",
+        dir="logs",
+        id=f"increasing_training_numeber_training_question_{question}_{str(datetime.datetime.now)}",
+        name=f"increasing_training_numeber_training_question_{question}",
         config={
             "k": 4,
             "num_models": 1,
@@ -269,7 +269,7 @@ def train_datamodel(question: int):
             "patience": 10,
             "gpu": f"{torch.cuda.get_device_name(0)}",
         },
-        tags=[f"question_{question}", "training", "instruction_variation_1"]
+        tags=[f"question_{question}", "training", "increasing_training_numeber"]
     )
 
     datamodel = DatamodelsNQPipeline(config)
@@ -299,15 +299,15 @@ def evaluate_datamodel(question: int):
 
     log_config = LogConfig(
         project="nq_stratified_datamodels",
-        dir="../logs",
-        id=f"evaluation_question_{question}_{str(datetime.datetime.now)}",
-        name=f"evaluation_question_{question}",
+        dir="logs",
+        id=f"increasing_training_numeber_evaluation_question_{question}_{str(datetime.datetime.now)}",
+        name=f"increasing_training_numeber_evaluation_question_{question}",
         config={
             "k": 4,
             "num_models": 1,
             "metrics": "mse"
         },
-        tags=[f"question_{question}", "evaluation", "instruction_variation_1"]
+        tags=[f"question_{question}", "evaluation", "increasing_training_numeber"]
     )
 
     datamodel = DatamodelsNQPipeline(config)

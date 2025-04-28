@@ -109,7 +109,7 @@ def setup():
             .with_columns(
                 pl.lit(None).alias("idx_right")
             )
-            .sample(n=15, shuffle=True, seed=42)
+            .sample(n=len(target), shuffle=True, seed=42)
             .drop("idx")
             .with_row_index("idx")
         )
