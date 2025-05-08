@@ -2,6 +2,7 @@
 
 This folder sever as a respository for experiment targeted in five different questions from Natural Questions dataset  
 Here we will cover the documetation of the questions used, the pipeline applied, the specfications of each experiment and the most relevant results
+Dmcr lib version v0.0.7
 
 ## 1. Selected Questions
 
