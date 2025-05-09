@@ -319,8 +319,8 @@ def run_collections():
     train_log_config = LogConfig(
         project="subpartition-datamodels-rag",
         dir="logs",
-        id=f"preview_100_train_collections_faiss_L2_{str(datetime.datetime.now)}",
-        name=f"preview_100_test_train_collections_faiss_L2",
+        id=f"preview_100_collections_faiss_L2_{str(datetime.datetime.now)}",
+        name=f"preview_100_collections_faiss_L2",
         config={
             "evaluator": "Rouge-L",
             "gpu": f"{torch.cuda.get_device_name(0)}",
@@ -335,7 +335,7 @@ def run_collections():
     datamodel.create_collection(
         evaluator = evaluator,
         mode = "train",
-        collection_name = "preview_100_collection_datamodel_L2_train",
+        collection_name = "preview_100_collection_L2_train",
         log = True,
         log_config = train_log_config
     )
@@ -345,7 +345,7 @@ def run_collections():
     datamodel.create_collection(
         evaluator = evaluator,
         mode = "test",
-        collection_name ="preview_100_collection_datamodel_L2_test",
+        collection_name ="preview_100_collection_L2_test",
         log = True,
         log_config = test_log_config
     )
