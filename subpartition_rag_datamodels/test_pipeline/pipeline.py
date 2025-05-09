@@ -403,7 +403,41 @@ def train_datamodels():
 
     
 
+def evaluate_datamodels():
 
+    config = DatamodelIndexBasedConfig(
+        k = 4,
+        num_models= 2,
+        datamodels_path = "datamodels",
+        train_set_path=WIKI_PATH,
+        test_set_path=QUESTIONS_PATH
+    )
+
+    log_config = LogConfig(
+        project="subpartition-datamodels-rag",
+        dir="logs",
+        id=f"test_evaluate_datamoles_{str(datetime.datetime.now)}",
+        name="test_evaluate_datamodels",
+        config={
+            "gpu": f"{torch.cuda.get_device_name(0)}",
+            "index": "FAISS_L2",
+            "size_index": 100,
+            "datamodel_configs": repr(config),
+            "metrics": "mse"
+
+        },
+        tags=["test", "evaluation", "FAISS_L2", "top_100"]
+    )
+
+    datamodel = DatamodelsIndexBasedNQPipeline(config)
+        
+    datamodel.evaluate_test_collections(
+            evaluation_id="evaluation_test",
+            collection_name="collection_datamodel_L2_test",
+            model_id="model_test",
+            log=True,
+            log_config=log_config
+        )
 
 
 
@@ -444,3 +478,6 @@ if __name__ == "__main__":
         
         case "train_datamodels":
             train_datamodels()
+        
+        case "evaluate_datamodels":
+            evaluate_datamodels()
