@@ -351,6 +351,60 @@ def run_collections():
     )
 
 
+def train_datamodels():
+
+    config = DatamodelIndexBasedConfig(
+        k = 4,
+        num_models= 2,
+        datamodels_path = "datamodels",
+        train_set_path=WIKI_PATH,
+        test_set_path=QUESTIONS_PATH
+    )
+
+
+
+    datamodel = DatamodelsIndexBasedNQPipeline(config)
+
+    log_config = LogConfig(
+        project="subpartition-datamodels-rag",
+        dir="logs",
+        id=f"test_train_datamoles_{str(datetime.datetime.now)}",
+        name=f"test_train_collections",
+        config={
+            "gpu": f"{torch.cuda.get_device_name(0)}",
+            "index": "FAISS_L2",
+            "size_index": 100,
+            "datamodel_configs": repr(config),
+            "epochs": 100,
+            "train_batches": 1,
+            "val_batches": 1,
+            "val_size": 0.1,
+            "lr": 1e-4,
+            "patience": 10,
+            "log_epochs": 10
+
+        },
+        tags=["test", "training", "FAISS_L2", "top_100"]
+    )
+
+    datamodel.train_datamodels(
+        collection_name=f"collection_datamodel_L2_train",
+        epochs=10,
+        train_batches=1,
+        val_batches=1,
+        val_size=0.1,
+        lr=1e-4,
+        patience=10,
+        log=True,
+        log_config=log_config,
+        log_epochs=10,
+        run_id=f"model_test",
+    )
+
+    
+
+
+
 
 
 
@@ -387,3 +441,6 @@ if __name__ == "__main__":
         
         case "run_collections":
             run_collections()
+        
+        case "train_datamodels":
+            train_datamodels()
