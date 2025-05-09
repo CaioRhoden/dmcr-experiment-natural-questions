@@ -56,7 +56,7 @@ def setup():
 
     This function downloads the 100 question golden dataset, writes it to questions.feather and creates the retrieval, generations, results and datamodels folders.
     """
-    train  = pl.read_ipc(GOLDEN_PATH).head(2)
+    train  = pl.read_ipc(GOLDEN_PATH).head(100)
     train.write_ipc("questions.feather")
 
     ## Create structure
@@ -190,8 +190,8 @@ def create_datamodels_datasets():
         save_path=DATASET_PATH,
         size_index=100,
         k=4,
-        train_samples=20,
-        test_samples=4
+        train_samples=2000,
+        test_samples=400
     )
 
     setter = IndexBasedSetter(config=setter_config)
@@ -211,7 +211,7 @@ def run_pre_colections():
 
     config = DatamodelIndexBasedConfig(
         k = 4,
-        num_models= 2,
+        num_models= 100,
         datamodels_path = "datamodels",
         train_set_path=WIKI_PATH,
         test_set_path=QUESTIONS_PATH
@@ -220,8 +220,8 @@ def run_pre_colections():
     train_log_config = LogConfig(
         project="subpartition-datamodels-rag",
         dir="logs",
-        id=f"train_test_{str(datetime.datetime.now)}",
-        name=f"train_test",
+        id=f"preview_100_train_pre_collections_faiss_L2_{str(datetime.datetime.now)}",
+        name=f"preview_100_train_pre_collections_faiss_L2",
         config={
             "llm": "Llama-3.2-3B-Instruct",
             "gpu": f"{torch.cuda.get_device_name(0)}",
@@ -230,14 +230,14 @@ def run_pre_colections():
             "model_configs": model_configs,
             "datamodel_configs": repr(config)
         },
-        tags=["test", "pre_collections", "FAISS_L2", "top_100"]
+        tags=["100_preview", "pre_collections", "FAISS_L2", "top_100"]
     )
 
     test_log_config = LogConfig(
         project="subpartition-datamodels-rag",
         dir="logs",
-        id=f"test_test_{str(datetime.datetime.now)}",
-        name=f"test_test",
+        id=f"preview_100_test_pre_collections_faiss_L2_{str(datetime.datetime.now)}",
+        name=f"preview_100_test_pre_collections_faiss_L2",
         config={
             "llm": "Llama-3.2-3B-Instruct",
             "gpu": f"{torch.cuda.get_device_name(0)}",
@@ -246,7 +246,7 @@ def run_pre_colections():
             "model_configs": model_configs,
             "datamodel_configs": repr(config)
         },
-        tags=["test", "pre_collections", "FAISS_L2", "top_100"]
+        tags=["100_preview", "pre_collections", "FAISS_L2", "top_100"]
     )
 
 
@@ -258,11 +258,11 @@ def run_pre_colections():
         instruction= "You are given a question and you MUST respond in 5 tokens, use the provided documents to try to answer the question",
         llm = model,
         start_idx = 0, 
-        end_idx = 20, 
+        end_idx = 2000, 
         mode = "train", 
         log = True, 
         log_config = train_log_config, 
-        checkpoint = 2, 
+        checkpoint = 100, 
         output_column = "answers",
         model_configs = model_configs,
         rag_indexes_path="retrieval/rag_retrieval_indexes.json"
@@ -273,11 +273,11 @@ def run_pre_colections():
         instruction= "You are given a question and you MUST respond in 5 tokensuse the provided documents to try to answer the question",
         llm = model,
         start_idx = 0, 
-        end_idx = 4, 
+        end_idx = 400, 
         mode = "test", 
         log = True, 
         log_config = test_log_config, 
-        checkpoint = 2, 
+        checkpoint = 100, 
         output_column = "answers",
         model_configs = model_configs,
         rag_indexes_path="retrieval/rag_retrieval_indexes.json"
@@ -290,7 +290,7 @@ def run_collections():
 
     config = DatamodelIndexBasedConfig(
         k = 4,
-        num_models= 2,
+        num_models= 100,
         datamodels_path = "datamodels",
         train_set_path=WIKI_PATH,
         test_set_path=QUESTIONS_PATH
@@ -304,8 +304,8 @@ def run_collections():
     test_log_config = LogConfig(
         project="subpartition-datamodels-rag",
         dir="logs",
-        id=f"test_collections_{str(datetime.datetime.now)}",
-        name=f"test_test_collections",
+        id=f"preview_100_test_collections_faiss_L2_{str(datetime.datetime.now)}",
+        name=f"preview_100_test_collections_faiss_L2",
         config={
             "evaluator": "Rouge-L",
             "gpu": f"{torch.cuda.get_device_name(0)}",
@@ -313,14 +313,14 @@ def run_collections():
             "size_index": 100,
             "datamodel_configs": repr(config)
         },
-        tags=["test", "collections", "FAISS_L2", "top_100"]
+        tags=["preview_100", "collections", "FAISS_L2", "top_100"]
     )
 
     train_log_config = LogConfig(
         project="subpartition-datamodels-rag",
         dir="logs",
-        id=f"train_collections_{str(datetime.datetime.now)}",
-        name=f"test_train_collections",
+        id=f"preview_100_train_collections_faiss_L2_{str(datetime.datetime.now)}",
+        name=f"preview_100_test_train_collections_faiss_L2",
         config={
             "evaluator": "Rouge-L",
             "gpu": f"{torch.cuda.get_device_name(0)}",
@@ -328,14 +328,14 @@ def run_collections():
             "size_index": 100,
             "datamodel_configs": repr(config)
         },
-        tags=["test", "collections", "FAISS_L2", "top_100"]
+        tags=["preview_100", "collections", "FAISS_L2", "top_100"]
     )
 
     print("Start Creating Train Collection")
     datamodel.create_collection(
         evaluator = evaluator,
         mode = "train",
-        collection_name = "collection_datamodel_L2_train",
+        collection_name = "preview_100_collection_datamodel_L2_train",
         log = True,
         log_config = train_log_config
     )
@@ -345,7 +345,7 @@ def run_collections():
     datamodel.create_collection(
         evaluator = evaluator,
         mode = "test",
-        collection_name ="collection_datamodel_L2_test",
+        collection_name ="preview_100_collection_datamodel_L2_test",
         log = True,
         log_config = test_log_config
     )
