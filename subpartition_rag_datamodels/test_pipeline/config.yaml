@@ -1,0 +1,13 @@
+
+retrieval_path: "retrieval/rag_retrieval_indexes.json"
+wiki_path : "../../data/wiki_dump2018_nq_open/processed/wiki.feather"
+embeder_path : "../../models/llms/bge-base-en-v1.5"
+golden_path : "../../data/nq_open_gold/processed/train.feather"
+vector_db_path : "../../data/wiki_dump2018_nq_open/wiki2.index"
+questions_path : "questions.feather"
+laguage_model_path : "../../models/llms/Llama-3.2-3B-Instruct"
+model_run_id : "model_test"
+train_collection_id: "train_collection"
+test_collection_id: "test_collection"
+k : 4
+seed: 42
