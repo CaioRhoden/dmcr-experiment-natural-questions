@@ -21,7 +21,9 @@ import yaml
 class RAGBasedExperimentPipeline:
 
     def __init__(self, config_path: str):
-        self.config = yaml.safe_load(open(config_path, "r"))
+        config = yaml.safe_load(open(config_path, "r"))
+        self.config = config["global_config"]
+        self.config_pre_collections = config["pre_collections_config"]
 
     def set_random_seed(self):
 
@@ -179,10 +181,10 @@ class RAGBasedExperimentPipeline:
         DATASET_PATH = "datamodels"
         setter_config = IndexBasedSetterConfig(
             save_path=DATASET_PATH,
-            size_index=100,
+            size_index=self.config["size_index"],
             k=self.config['k'],
-            train_samples=20,
-            test_samples=4
+            train_samples= self.config_pre_collections["train_samples"],
+            test_samples= self.config_pre_collections["test_samples"]
         )
 
         setter = IndexBasedSetter(config=setter_config)
@@ -191,6 +193,13 @@ class RAGBasedExperimentPipeline:
     def run_pre_colections(self):
 
 
+        """
+        This function creates the pre collections for train and test datasets.
+        It uses the DatamodelsIndexBasedNQPipeline to create the pre collections.
+        The function takes the instruction, llm, start_idx, end_idx, mode, log,
+        log_config, checkpoint, output_column, model_configs, and rag_indexes_path
+        as parameters. It returns nothing.
+        """
         model = GenericInstructModelHF(self.config["laguage_model_path"])
 
         model_configs = {
@@ -202,7 +211,7 @@ class RAGBasedExperimentPipeline:
 
         config = DatamodelIndexBasedConfig(
             k = self.config['k'],
-            num_models= 2,
+            num_models= self.config["num_models"],
             datamodels_path = "datamodels",
             train_set_path=self.config["wiki_path"],
             test_set_path=self.config["questions_path"]
@@ -211,33 +220,32 @@ class RAGBasedExperimentPipeline:
         train_log_config = LogConfig(
             project="subpartition-datamodels-rag",
             dir="logs",
-            id=f"train_test_{str(datetime.datetime.now)}",
-            name=f"train_test",
+            id=f"pre_collection_{self.config['train_collection_id']}_{str(datetime.datetime.now)}",
+            name=f"pre_collection_{self.config['train_collection_id']}",
             config={
-                "llm": "Llama-3.2-3B-Instruct",
+                "llm": f"{self.config['laguage_model_path']}",
                 "gpu": f"{torch.cuda.get_device_name(0)}",
-                "index": "FAISS_L2",
-                "size_index": 100,
+                "size_index": self.config["size_index"],
                 "model_configs": model_configs,
                 "datamodel_configs": repr(config)
             },
-            tags=["test", "pre_collections", "FAISS_L2", "top_100"]
+            tags=self.config_pre_collections["tags"].extend(["train", "pre_collection"])
         )
 
         test_log_config = LogConfig(
             project="subpartition-datamodels-rag",
             dir="logs",
-            id=f"test_test_{str(datetime.datetime.now)}",
-            name=f"test_test",
+            id=f"pre_collection_{self.config['test_collection_id']}_{str(datetime.datetime.now)}",
+            name=f"pre_collection_{self.config['test_collection_id']}",
             config={
-                "llm": "Llama-3.2-3B-Instruct",
+                "llm": f"{self.config['laguage_model_path']}",
                 "gpu": f"{torch.cuda.get_device_name(0)}",
-                "index": "FAISS_L2",
-                "size_index": 100,
+                "size_index": self.config["size_index"],
                 "model_configs": model_configs,
                 "datamodel_configs": repr(config)
             },
-            tags=["test", "pre_collections", "FAISS_L2", "top_100"]
+            tags=self.config_pre_collections["tags"].extend(["test", "pre_collection"])
+            
         )
 
 
@@ -248,12 +256,12 @@ class RAGBasedExperimentPipeline:
         datamodel.create_pre_collection(
             instruction= "You are given a question and you MUST respond in 5 tokens, use the provided documents to try to answer the question",
             llm = model,
-            start_idx = 0, 
-            end_idx = 20, 
+            start_idx = self.config_pre_collections["train_start_idx"], 
+            end_idx = self.config_pre_collections["train_end_idx"], 
             mode = "train", 
             log = True, 
             log_config = train_log_config, 
-            checkpoint = 2, 
+            checkpoint = self.config_pre_collections["train_checkpoint"], 
             output_column = "answers",
             model_configs = model_configs,
             rag_indexes_path="retrieval/rag_retrieval_indexes.json"
@@ -263,12 +271,12 @@ class RAGBasedExperimentPipeline:
         datamodel.create_pre_collection(
             instruction= "You are given a question and you MUST respond in 5 tokensuse the provided documents to try to answer the question",
             llm = model,
-            start_idx = 0, 
-            end_idx = 4, 
+            start_idx = self.config_pre_collections["test_start_idx"], 
+            end_idx = self.config_pre_collections["test_end_idx"], 
             mode = "test", 
             log = True, 
             log_config = test_log_config, 
-            checkpoint = 2, 
+            checkpoint = self.config_pre_collections["test_checkpoint"], 
             output_column = "answers",
             model_configs = model_configs,
             rag_indexes_path="retrieval/rag_retrieval_indexes.json"
@@ -281,7 +289,7 @@ class RAGBasedExperimentPipeline:
 
         config = DatamodelIndexBasedConfig(
             k = self.config['k'],
-            num_models= 2,
+            num_models= self.config["num_models"],
             datamodels_path = "datamodels",
             train_set_path=self.config["wiki_path"],
             test_set_path=self.config["questions_path"]
@@ -301,7 +309,7 @@ class RAGBasedExperimentPipeline:
                 "evaluator": "Rouge-L",
                 "gpu": f"{torch.cuda.get_device_name(0)}",
                 "index": "FAISS_L2",
-                "size_index": 100,
+                "size_index": self.config["size_index"],
                 "datamodel_configs": repr(config)
             },
             tags=["test", "collections", "FAISS_L2", "top_100"]
@@ -316,7 +324,7 @@ class RAGBasedExperimentPipeline:
                 "evaluator": "Rouge-L",
                 "gpu": f"{torch.cuda.get_device_name(0)}",
                 "index": "FAISS_L2",
-                "size_index": 100,
+                "size_index": self.config["size_index"],
                 "datamodel_configs": repr(config)
             },
             tags=["test", "collections", "FAISS_L2", "top_100"]
@@ -346,7 +354,7 @@ class RAGBasedExperimentPipeline:
 
         config = DatamodelIndexBasedConfig(
             k = self.config['k'],
-            num_models= 2,
+            num_models= self.config["num_models"],
             datamodels_path = "datamodels",
             train_set_path=self.config["wiki_path"],
             test_set_path=self.config["questions_path"]
@@ -364,9 +372,9 @@ class RAGBasedExperimentPipeline:
             config={
                 "gpu": f"{torch.cuda.get_device_name(0)}",
                 "index": "FAISS_L2",
-                "size_index": 100,
+                "size_index": self.config["size_index"],
                 "datamodel_configs": repr(config),
-                "epochs": 100,
+                "epochs": 200,
                 "train_batches": 1,
                 "val_batches": 1,
                 "val_size": 0.1,
@@ -380,12 +388,12 @@ class RAGBasedExperimentPipeline:
 
         datamodel.train_datamodels(
             collection_name=self.config["train_collection_id"],	
-            epochs=10,
+            epochs=250,
             train_batches=1,
             val_batches=1,
-            val_size=0.1,
+            val_size=0.25,
             lr=1e-4,
-            patience=10,
+            patience=50,
             log=True,
             log_config=log_config,
             log_epochs=10,
@@ -398,7 +406,7 @@ class RAGBasedExperimentPipeline:
 
         config = DatamodelIndexBasedConfig(
             k = self.config['k'],
-            num_models= 2,
+            num_models= self.config["num_models"],
             datamodels_path = "datamodels",
             train_set_path=self.config["wiki_path"],
             test_set_path=self.config["questions_path"]
@@ -412,7 +420,7 @@ class RAGBasedExperimentPipeline:
             config={
                 "gpu": f"{torch.cuda.get_device_name(0)}",
                 "index": "FAISS_L2",
-                "size_index": 100,
+                "size_index": self.config["size_index"],
                 "datamodel_configs": repr(config),
                 "metrics": "mse"
 
