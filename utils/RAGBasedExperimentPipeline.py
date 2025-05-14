@@ -85,7 +85,7 @@ class RAGBasedExperimentPipeline:
         retrieval_indexes = {}
         retrieval_distances = {}
 
-        df = pl.read_ipc("questions.feather")
+        df = pl.read_ipc(self.config["questions_path"])
 
         ### Load faiss indices
         index = faiss.read_index(self.config["vector_db_path"])
