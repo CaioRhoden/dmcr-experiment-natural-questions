@@ -9,7 +9,7 @@ global_config:
   laguage_model_path : "../../../models/llms/Llama-3.2-3B-Instruct"
   model_run_id : "model_preview_100_faiss_L2_top_100"
   train_collection_id: "preview_100_collection_L2_train"
-  test_collection_id: "preview_100_collection_L2_test"
+  test_collection_id: "preview_100_colle'ction_L2_test"
   k : 4
   seed: 42
 
