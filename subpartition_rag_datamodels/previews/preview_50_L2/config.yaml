@@ -25,3 +25,12 @@ pre_collections_config:
   test_end_idx: 400
   train_checkpoint: 200
   test_checkpoint: 200
+
+datamodels_training_config:
+  epochs: 1000
+  lr: 0.001
+  train_batches: 5
+  val_batches: 3
+  val_size: 0.15
+  patience: 50
+  log_epochs: 25
