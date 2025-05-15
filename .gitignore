@@ -3,6 +3,7 @@ data
 ../models
 logs
 
+pre_collection*
 
 
 # Byte-compiled / optimized / DLL files

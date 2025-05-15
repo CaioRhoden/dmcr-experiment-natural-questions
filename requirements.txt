@@ -1,2 +1,2 @@
-git+https://github.com/CaioRhoden/datamodels-context-reduction.git@v0.0.12
+git+https://github.com/CaioRhoden/datamodels-context-reduction.git@v0.0.14
 faiss==1.11.0

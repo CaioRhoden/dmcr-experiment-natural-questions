@@ -13,6 +13,7 @@ global_config:
   seed: 42
   size_index: 100
   num_models: 50
+  evaluation_metric: "R2Score"
 
 pre_collections_config:
   train_samples: 2000
