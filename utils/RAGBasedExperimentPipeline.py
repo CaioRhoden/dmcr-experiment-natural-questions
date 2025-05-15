@@ -24,6 +24,7 @@ class RAGBasedExperimentPipeline:
         config = yaml.safe_load(open(config_path, "r"))
         self.config = config["global_config"]
         self.config_pre_collections = config["pre_collections_config"]
+        self.config_datamodels_training = config["datamodels_training_config"]
 
     def set_random_seed(self):
 
@@ -352,6 +353,15 @@ class RAGBasedExperimentPipeline:
 
     def train_datamodels(self):
 
+        epochs = self.config_datamodels_training["epochs"]
+        lr = self.config_datamodels_training["lr"]
+        train_batches = self.config_datamodels_training["train_batches"]
+        val_batches = self.config_datamodels_training["val_batches"]
+        val_size = self.config_datamodels_training["val_size"]
+        patience = self.config_datamodels_training["patience"]
+        log_epochs = self.config_datamodels_training["log_epochs"]
+
+
         config = DatamodelIndexBasedConfig(
             k = self.config['k'],
             num_models= self.config["num_models"],
@@ -374,29 +384,23 @@ class RAGBasedExperimentPipeline:
                 "index": "FAISS_L2",
                 "size_index": self.config["size_index"],
                 "datamodel_configs": repr(config),
-                "epochs": 200,
-                "train_batches": 1,
-                "val_batches": 1,
-                "val_size": 0.1,
-                "lr": 1e-4,
-                "patience": 10,
-                "log_epochs": 10
+                "training_configs": self.config_datamodels_training
 
             },
-            tags=["test", "training", "FAISS_L2", "top_100"]
+            tags=self.config_pre_collections["tags"].extend(["training"])
         )
 
         datamodel.train_datamodels(
             collection_name=self.config["train_collection_id"],	
-            epochs=250,
-            train_batches=1,
-            val_batches=1,
-            val_size=0.25,
-            lr=1e-4,
-            patience=50,
+            epochs=epochs,
+            train_batches=train_batches,
+            val_batches=val_batches,
+            val_size=val_size,
+            lr=lr,
+            patience=patience,
             log=True,
             log_config=log_config,
-            log_epochs=10,
+            log_epochs=log_epochs,
             run_id=self.config['model_run_id'],
         )
 
