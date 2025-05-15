@@ -431,11 +431,12 @@ class RAGBasedExperimentPipeline:
         datamodel = DatamodelsIndexBasedNQPipeline(config)
             
         datamodel.evaluate_test_collections(
-                evaluation_id=f"evaluation_{self.config['model_run_id']}",
+                evaluation_id=f"evaluation_{self.config['model_run_id']}_{self.config['evaluation_metric']}",
                 collection_name=self.config["test_collection_id"],
                 model_id=self.config['model_run_id'],
                 log=True,
-                log_config=log_config
+                log_config=log_config,
+                metric=self.config["evaluation_metric"]
             )
 
 
