@@ -255,7 +255,7 @@ class RAGBasedExperimentPipeline:
 
         print("Start Creating Train Pre Collection")
         datamodel.create_pre_collection(
-            instruction= "You are given a question and you MUST respond in 5 tokens, use the provided documents to try to answer the question",
+            instruction= self.config_pre_collections["instruction"],
             llm = model,
             start_idx = self.config_pre_collections["train_start_idx"], 
             end_idx = self.config_pre_collections["train_end_idx"], 
@@ -270,7 +270,7 @@ class RAGBasedExperimentPipeline:
 
         print("Start Creating Test Pre Collection")
         datamodel.create_pre_collection(
-            instruction= "You are given a question and you MUST respond in 5 tokensuse the provided documents to try to answer the question",
+            instruction= self.config_pre_collections["instruction"],
             llm = model,
             start_idx = self.config_pre_collections["test_start_idx"], 
             end_idx = self.config_pre_collections["test_end_idx"], 
