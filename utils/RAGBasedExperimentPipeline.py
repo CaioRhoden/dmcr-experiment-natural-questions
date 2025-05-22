@@ -9,7 +9,7 @@ from dmcr.datamodels.setter.SetterConfig import IndexBasedSetterConfig
 from dmcr.datamodels.pipeline import DatamodelsIndexBasedNQPipeline
 from dmcr.datamodels.config import DatamodelIndexBasedConfig, LogConfig
 from dmcr.models import GenericInstructModelHF
-from dmcr.evaluators import Rouge_L_evaluator
+from dmcr.evaluators import Rouge_L_evaluator, SquadV2Evaluator
 import datetime
 import faiss
 import json
@@ -296,8 +296,14 @@ class RAGBasedExperimentPipeline:
             test_set_path=self.config["questions_path"]
         )
 
+        ## Config evaluator based on yaml parameter
+        if self.config["evaluator"] == "Rouge-L":
+            evaluator = Rouge_L_evaluator()
+        elif self.config["evaluator"] == "SquadV2":
+            evaluator = SquadV2Evaluator("best_f1")
+        else:
+            raise ValueError(f"Invalid evaluator")
 
-        evaluator = Rouge_L_evaluator()
 
         datamodel = DatamodelsIndexBasedNQPipeline(config)
 
@@ -322,7 +328,7 @@ class RAGBasedExperimentPipeline:
             id=f"train_collections_{str(datetime.datetime.now)}",
             name=self.config["train_collection_id"],
             config={
-                "evaluator": "Rouge-L",
+                "evaluator": self.config["evaluator"],
                 "gpu": f"{torch.cuda.get_device_name(0)}",
                 "index": "FAISS_L2",
                 "size_index": self.config["size_index"],
