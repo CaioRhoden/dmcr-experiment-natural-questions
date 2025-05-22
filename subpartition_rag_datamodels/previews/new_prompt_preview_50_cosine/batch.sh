@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=16
 #SBATCH --time=23:00:00
 #SBATCH --gres=gpu:1
-#SBATCH --mem-per-gpu=25G
+#SBATCH --mem-per-gpu=40G
 #SBATCH --mail-user=c214129@dac.unicamp.br
 #SBATCH --mail-type=BEGIN,END,FAIL
 
@@ -16,10 +16,10 @@ export WANDB_MODE="offline"
 
 # CUDA_VISIBLE_DEVICES=0 python3 pipeline.py -s setup
 CUDA_VISIBLE_DEVICES=0 python3 pipeline.py -s get_rag_retrieval
-# CUDA_VISIBLE_DEVICES=0 python3 pipeline.py -s get_rag_generations
-# CUDA_VISIBLE_DEVICES=0 python3 pipeline.py -s create_datamodels_datasets
-# CUDA_VISIBLE_DEVICES=0 python3 pipeline.py -s run_pre_collections
-# CUDA_VISIBLE_DEVICES=0 python3 pipeline.py -s run_collections
+CUDA_VISIBLE_DEVICES=0 python3 pipeline.py -s get_rag_generations
+CUDA_VISIBLE_DEVICES=0 python3 pipeline.py -s create_datamodels_datasets
+CUDA_VISIBLE_DEVICES=0 python3 pipeline.py -s run_pre_collections
+CUDA_VISIBLE_DEVICES=0 python3 pipeline.py -s run_collections
 # CUDA_VISIBLE_DEVICES=0 python3 pipeline.py -s train_datamodels
 # CUDA_VISIBLE_DEVICES=0 python3 pipeline.py -s evaluate_datamodels
-CUDA_VISIBLE_DEVICES=0 python3 pipeline.py -s get_datamodels_generations
+# CUDA_VISIBLE_DEVICES=0 python3 pipeline.py -s get_datamodels_generations
