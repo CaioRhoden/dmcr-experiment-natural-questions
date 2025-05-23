@@ -106,7 +106,7 @@ class RAGBasedExperimentPipeline:
             query_embedding = query_embedding.astype('float32').reshape(1, -1)
 
             ### Get l2 and ip neighbors
-            scores, ids = index.search(query_embedding, 100)
+            scores, ids = index.search(query_embedding, self.config["size_index"])
             # ip_ids, ip_scores = ip_index.search(query_embedding, 100)
 
             retrieval_indexes[idx] = ids.tolist()[0]
