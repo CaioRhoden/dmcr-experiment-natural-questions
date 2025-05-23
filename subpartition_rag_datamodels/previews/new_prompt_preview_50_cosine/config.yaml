@@ -14,6 +14,7 @@ global_config:
   size_index: 100
   num_models: 50
   evaluation_metric: "R2Score"
+  evaluator: "Rouge-L"
 
 pre_collections_config:
   instruction: You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens, you can use the available documents" 
