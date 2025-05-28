@@ -1,0 +1,25 @@
+
+global_config:
+  retrieval_path: "retrieval/rag_retrieval_indexes.json"
+  wiki_path : "../../../data/wiki_dump2018_nq_open/processed/wiki.feather"
+  embeder_path : "../../../models/llms/bge-base-en-v1.5"
+  golden_path : "../../../data/nq_open_gold/processed/train.feather"
+  vector_db_path : "../../../data/wiki_dump2018_nq_open/wiki2.index"
+  questions_path : "questions.feather"
+  laguage_model_path : "../../../models/llms/Llama-3.2-3B-Instruct"
+  model_run_id : "model_preview_100_faiss_L2_top_100"
+  train_collection_id: "preview_100_collection_L2_train"
+  test_collection_id: "preview_100_colle'ction_L2_test"
+  k : 4
+  seed: 42
+
+pre_collections_config:
+  train_samples: 2000
+  test_samples: 400
+  tags: ["preview_100", "FAISS_L2"]
+  train_start_idx: 0
+  train_end_idx: 2000
+  test_start_idx: 0
+  test_end_idx: 400
+  train_checkpoint: 200
+  test_checkpoint: 200
