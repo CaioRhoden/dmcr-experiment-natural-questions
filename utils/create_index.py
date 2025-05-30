@@ -85,11 +85,13 @@ def create_hf_embedder(
         saving_path: str, 
         embedding_size: int, 
         batch_size=80000, 
-        nlist:int = 100
+        nlist:int = 100,
+        model_kwargs: dict = {},
+        encode_kwargs: dict = {}
     ):
 
     
-    embedder = HuggingFaceEmbedding(model_name=embedder_path)
+    embedder = HuggingFaceEmbedding(model_name=embedder_path, model_kwargs=model_kwargs, encode_kwargs=encode_kwargs)
     quantizer = faiss.IndexFlatIP(embedding_size)
     index = faiss.IndexIVFScalarQuantizer(
         quantizer, embedding_size, nlist, faiss.ScalarQuantizer.QT_fp16, faiss.METRIC_INNER_PRODUCT
@@ -112,7 +114,7 @@ def create_hf_embedder(
         
         
         # Encode the current batch
-        batch_embeddings_list = embedder.get_text_embedding_batch (batch_texts)
+        batch_embeddings_list = embedder.get_text_embedding_batch(batch_texts)
         batch_embeddings = np.array(batch_embeddings_list, dtype=np.float16)
 
         if start == 0:
