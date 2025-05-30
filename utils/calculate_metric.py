@@ -9,6 +9,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 from dmcr.evaluators.Rouge_L_evaluator import Rouge_L_evaluator
+from dmcr.evaluators.Squadv2Evaluator import SquadV2Evaluator
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 seed = 42
@@ -28,43 +29,65 @@ if torch.cuda.is_available():
 
 
 def calculate_agg_metric(
-        metric: str,
-        agg: str,
+        metrics: list[str],
         generation_path: str,
         reference_path: str,
         saving_path: str
 ) -> None:
 
+    """
+    Calculate mean and max of Rouge-L and/or SQuAD V2 metrics for generations.
+
+    Args:
+        metrics (list[str]): List of metrics to calculate. Can be "rouge_l" and/or "squad_v2".
+        generation_path (str): Path to JSON file containing generations.
+        reference_path (str): Path to JSON file containing reference answers.
+        saving_path (str): Path to save the results in IPC format.
+
+    Returns:
+        None
+    """
+    
     results = {
         "idx": [],
-        "mean_metric": []
+        "mean": [],
+        "max": [],
+        "metric": []
+
     }
-    evaluator = Rouge_L_evaluator()
+    
+    generations = json.load(open(generation_path, "r"))
+    questions = pl.read_ipc(reference_path)
 
+    for metric in metrics:
+        if metric == "rouge_l":
+            evaluator = Rouge_L_evaluator()
+        elif metric == "squad_v2_best_f1":
+            evaluator = SquadV2Evaluator("best_f1")
+        elif metric == "squad_v2_best_exact":
+            evaluator = SquadV2Evaluator("best_exact")
+        else:
+            raise ValueError(f"Invalid evaluator: {metric}")	
 
-    for i in range(len(rag_generations)):
-        rag_i_results = []
-        datamodels_i_results = []
-        results["idx"].append(i)
-        for j in range(len(rag_generations[str(i)])):
+        for i in range(len(generations)):
+            results_i = []
+            results["idx"].append(i)
+            for j in range(len(generations[str(i)])):
 
-            max_rag = 0
-            max_datamodels = 0
+                    
+
+                max_metric = 0.0
+                res =  questions[i]["answers"].to_numpy().flatten()
             
-            for res in  questions[i]["answers"].to_numpy().flatten()[0]:
+                metric_value = evaluator.evaluate(np.array([res]), np.array([str(generations[str(i)][j])]))
+                max_metric = max(max_metric, metric_value[0])
 
-                metric_rag = evaluator.evaluate(np.array([res]), np.array([str(rag_generations[str(i)][j])]))
-                metric_datamodels = evaluator.evaluate(np.array([res]), np.array([str(datamodels_generations[str(i)][j])]))
-                
-                max_rag = max(max_rag, metric_rag[0])
-                max_datamodels = max(max_datamodels, metric_datamodels[0])
+                results_i.append(max_metric)
 
-            rag_i_results.append(max_rag)
-            datamodels_i_results.append(max_datamodels)
-
-        results["mean_metric_rag"].append(np.mean(rag_i_results))
-        results["mean_metric_datamodels"].append(np.mean(datamodels_i_results))
-        df_results = pl.DataFrame(results)
-        df_results.write_ipc("results.feather")
+            results["mean"].append(np.mean(results_i))
+            results["max"].append(np.max(results_i))
+            results["metric"].append(metric)
+            df_results = pl.DataFrame(results)
+            df_results.write_ipc(saving_path)
 
     df_results = pl.DataFrame(results)
