@@ -5,6 +5,10 @@ import random
 import numpy as np
 from FlagEmbedding import FlagModel
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from sentence_transformers import SentenceTransformer
+import torch.nn.functional as F
+
+
 
 import faiss
 import gc
@@ -79,7 +83,7 @@ def create_cosine_flag_embeeder():
         gc.collect()
         
 
-def create_hf_embedder(
+def create_llamaindex_hf_embedder(
         wiki_path: str, 
         embedder_path: str, 
         saving_path: str, 
@@ -87,11 +91,10 @@ def create_hf_embedder(
         batch_size=80000, 
         nlist:int = 100,
         model_kwargs: dict = {},
-        encode_kwargs: dict = {}
     ):
 
     
-    embedder = HuggingFaceEmbedding(model_name=embedder_path, model_kwargs=model_kwargs, encode_kwargs=encode_kwargs)
+    embedder = HuggingFaceEmbedding(model_name=embedder_path, model_kwargs=model_kwargs)
     quantizer = faiss.IndexFlatIP(embedding_size)
     index = faiss.IndexIVFScalarQuantizer(
         quantizer, embedding_size, nlist, faiss.ScalarQuantizer.QT_fp16, faiss.METRIC_INNER_PRODUCT
@@ -135,5 +138,65 @@ def create_hf_embedder(
     
 
 
+def create_hf_embedder(
+        wiki_path: str, 
+        embedder_path: str, 
+        saving_path: str, 
+        embedding_size: int, 
+        batch_size=80000, 
+        nlist:int = 100,
+        encode_kwargs: dict = {},
+    ):
+
+    
+    embedder = SentenceTransformer(
+        embedder_path,
+        trust_remote_code=True,
+    )
+
+    quantizer = faiss.IndexFlatIP(embedding_size)
+    index = faiss.IndexIVFScalarQuantizer(
+        quantizer, embedding_size, nlist, faiss.ScalarQuantizer.QT_fp16, faiss.METRIC_INNER_PRODUCT
+    )
+
+    # index = faiss.read_index("wiki.index")
+    WIKI_PATH = wiki_path
+    wiki = pl.read_ipc(WIKI_PATH).with_row_index("idx")
+    wiki = wiki.sample(fraction=1.0, shuffle=True, seed=42)
+    total_size = len(wiki)
+    torch.backends.cuda.enable_cudnn_sdp(False)
 
 
+    for start in range(0, total_size, batch_size):
+        
+        end = min(start + batch_size, total_size)
+        print(f"End: {end}")
+        
+        batch_texts = wiki[start:end].select("text").to_numpy().flatten().tolist()
+        
+        
+        # Encode the current batch
+        batch_embeddings_list = embedder.encode(batch_texts, **encode_kwargs)
+        batch_embeddings = normalize_embeddings(np.array(batch_embeddings_list, dtype=np.float16))
+
+        if start == 0:
+            index.train(batch_embeddings)
+
+
+        # Add to index
+        index.add(batch_embeddings)
+
+        faiss.write_index(index, saving_path)
+
+        print(f"Index size: {index.ntotal}")
+        
+        # Optional: Clear memory if needed
+        del batch_texts, batch_embeddings
+        torch.cuda.empty_cache()
+        gc.collect()
+    
+def normalize_embeddings(embeddings: np.ndarray) -> np.ndarray:
+        """L2 normalize embeddings"""
+        norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
+        norms[norms == 0] = 1  # avoid division by zero
+        return embeddings / norms
