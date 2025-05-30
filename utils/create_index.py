@@ -79,7 +79,14 @@ def create_cosine_flag_embeeder():
         gc.collect()
         
 
-def create_hf_embedder(wiki_path: str, embedder_path: str, saving_path: str, embedding_size: int, batch_size=80000, nlist:int = 100):
+def create_hf_embedder(
+        wiki_path: str, 
+        embedder_path: str, 
+        saving_path: str, 
+        embedding_size: int, 
+        batch_size=80000, 
+        nlist:int = 100
+    ):
 
     
     embedder = HuggingFaceEmbedding(model_name=embedder_path)
