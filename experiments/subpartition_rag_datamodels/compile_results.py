@@ -45,7 +45,7 @@ def compile_result(preview_idx: int):
         metrics=metrics,
         generation_path=rag_generations[preview_idx],
         reference_path=f"{PREFIX_PATH}/50_test.feather",
-        saving_path=f"previews_results/preview_{preview_idx}_rag.ipc"
+        saving_path=f"previews_results/preview_{preview_idx}_rag.feather"
     )
     print(f"Finished RAG Preview {preview_idx} - {datetime.datetime.now()}")
     print(f"Starting Datamodels Preview {preview_idx} - {datetime.datetime.now()}")
@@ -53,7 +53,7 @@ def compile_result(preview_idx: int):
         metrics=metrics,
         generation_path=datamodels_generations[preview_idx],
         reference_path=f"{PREFIX_PATH}/50_test.feather",
-        saving_path=f"previews_results/preview_{preview_idx}_datamodels.ipc"
+        saving_path=f"previews_results/preview_{preview_idx}_datamodels.feather"
     )
     print(f"Finished Datamodels Preview {preview_idx} - {datetime.datetime.now()}")
 
