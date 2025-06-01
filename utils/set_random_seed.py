@@ -3,7 +3,7 @@ import numpy as np
 import random
 import polars as pl
 
-def set_all_seeds(seed: int) -> None:
+def set_random_seed(seed: int) -> None:
     """
     Set all relevant seeds for deterministic behavior.
 
