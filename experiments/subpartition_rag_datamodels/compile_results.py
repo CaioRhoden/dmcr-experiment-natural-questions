@@ -1,4 +1,4 @@
-from utils.set_seed import set_all_seeds
+from utils.set_random_seed import set_random_seed
 from utils.calculate_metric import calculate_agg_metric
 import datetime
 import argparse
@@ -14,6 +14,8 @@ def compile_result(preview_idx: int):
     Returns:
         None
     """
+
+    set_random_seed(seed=42)
     PREFIX_PATH = "previews"
     L2 = "preview_50_L2"
     IP = "preview_50_IP"
