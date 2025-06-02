@@ -13,7 +13,7 @@ global_config:
   seed: 42
   size_index: 100
   num_models: 50
-  evaluation_metric: "R2Score"
+  evaluation_metric: "mse"
   evaluator: "Rouge-L"
 
 pre_collections_config:
