@@ -30,7 +30,7 @@ pre_collections_config:
 
 datamodels_training_config:
   epochs: 1000
-  lr: 0.001
+  lr: 0.0001
   train_batches: 5
   val_batches: 3
   val_size: 0.15
