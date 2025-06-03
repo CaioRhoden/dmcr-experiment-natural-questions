@@ -39,8 +39,19 @@ def compile_result(preview_idx: int):
         f"{PREFIX_PATH}/{NEW_PROMPT}/generations/datamodels_generations.json",
     ]
 
+    baseline_generation = f"{PREFIX_PATH}/baseline/generations/llama3-2-8b-instruct_baseline_generations.json"
+
 
     metrics = ["rouge_l", "squad_v2_best_f1", "squad_v2_best_exact"]
+
+    print(f"Starting Baseline Preview {preview_idx} - {datetime.datetime.now()}")
+    calculate_agg_metric(
+        metrics=metrics,
+        generation_path=baseline_generation,
+        reference_path=f"{PREFIX_PATH}/50_test.feather",
+        saving_path=f"previews_results/preview_baseline.feather"
+    )
+    print(f"Finished Baseline Preview {preview_idx} - {datetime.datetime.now()}")
 
     print(f"Starting RAG Preview {preview_idx} - {datetime.datetime.now()}")
     calculate_agg_metric(
@@ -58,6 +69,8 @@ def compile_result(preview_idx: int):
         saving_path=f"previews_results/preview_{preview_idx}_datamodels.feather"
     )
     print(f"Finished Datamodels Preview {preview_idx} - {datetime.datetime.now()}")
+    
+       
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
