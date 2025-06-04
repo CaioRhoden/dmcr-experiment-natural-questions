@@ -1,22 +1,26 @@
 
+from typing import Set
 import polars as pl
 import os
 import torch
 import numpy as np
 import random
+import datetime
+import faiss
+import json
+from FlagEmbedding import FlagModel
+import yaml
+
+
 from dmcr.datamodels.setter.IndexBasedSetter import IndexBasedSetter
 from dmcr.datamodels.setter.SetterConfig import IndexBasedSetterConfig
 from dmcr.datamodels.pipeline import DatamodelsIndexBasedNQPipeline
 from dmcr.datamodels.config import DatamodelIndexBasedConfig, LogConfig
 from dmcr.models import GenericInstructModelHF
 from dmcr.evaluators import Rouge_L_evaluator, SquadV2Evaluator
-import datetime
-import faiss
-import json
-from FlagEmbedding import FlagModel
 
-import yaml
-
+from utils.weights_to_json import load_weights_to_json
+from utils.set_random_seed import set_random_seed
 
 class RAGBasedExperimentPipeline:
 
@@ -25,27 +29,87 @@ class RAGBasedExperimentPipeline:
         self.config = config["global_config"]
         self.config_pre_collections = config["pre_collections_config"]
         self.config_datamodels_training = config["datamodels_training_config"]
+        self.config_datamodels_retrieval = config["datamodels_retrieval_config"]
+        # self._validate_config
 
     def set_random_seed(self):
+        set_random_seed(self.config["seed"])
+       
 
-        np.random.seed(self.config["seed"])
-        random.seed(self.config["seed"])
-        pl.set_random_seed(self.config["seed"])
-
-        # PyTorch
-        torch.manual_seed(self.config["seed"])
-        if torch.cuda.is_available():
-            torch.cuda.manual_seed(self.config["seed"])
-            torch.cuda.manual_seed_all(self.config["seed"])
-            torch.backends.cudnn.deterministic = True
-            torch.backends.cudnn.benchmark = False
-
-        if torch.cuda.is_available():
-            print(f"Number of GPUs available: {torch.cuda.device_count()}")
-            for i in range(torch.cuda.device_count()):
-                print(f"GPU {i}: {torch.cuda.get_device_name(i)}")
+    def _validate_config(self, config: dict):
 
 
+        """
+        Validate the config dict to ensure it contains all the necessary keys and values to run the pipeline.
+
+        Args:
+            config (dict): The config dict to validate.
+
+        Raises:
+            AssertionError: If the config dict is invalid.
+
+        """
+        subsection_keys = {
+            "global_config",
+            "pre_collections_config",
+            "datamodels_training_config",
+        }
+
+        assert {c for c in config.keys()}.issuperset(subsection_keys)
+
+        global_config_keys = {
+            "retrieval_path",
+            "wiki_path",
+            "embeder_path",
+            "vector_db_path",
+            "questions_path",
+            "laguage_model_path",
+            "model_run_id",
+            "train_collection_id",
+            "test_collection_id",
+            "k",
+            "seed",
+            "size_index",
+            "num_models",
+            "evaluation_metric",
+            "evaluator",
+        }
+
+        assert {c for c in config["global_config"].keys()}.issuperset(global_config_keys)
+
+        pre_collections_config_keys = {
+            "instruction",
+            "train_samples",
+            "test_samples",
+            "tags",
+            "train_start_idx",
+            "train_end_idx",
+            "test_start_idx",
+            "test_end_idx",
+            "train_checkpoint",
+            "test_checkpoint",
+        }
+
+        assert {c for c in config["pre_collections_config"].keys()}.issuperset(pre_collections_config_keys)
+
+        datamodels_training_config_keys = {
+            "epochs",
+            "lr",
+            "train_batches",
+            "val_batches",
+            "val_size",
+            "patience",
+            "log_epochs",
+        }
+
+        assert {c for c in config["datamodels_training_config"].keys()}.issuperset(datamodels_training_config_keys)
+
+        datamodels_retrieval_config_keys = {
+            "model_run_id",
+        }
+
+        assert {c for c in config["datamodels_retrieval_config"].keys()}.issuperset(datamodels_retrieval_config_keys)
+        
 
     def setup(self):
 
@@ -505,8 +569,52 @@ class RAGBasedExperimentPipeline:
                 json.dump(generations, f)
 
 
+    def get_datamodels_retrieval(self):
+
+        """
+        This function is used to get the retrieval data from the datamodels.
+        
+        It takes the model id from the config_datamodels_retrieval, loads the weights
+        from the weights.pt file, and then calls the load_weights_to_json function
+        to convert the weights into a json file.
+        
+        The json file is saved in the retrieval folder with the name rag_retrieval_indexes.json.
+        The function also saves the retrieval data in the saving path specified in the config.
+        """
+        print("Aquuiiiiii")
+        model_id = self.config_datamodels_retrieval["model_run_id"]
+        load_weights_to_json(
+            f"datamodels/models/{model_id}/weights.pt",
+            "retrieval/rag_retrieval_indexes.json",
+            "retrieval",
+            model_id
+        )
+
+        
+
+
+
     def invoke_pipeline_stpe(self, step: str):
 
+        """
+        This function is used to invoke the pipeline for a specific step.
+        
+        It uses a match-case statement to determine which step to run.
+        
+        The steps are:
+        - setup: Sets up the experiment.
+        - get_rag_retrieval: Get the retrieval data from the RAG model.
+        - get_rag_generations: Get the generations data from the RAG model.
+        - get_datamodels_generations: Get the generations data from the datamodels.
+        - create_datamodels_datasets: Create the datasets for the datamodels.
+        - run_pre_collections: Run the pre-collections for the datamodels.
+        - run_collections: Run the collections for the datamodels.
+        - train_datamodels: Train the datamodels.
+        - evaluate_datamodels: Evaluate the datamodels.
+        - get_datampodels_retrieval: Get the retrieval data from the datamodels.
+        
+        The function does not return anything.
+        """
         match step:
             case "setup":
                 self.setup()
@@ -534,4 +642,10 @@ class RAGBasedExperimentPipeline:
             
             case "evaluate_datamodels":
                 self.evaluate_datamodels()
+
+            case "get_datamodels_retrieval":
+                self.get_datamodels_retrieval()
+            
+            case _:
+                raise ValueError(f"Invalid step: {step}")
         
