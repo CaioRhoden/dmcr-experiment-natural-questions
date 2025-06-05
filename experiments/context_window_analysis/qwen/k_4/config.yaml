@@ -1,0 +1,39 @@
+
+global_config:
+  retrieval_path: "retrieval/rag_retrieval_indexes.json"
+  wiki_path : "../../../../data/wiki_dump2018_nq_open/processed/wiki.feather"
+  embeder_path : "../../../../models/llms/bge-base-en-v1.5"
+  vector_db_path : "../../../../data/wiki_dump2018_nq_open/wiki_ip.index"
+  questions_path : "../../50_test.feather"
+  laguage_model_path : "../../../../models/llms/Qwen3-8B"
+  model_run_id : "llama_k4"
+  train_collection_id: "llama_k4"
+  test_collection_id: "llama_k4"
+  k : 4
+  seed: 42
+  size_index: 100
+  num_models: 50
+  evaluation_metric: "mse"
+  evaluator: "Rouge-L"
+
+pre_collections_config:
+  instruction: You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens, you can use the available documents" 
+  train_samples: 2000
+  train_samples: 2000
+  test_samples: 400
+  tags: ["preview_50", "FAISS_IP", "k4"]
+  train_start_idx: 0
+  train_end_idx: 2000
+  test_start_idx: 0
+  test_end_idx: 400
+  train_checkpoint: 200
+  test_checkpoint: 200
+
+datamodels_training_config:
+  epochs: 1000
+  lr: 0.0001
+  train_batches: 5
+  val_batches: 3
+  val_size: 0.15
+  patience: 50
+  log_epochs: 25

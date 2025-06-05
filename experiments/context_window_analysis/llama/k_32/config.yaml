@@ -6,10 +6,10 @@ global_config:
   vector_db_path : "../../../../data/wiki_dump2018_nq_open/wiki_ip.index"
   questions_path : "../../50_test.feather"
   laguage_model_path : "../../../../models/llms/Llama-3.2-3B-Instruct"
-  model_run_id : "preview_50_IP_k8"
-  train_collection_id: "preview_50_IP_k8"
-  test_collection_id: "preview_50_IP_k8"
-  k : 3
+  model_run_id : "llama_k32"
+  train_collection_id: "llama_k32"
+  test_collection_id: "llama_k32"
+  k : 32
   seed: 42
   size_index: 100
   num_models: 50
