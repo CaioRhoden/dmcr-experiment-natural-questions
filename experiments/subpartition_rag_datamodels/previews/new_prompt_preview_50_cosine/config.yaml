@@ -36,3 +36,6 @@ datamodels_training_config:
   val_size: 0.15
   patience: 50
   log_epochs: 25
+
+datamodels_retrieval_config:
+  model_run_id: "new_prompt_preview_50_cosine"

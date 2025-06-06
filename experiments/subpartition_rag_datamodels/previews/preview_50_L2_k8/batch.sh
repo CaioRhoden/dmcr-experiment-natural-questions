@@ -14,12 +14,13 @@ source ~/miniconda3/bin/activate
 conda activate nq
 export WANDB_MODE="offline"
 
-# CUDA_VISIBLE_DEVICES=0 python3 pipeline.py -s setup
-# CUDA_VISIBLE_DEVICES=0 python3 pipeline.py -s get_rag_retrieval
-# CUDA_VISIBLE_DEVICES=0 python3 pipeline.py -s get_rag_generations
-# CUDA_VISIBLE_DEVICES=0 python3 pipeline.py -s create_datamodels_datasets
-# CUDA_VISIBLE_DEVICES=0 python3 pipeline.py -s run_pre_collections
-# CUDA_VISIBLE_DEVICES=0 python3 pipeline.py -s run_collections
-# CUDA_VISIBLE_DEVICES=0 python3 pipeline.py -s train_datamodels
-# CUDA_VISIBLE_DEVICES=0 python3 pipeline.py -s evaluate_datamodels
-# CUDA_VISIBLE_DEVICES=0 python3 pipeline.py -s get_datamodels_generations
+#  python3 pipeline.py -s setup
+#  python3 pipeline.py -s get_rag_retrieval
+#  python3 pipeline.py -s get_rag_generations
+#  python3 pipeline.py -s create_datamodels_datasets
+#  python3 pipeline.py -s run_pre_collections
+#  python3 pipeline.py -s run_collections
+#  python3 pipeline.py -s train_datamodels
+#  python3 pipeline.py -s evaluate_datamodels
+#  python3 pipeline.py -s get_datamodels_generations
+# python3 pipeline.py -s get_datamodels_retrieval
