@@ -26,10 +26,10 @@ class RAGBasedExperimentPipeline:
 
     def __init__(self, config_path: str):
         config = yaml.safe_load(open(config_path, "r"))
+        self.config_path = config_path
         self.config = config["global_config"]
         self.config_pre_collections = config["pre_collections_config"]
         self.config_datamodels_training = config["datamodels_training_config"]
-        self.config_datamodels_retrieval = config["datamodels_retrieval_config"]
         # self._validate_config
 
     def set_random_seed(self):
@@ -104,12 +104,20 @@ class RAGBasedExperimentPipeline:
 
         assert {c for c in config["datamodels_training_config"].keys()}.issuperset(datamodels_training_config_keys)
 
+        
+        
+    def load_datamodels_retrieval_config(self):
+        
+        config = json.load(open(self.config_path, "r"))
         datamodels_retrieval_config_keys = {
             "model_run_id",
         }
 
         assert {c for c in config["datamodels_retrieval_config"].keys()}.issuperset(datamodels_retrieval_config_keys)
-        
+        self.config_datamodels_retrieval = config["datamodels_retrieval_config"]
+
+
+
 
     def setup(self):
 
