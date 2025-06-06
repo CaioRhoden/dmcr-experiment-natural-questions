@@ -106,9 +106,9 @@ class RAGBasedExperimentPipeline:
 
         
         
-    def load_datamodels_retrieval_config(self):
+    def _load_datamodels_retrieval_config(self):
         
-        config = json.load(open(self.config_path, "r"))
+        config =  yaml.safe_load(open(self.config_path, "r"))
         datamodels_retrieval_config_keys = {
             "model_run_id",
         }
@@ -589,7 +589,7 @@ class RAGBasedExperimentPipeline:
         The json file is saved in the retrieval folder with the name rag_retrieval_indexes.json.
         The function also saves the retrieval data in the saving path specified in the config.
         """
-        print("Aquuiiiiii")
+        self._load_datamodels_retrieval_config()
         model_id = self.config_datamodels_retrieval["model_run_id"]
         load_weights_to_json(
             f"datamodels/models/{model_id}/weights.pt",
