@@ -1,5 +1,6 @@
 import torch
 import json
+import numpy as np
 
 def weights_to_dict(weights: torch.Tensor, subset_documents: dict[str, list[int]]) -> list[dict[str, list[int]]]:
 
@@ -16,15 +17,30 @@ def weights_to_dict(weights: torch.Tensor, subset_documents: dict[str, list[int]
     Returns
     -------
     list[dict[str, list[int]]]
-        A list of two dictionaries, where the first dictionary contains the top k values for each row,
+        A list of two dictionaries, where the first dictionary contains the reversed ordered values of 
         and the second dictionary contains the weights for each of the top k values.
     """
-    sorted_indices = torch.argsort(weights, dim=1, descending=True).tolist()
-    new_json1 = {}
-    new_json2 = {}
+    weights = weights.cpu().detach().numpy()
+    new_dict1 = {}
+    new_dict2 = {}
+
+    for i in range(50):
+        key = str(i)
+        orig_list = subset_documents[key]
+        row = weights[i]
+        sorted_indices = np.argsort(row)[::-1]
+
+        
+        # Create new_dict1: reorder the original list based on descending order of the tensor row
+        new_list = [orig_list[index] for index in sorted_indices]
+        new_dict1[key] = new_list
+        
+        # Create new_dict2: reverse the tensor row and convert to list
+        reversed_row = row[::-1]
+        new_dict2[key] = reversed_row.tolist()
     
     
-    return [new_json1, new_json2]
+    return [new_dict1, new_dict2]
 
 
 def load_weights_to_json(
