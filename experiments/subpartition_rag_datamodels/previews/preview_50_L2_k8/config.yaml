@@ -36,4 +36,6 @@ datamodels_training_config:
   val_batches: 3
   val_size: 0.15
   patience: 50
-  log_epochs: 25
+
+datamodels_retrieval_config:
+  model_run_id: "preview_50_IP_k8"
