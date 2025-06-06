@@ -27,10 +27,12 @@ class RAGBasedExperimentPipeline:
     def __init__(self, config_path: str):
         config = yaml.safe_load(open(config_path, "r"))
         self.config_path = config_path
+
+        self._validate_config(config)
+
         self.config = config["global_config"]
         self.config_pre_collections = config["pre_collections_config"]
         self.config_datamodels_training = config["datamodels_training_config"]
-        # self._validate_config
 
     def set_random_seed(self):
         set_random_seed(self.config["seed"])
@@ -114,8 +116,6 @@ class RAGBasedExperimentPipeline:
         }
 
         assert {c for c in config["datamodels_retrieval_config"].keys()}.issuperset(datamodels_retrieval_config_keys)
-        self.config_datamodels_retrieval = config["datamodels_retrieval_config"]
-
 
 
 
@@ -291,7 +291,7 @@ class RAGBasedExperimentPipeline:
         )
 
         train_log_config = LogConfig(
-            project="subpartition-datamodels-rag",
+            project=self.config["project_log"],
             dir="logs",
             id=f"pre_collection_{self.config['train_collection_id']}_{str(datetime.datetime.now)}",
             name=f"pre_collection_{self.config['train_collection_id']}",
@@ -306,7 +306,7 @@ class RAGBasedExperimentPipeline:
         )
 
         test_log_config = LogConfig(
-            project="subpartition-datamodels-rag",
+            project=self.config["project_log"],
             dir="logs",
             id=f"pre_collection_{self.config['test_collection_id']}_{str(datetime.datetime.now)}",
             name=f"pre_collection_{self.config['test_collection_id']}",
@@ -380,7 +380,7 @@ class RAGBasedExperimentPipeline:
         datamodel = DatamodelsIndexBasedNQPipeline(config)
 
         test_log_config = LogConfig(
-            project="subpartition-datamodels-rag",
+            project=self.config["project_log"],
             dir="logs",
             id=f"test_collections_{str(datetime.datetime.now)}",
             name=self.config["test_collection_id"],
@@ -395,7 +395,7 @@ class RAGBasedExperimentPipeline:
         )
 
         train_log_config = LogConfig(
-            project="subpartition-datamodels-rag",
+            project=self.config["project_log"],
             dir="logs",
             id=f"train_collections_{str(datetime.datetime.now)}",
             name=self.config["train_collection_id"],
@@ -453,7 +453,7 @@ class RAGBasedExperimentPipeline:
         datamodel = DatamodelsIndexBasedNQPipeline(config)
 
         log_config = LogConfig(
-            project="subpartition-datamodels-rag",
+            project=self.config["project_log"],
             dir="logs",
             id=f"test_train_datamoles_{str(datetime.datetime.now)}",
             name=self.config['model_run_id'],
@@ -495,7 +495,7 @@ class RAGBasedExperimentPipeline:
         )
 
         log_config = LogConfig(
-            project="subpartition-datamodels-rag",
+            project=self.config["project_log"],
             dir="logs",
             id=f"{self.config['model_run_id']}_evaluate_datamodels_{str(datetime.datetime.now)}",
             name=f"{self.config['model_run_id']}_evaluate_datamodels",
