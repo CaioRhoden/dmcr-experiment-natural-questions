@@ -52,7 +52,7 @@ def load_weights_to_json(
         The path to save the result
     """
     
-    weights = torch.load(weights_path)
+    weights = torch.load(weights_path, weights_only=True)
     subset_documents = json.load(open(subset_documents_path, "r"))
     result = weights_to_dict(weights, subset_documents)
 
