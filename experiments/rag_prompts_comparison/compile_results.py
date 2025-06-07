@@ -18,9 +18,10 @@ def compile_result():
     set_random_seed(seed=42)
     POWER_OF_NOISE = "power_of_noise_prompt"
     NEW_PROMPT = "new_prompt"
+    OPTIONAL ="prompt_optional_retrieve"
 
 
-    generations_paths = [POWER_OF_NOISE, NEW_PROMPT]
+    generations_paths = [POWER_OF_NOISE, NEW_PROMPT, OPTIONAL]
 
     rag_generations = [f"{p}/generations/rag_generations.json" for p in generations_paths]
     datamodels_generations = [f"{p}/generations/datamodels_generations.json" for p in generations_paths]

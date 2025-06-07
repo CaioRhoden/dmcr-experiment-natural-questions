@@ -2,7 +2,7 @@
 ## Create each datamodel folder -> partition target and random data for each -> run datamodels steps
 #######################################################################################################
 import argparse
-from utils.RAGBasedExperimentPipeline import RAGBasedExperimentPipeline
+from utils.RAGBasedExperimentPipelineWIthConfig import RAGBasedExperimentPipelineWihConfig
 
 if __name__ == "__main__":
 
@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
     step = args.step
 
-    pipeline = RAGBasedExperimentPipeline(config_path="config.yaml")
+    pipeline =RAGBasedExperimentPipelineWihConfig(config_path="config.yaml")
     pipeline.set_random_seed()
     pipeline.invoke_pipeline_stpe(step)
 
