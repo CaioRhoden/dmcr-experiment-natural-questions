@@ -5,7 +5,7 @@ from utils.RAGBasedExperimentPipeline import RAGBasedExperimentPipeline
 from pathlib import Path
 import tyro
 
-root = Path(__file__).parent.parent.parent
+root = Path(__file__).parent.parent.parent.parent
 
 @dataclass
 class Config:
@@ -22,15 +22,15 @@ class Config:
     # Global Config Fields
     retrieval_path: str = "retrieval/rag_retrieval_indexes.json"
     '''Path to the retrieval indexes JSON file.'''
-    wiki_path: str = "/data/wiki_dump2018_nq_open/processed/wiki.feather"
+    wiki_path: str = "data/wiki_dump2018_nq_open/processed/wiki.feather"
     '''Path to the wiki dataset file.'''
-    embeder_path: str = "/models/llms/bge-base-en-v1.5"
+    embeder_path: str = "models/llms/bge-base-en-v1.5"
     '''Path to the embedder model.'''
-    vector_db_path: str = "/data/wiki_dump2018_nq_open/wiki_ip.index"
+    vector_db_path: str = "data/wiki_dump2018_nq_open/wiki_ip.index"
     '''Path to the vector database.'''
-    questions_path: str = "../../50_test.feather"
+    questions_path: str = "../50_test.feather"
     '''Path to the questions dataset file.'''
-    laguage_model_path: str = "/models/llms/Llama-3.2-3B-Instruct"
+    laguage_model_path: str = "models/llms/Llama-3.2-3B-Instruct"
     '''Path to the language model.'''
     project_log: str = "nq_experiment_subset_sizes"
     '''Project log name fgor wandb'''
@@ -91,7 +91,6 @@ class Config:
 
 if __name__ == "__main__":
 
-    
     ## Load dataclass as args
     args = tyro.cli(Config)
 
@@ -99,7 +98,6 @@ if __name__ == "__main__":
     args.wiki_path = f"{root}/{args.wiki_path}"
     args.embeder_path = f"{root}/{args.embeder_path}"
     args.retrieval_path = f"{root}/{args.retrieval_path}"
-    args.questions_path = f"{root}/{args.questions_path}"
     args.laguage_model_path = f"{root}/{args.laguage_model_path}"
     args.vector_db_path = f"{root}/{args.vector_db_path}"
 
