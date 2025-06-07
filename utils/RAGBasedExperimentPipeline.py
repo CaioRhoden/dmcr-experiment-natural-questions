@@ -1,5 +1,5 @@
 
-from typing import Set
+from typing import Optional, Set
 import polars as pl
 import os
 import torch
@@ -23,99 +23,98 @@ from utils.weights_to_json import load_weights_to_json
 from utils.set_random_seed import set_random_seed
 
 class RAGBasedExperimentPipeline:
+    def __init__(
+        self,
+        # We define a parameter for each field in the Config dataclass
+        seed: int,
+        retrieval_path: str,
+        wiki_path: str,
+        embeder_path: str,
+        vector_db_path: str,
+        questions_path: str,
+        laguage_model_path: str,
+        project_log: str,
+        model_run_id: str,
+        train_collection_id: str,
+        test_collection_id: str,
+        k: int,
+        size_index: int,
+        num_models: int,
+        evaluation_metric: str,
+        evaluator: str,
+        instruction: str,
+        train_samples: int,
+        test_samples: int,
+        train_start_idx: int,
+        train_end_idx: int,
+        test_start_idx: int,
+        test_end_idx: int,
+        train_checkpoint: int,
+        test_checkpoint: int,
+        epochs: int,
+        lr: float,
+        train_batches: int,
+        val_batches: int,
+        val_size: float,
+        patience: int,
+        log_epochs: int,
+        tags: list[str] = [],
+        model_id_retrieval: str = "",
+        **kwargs, # Use kwargs to gracefully handle any extra fields
+    ):
+        
+        '''
+        Initializes the experiment pipeline with individual configuration arguments.
+        '''
+        # Assign all initialization parameters to instance attributes
+        self.seed = seed
 
-    def __init__(self, config_path: str):
-        config = yaml.safe_load(open(config_path, "r"))
-        self.config_path = config_path
+        self.retrieval_path = retrieval_path
+        self.wiki_path = wiki_path
+        self.embeder_path = embeder_path
+        self.vector_db_path = vector_db_path
+        self.questions_path = questions_path
+        self.laguage_model_path = laguage_model_path
+        self.project_log = project_log
+        self.model_run_id = model_run_id
+        self.train_collection_id = train_collection_id
+        self.test_collection_id = test_collection_id
+        self.k = k
+        self.size_index = size_index
+        self.num_models = num_models
+        self.evaluation_metric = evaluation_metric
+        self.evaluator = evaluator
 
-        self._validate_config(config)
+        ## Pre collection parameters
+        self.instruction = instruction
+        self.train_samples = train_samples
+        self.test_samples = test_samples
+        self.train_start_idx = train_start_idx
+        self.train_end_idx = train_end_idx
+        self.test_start_idx = test_start_idx
+        self.test_end_idx = test_end_idx
+        self.train_checkpoint = train_checkpoint
+        self.test_checkpoint = test_checkpoint
 
-        self.config = config["global_config"]
-        self.config_pre_collections = config["pre_collections_config"]
-        self.config_datamodels_training = config["datamodels_training_config"]
+        ## Training parameters
+        self.epochs = epochs
+        self.lr = lr
+        self.train_batches = train_batches
+        self.val_batches = val_batches
+        self.val_size = val_size
+        self.patience = patience
+        self.log_epochs = log_epochs
+        self.tags = tags
+
+        ##Retrieval json datamodels
+        self.model_id_retrieval = model_id_retrieval
+        
+
 
     def set_random_seed(self):
-        set_random_seed(self.config["seed"])
-       
+        set_random_seed(self.seed)
+    
 
-    def _validate_config(self, config: dict):
-
-
-        """
-        Validate the config dict to ensure it contains all the necessary keys and values to run the pipeline.
-
-        Args:
-            config (dict): The config dict to validate.
-
-        Raises:
-            AssertionError: If the config dict is invalid.
-
-        """
-        subsection_keys = {
-            "global_config",
-            "pre_collections_config",
-            "datamodels_training_config",
-        }
-
-        assert {c for c in config.keys()}.issuperset(subsection_keys)
-
-        global_config_keys = {
-            "retrieval_path",
-            "wiki_path",
-            "embeder_path",
-            "vector_db_path",
-            "questions_path",
-            "laguage_model_path",
-            "model_run_id",
-            "train_collection_id",
-            "test_collection_id",
-            "k",
-            "seed",
-            "size_index",
-            "num_models",
-            "evaluation_metric",
-            "evaluator",
-        }
-
-        assert {c for c in config["global_config"].keys()}.issuperset(global_config_keys)
-
-        pre_collections_config_keys = {
-            "instruction",
-            "train_samples",
-            "test_samples",
-            "tags",
-            "train_start_idx",
-            "train_end_idx",
-            "test_start_idx",
-            "test_end_idx",
-            "train_checkpoint",
-            "test_checkpoint",
-        }
-
-        assert {c for c in config["pre_collections_config"].keys()}.issuperset(pre_collections_config_keys)
-
-        datamodels_training_config_keys = {
-            "epochs",
-            "lr",
-            "train_batches",
-            "val_batches",
-            "val_size",
-            "patience",
-            "log_epochs",
-        }
-
-        assert {c for c in config["datamodels_training_config"].keys()}.issuperset(datamodels_training_config_keys)
-
-        
-        
-    def _load_datamodels_retrieval_config(self):
-        
-        config = json.load(open(self.config_path, "r"))
-        datamodels_retrieval_config_keys = {
-            "model_run_id",
-        }
-
-        assert {c for c in config["datamodels_retrieval_config"].keys()}.issuperset(datamodels_retrieval_config_keys)
 
 
 
@@ -158,12 +157,12 @@ class RAGBasedExperimentPipeline:
         retrieval_indexes = {}
         retrieval_distances = {}
 
-        df = pl.read_ipc(self.config["questions_path"])
+        df = pl.read_ipc(self.questions_path)
 
         ### Load faiss indices
-        index = faiss.read_index(self.config["vector_db_path"])
+        index = faiss.read_index(self.vector_db_path)
         # ip_index = faiss.read_index(IP_FAISS_INDEX_PATH)
-        embedder = FlagModel(self.config["embeder_path"], devices=["cuda:0"], use_fp16=True)
+        embedder = FlagModel(self.embeder_path, devices=["cuda:0"], use_fp16=True)
 
 
 
@@ -178,7 +177,7 @@ class RAGBasedExperimentPipeline:
             query_embedding = query_embedding.astype('float32').reshape(1, -1)
 
             ### Get l2 and ip neighbors
-            scores, ids = index.search(query_embedding, self.config["size_index"])
+            scores, ids = index.search(query_embedding, self.size_index)
             # ip_ids, ip_scores = ip_index.search(query_embedding, 100)
 
             retrieval_indexes[idx] = ids.tolist()[0]
@@ -196,10 +195,10 @@ class RAGBasedExperimentPipeline:
 
 
         ## Setup variables
-        wiki = pl.read_ipc(self.config["wiki_path"]).with_row_index("idx")
-        questions = pl.read_ipc(self.config["questions_path"])
+        wiki = pl.read_ipc(self.wiki_path).with_row_index("idx")
+        questions = pl.read_ipc(self.questions_path)
 
-        model = GenericInstructModelHF(self.config["laguage_model_path"])
+        model = GenericInstructModelHF(self.laguage_model_path)
         model_configs = {
                 "temperature": 0.7,
                 "top_p": 0.9,
@@ -211,21 +210,21 @@ class RAGBasedExperimentPipeline:
         generations = {}
 
         ## Load retrieval data
-        with open(self.config["retrieval_path"], "r") as f:
+        with open(self.retrieval_path, "r") as f:
             retrieval_data = json.load(f)
 
         print(retrieval_data)
         ## Iterate questions
         for r_idx in range(len(retrieval_data)):
 
-            top_k = retrieval_data[f"{r_idx}"][0:self.config['k']]
+            top_k = retrieval_data[f"{r_idx}"][0:self.k]
             docs = wiki.filter(pl.col("idx").is_in(top_k))
 
 
             ## Generate prompt
             prompt = "Documents: \n"
             for doc_idx in range(len(top_k)-1, -1, -1):
-                prompt += f"Document[{self.config['k']-doc_idx}](Title: {docs.filter(pl.col('idx')==top_k[doc_idx])['title'].to_numpy().flatten()[0]}){docs.filter(pl.col('idx')==top_k[doc_idx])['title'].to_numpy().flatten()[0]}\n\n"
+                prompt += f"Document[{self.k-doc_idx}](Title: {docs.filter(pl.col('idx')==top_k[doc_idx])['title'].to_numpy().flatten()[0]}){docs.filter(pl.col('idx')==top_k[doc_idx])['title'].to_numpy().flatten()[0]}\n\n"
             prompt += f"Question: {questions[r_idx]['question'].to_numpy().flatten()[0]}\nAnswer: "
 
             ## Generate output
@@ -254,10 +253,10 @@ class RAGBasedExperimentPipeline:
         DATASET_PATH = "datamodels"
         setter_config = IndexBasedSetterConfig(
             save_path=DATASET_PATH,
-            size_index=self.config["size_index"],
-            k=self.config['k'],
-            train_samples= self.config_pre_collections["train_samples"],
-            test_samples= self.config_pre_collections["test_samples"]
+            size_index=self.size_index,
+            k=self.k,
+            train_samples= self.train_samples,
+            test_samples= self.test_samples
         )
 
         setter = IndexBasedSetter(config=setter_config)
@@ -273,7 +272,7 @@ class RAGBasedExperimentPipeline:
         log_config, checkpoint, output_column, model_configs, and rag_indexes_path
         as parameters. It returns nothing.
         """
-        model = GenericInstructModelHF(self.config["laguage_model_path"])
+        model = GenericInstructModelHF(self.laguage_model_path)
 
         model_configs = {
                 "temperature": 0.7,
@@ -283,41 +282,41 @@ class RAGBasedExperimentPipeline:
         }
 
         config = DatamodelIndexBasedConfig(
-            k = self.config['k'],
-            num_models= self.config["num_models"],
+            k = self.k,
+            num_models= self.num_models,
             datamodels_path = "datamodels",
-            train_set_path=self.config["wiki_path"],
-            test_set_path=self.config["questions_path"]
+            train_set_path=self.wiki_path,
+            test_set_path=self.questions_path
         )
 
         train_log_config = LogConfig(
-            project=self.config["project_log"],
+            project=self.project_log,
             dir="logs",
-            id=f"pre_collection_{self.config['train_collection_id']}_{str(datetime.datetime.now)}",
-            name=f"pre_collection_{self.config['train_collection_id']}",
+            id=f"pre_collection_{self.train_collection_id}_{str(datetime.datetime.now)}",
+            name=f"pre_collection_{self.train_collection_id}",
             config={
-                "llm": f"{self.config['laguage_model_path']}",
+                "llm": f"{self.laguage_model_path}",
                 "gpu": f"{torch.cuda.get_device_name(0)}",
-                "size_index": self.config["size_index"],
+                "size_index": self.size_index,
                 "model_configs": model_configs,
                 "datamodel_configs": repr(config)
             },
-            tags=self.config_pre_collections["tags"].extend(["train", "pre_collection"])
+            tags=self.tags.extend(["train", "pre_collection"])
         )
 
         test_log_config = LogConfig(
-            project=self.config["project_log"],
+            project=self.project_log,
             dir="logs",
-            id=f"pre_collection_{self.config['test_collection_id']}_{str(datetime.datetime.now)}",
-            name=f"pre_collection_{self.config['test_collection_id']}",
+            id=f"pre_collection_{self.test_collection_id}_{str(datetime.datetime.now)}",
+            name=f"pre_collection_{self.test_collection_id}",
             config={
-                "llm": f"{self.config['laguage_model_path']}",
+                "llm": f"{self.laguage_model_path}",
                 "gpu": f"{torch.cuda.get_device_name(0)}",
-                "size_index": self.config["size_index"],
+                "size_index": self.size_index,
                 "model_configs": model_configs,
                 "datamodel_configs": repr(config)
             },
-            tags=self.config_pre_collections["tags"].extend(["test", "pre_collection"])
+            tags=self.tags.extend(["test", "pre_collection"])
             
         )
 
@@ -327,14 +326,14 @@ class RAGBasedExperimentPipeline:
 
         print("Start Creating Train Pre Collection")
         datamodel.create_pre_collection(
-            instruction= self.config_pre_collections["instruction"],
+            instruction= self.instruction,
             llm = model,
-            start_idx = self.config_pre_collections["train_start_idx"], 
-            end_idx = self.config_pre_collections["train_end_idx"], 
+            start_idx = self.train_start_idx, 
+            end_idx = self.train_end_idx, 
             mode = "train", 
             log = True, 
             log_config = train_log_config, 
-            checkpoint = self.config_pre_collections["train_checkpoint"], 
+            checkpoint = self.train_checkpoint, 
             output_column = "answers",
             model_configs = model_configs,
             rag_indexes_path="retrieval/rag_retrieval_indexes.json"
@@ -342,14 +341,14 @@ class RAGBasedExperimentPipeline:
 
         print("Start Creating Test Pre Collection")
         datamodel.create_pre_collection(
-            instruction= self.config_pre_collections["instruction"],
+            instruction= self.instruction,
             llm = model,
-            start_idx = self.config_pre_collections["test_start_idx"], 
-            end_idx = self.config_pre_collections["test_end_idx"], 
+            start_idx = self.test_start_idx, 
+            end_idx = self.test_end_idx, 
             mode = "test", 
             log = True, 
             log_config = test_log_config, 
-            checkpoint = self.config_pre_collections["test_checkpoint"], 
+            checkpoint = self.test_checkpoint, 
             output_column = "answers",
             model_configs = model_configs,
             rag_indexes_path="retrieval/rag_retrieval_indexes.json"
@@ -361,17 +360,17 @@ class RAGBasedExperimentPipeline:
 
 
         config = DatamodelIndexBasedConfig(
-            k = self.config['k'],
-            num_models= self.config["num_models"],
+            k = self.k,
+            num_models= self.num_models,
             datamodels_path = "datamodels",
-            train_set_path=self.config["wiki_path"],
-            test_set_path=self.config["questions_path"]
+            train_set_path=self.wiki_path,
+            test_set_path=self.questions_path
         )
 
         ## Config evaluator based on yaml parameter
-        if self.config["evaluator"] == "Rouge-L":
+        if self.evaluator == "Rouge-L":
             evaluator = Rouge_L_evaluator()
-        elif self.config["evaluator"] == "SquadV2":
+        elif self.evaluator == "SquadV2":
             evaluator = SquadV2Evaluator("best_f1")
         else:
             raise ValueError(f"Invalid evaluator")
@@ -380,40 +379,40 @@ class RAGBasedExperimentPipeline:
         datamodel = DatamodelsIndexBasedNQPipeline(config)
 
         test_log_config = LogConfig(
-            project=self.config["project_log"],
+            project=self.project_log,
             dir="logs",
             id=f"test_collections_{str(datetime.datetime.now)}",
-            name=self.config["test_collection_id"],
+            name=self.test_collection_id,
             config={
                 "evaluator": "Rouge-L",
                 "gpu": f"{torch.cuda.get_device_name(0)}",
                 "index": "FAISS_L2",
-                "size_index": self.config["size_index"],
+                "size_index": self.size_index,
                 "datamodel_configs": repr(config)
             },
-            tags=["test", "collections", "FAISS_L2", "top_100"]
+            tags=self.tags.extend(["test", "collections"])
         )
 
         train_log_config = LogConfig(
-            project=self.config["project_log"],
+            project=self.project_log,
             dir="logs",
             id=f"train_collections_{str(datetime.datetime.now)}",
-            name=self.config["train_collection_id"],
+            name=self.train_collection_id,
             config={
-                "evaluator": self.config["evaluator"],
+                "evaluator": self.evaluator,
                 "gpu": f"{torch.cuda.get_device_name(0)}",
                 "index": "FAISS_L2",
-                "size_index": self.config["size_index"],
+                "size_index": self.size_index,
                 "datamodel_configs": repr(config)
             },
-            tags=["test", "collections", "FAISS_L2", "top_100"]
+            tags=self.tags.extend(["train", "collections"])
         )
 
         print("Start Creating Train Collection")
         datamodel.create_collection(
             evaluator = evaluator,
             mode = "train",
-            collection_name = self.config["train_collection_id"],
+            collection_name = self.train_collection_id,
             log = True,
             log_config = train_log_config
         )
@@ -423,7 +422,7 @@ class RAGBasedExperimentPipeline:
         datamodel.create_collection(
             evaluator = evaluator,
             mode = "test",
-            collection_name = self.config["test_collection_id"],	
+            collection_name = self.test_collection_id,	
             log = True,
             log_config = test_log_config
         )
@@ -431,21 +430,21 @@ class RAGBasedExperimentPipeline:
 
     def train_datamodels(self):
 
-        epochs = self.config_datamodels_training["epochs"]
-        lr = self.config_datamodels_training["lr"]
-        train_batches = self.config_datamodels_training["train_batches"]
-        val_batches = self.config_datamodels_training["val_batches"]
-        val_size = self.config_datamodels_training["val_size"]
-        patience = self.config_datamodels_training["patience"]
-        log_epochs = self.config_datamodels_training["log_epochs"]
+        epochs = self.epochs
+        lr = self.lr
+        train_batches = self.train_batches
+        val_batches = self.val_batches
+        val_size = self.val_size
+        patience = self.patience
+        log_epochs = self.log_epochs
 
 
         config = DatamodelIndexBasedConfig(
-            k = self.config['k'],
-            num_models= self.config["num_models"],
+            k = self.k,
+            num_models= self.num_models,
             datamodels_path = "datamodels",
-            train_set_path=self.config["wiki_path"],
-            test_set_path=self.config["questions_path"]
+            train_set_path=self.wiki_path,
+            test_set_path=self.questions_path
         )
 
 
@@ -453,23 +452,22 @@ class RAGBasedExperimentPipeline:
         datamodel = DatamodelsIndexBasedNQPipeline(config)
 
         log_config = LogConfig(
-            project=self.config["project_log"],
+            project=self.project_log,
             dir="logs",
             id=f"test_train_datamoles_{str(datetime.datetime.now)}",
-            name=self.config['model_run_id'],
+            name=self.model_run_id,
             config={
                 "gpu": f"{torch.cuda.get_device_name(0)}",
                 "index": "FAISS_L2",
-                "size_index": self.config["size_index"],
+                "size_index": self.size_index,
                 "datamodel_configs": repr(config),
-                "training_configs": self.config_datamodels_training
 
             },
-            tags=self.config_pre_collections["tags"].extend(["training"])
+            tags=self.tags.extend(["training"])
         )
 
         datamodel.train_datamodels(
-            collection_name=self.config["train_collection_id"],	
+            collection_name=self.train_collection_id,	
             epochs=epochs,
             train_batches=train_batches,
             val_batches=val_batches,
@@ -479,7 +477,7 @@ class RAGBasedExperimentPipeline:
             log=True,
             log_config=log_config,
             log_epochs=log_epochs,
-            run_id=self.config['model_run_id'],
+            run_id=self.model_run_id,
         )
 
         
@@ -487,38 +485,38 @@ class RAGBasedExperimentPipeline:
     def evaluate_datamodels(self):
 
         config = DatamodelIndexBasedConfig(
-            k = self.config['k'],
-            num_models= self.config["num_models"],
+            k = self.k,
+            num_models= self.num_models,
             datamodels_path = "datamodels",
-            train_set_path=self.config["wiki_path"],
-            test_set_path=self.config["questions_path"]
+            train_set_path=self.wiki_path,
+            test_set_path=self.questions_path
         )
 
         log_config = LogConfig(
-            project=self.config["project_log"],
+            project=self.project_log,
             dir="logs",
-            id=f"{self.config['model_run_id']}_evaluate_datamodels_{str(datetime.datetime.now)}",
-            name=f"{self.config['model_run_id']}_evaluate_datamodels",
+            id=f"{self.model_run_id}_evaluate_datamodels_{str(datetime.datetime.now)}",
+            name=f"{self.model_run_id}_evaluate_datamodels",
             config={
                 "gpu": f"{torch.cuda.get_device_name(0)}",
                 "index": "FAISS_L2",
-                "size_index": self.config["size_index"],
+                "size_index": self.size_index,
                 "datamodel_configs": repr(config),
                 "metrics": "mse"
 
             },
-            tags=["test", "evaluation", "FAISS_L2", "top_100"]
+            tags=self.tags.extend(["evaluation"])
         )
 
         datamodel = DatamodelsIndexBasedNQPipeline(config)
             
         datamodel.evaluate_test_collections(
-                evaluation_id=f"evaluation_{self.config['model_run_id']}_{self.config['evaluation_metric']}",
-                collection_name=self.config["test_collection_id"],
-                model_id=self.config['model_run_id'],
+                evaluation_id=f"evaluation_{self.model_run_id}_{self.evaluation_metric}",
+                collection_name=self.test_collection_id,
+                model_id=self.model_run_id,
                 log=True,
                 log_config=log_config,
-                metric=self.config["evaluation_metric"]
+                metric=self.evaluation_metric
             )
 
 
@@ -526,10 +524,10 @@ class RAGBasedExperimentPipeline:
 
 
         ## Setup variables
-        wiki = pl.read_ipc(self.config["wiki_path"]).with_row_index("idx")
-        questions = pl.read_ipc(self.config["questions_path"])
+        wiki = pl.read_ipc(self.wiki_path).with_row_index("idx")
+        questions = pl.read_ipc(self.questions_path)
 
-        model = GenericInstructModelHF(self.config["laguage_model_path"])
+        model = GenericInstructModelHF(self.laguage_model_path)
         model_configs = {
                 "temperature": 0.7,
                 "top_p": 0.9,
@@ -541,27 +539,27 @@ class RAGBasedExperimentPipeline:
         generations = {}
 
         ## Load retrieval data
-        with open(self.config["retrieval_path"], "r") as f:
+        with open(self.retrieval_path, "r") as f:
             retrieval_data = json.load(f)
 
         ## Load weights
-        weights = torch.load(f"datamodels/models/{self.config['model_run_id']}/weights.pt")
+        weights = torch.load(f"datamodels/models/{self.model_run_id}/weights.pt")
 
-        ## Get self.config["k highest weights
-        k_values, k_indices = weights.topk(self.config['k'], dim=1)
+        ## Get self.k highest weights
+        k_values, k_indices = weights.topk(self.k, dim=1)
 
 
         ## Iterate questions
         for r_idx in range(len(retrieval_data)):
 
-            top_k = [retrieval_data[f"{r_idx}"][i] for i in k_indices[r_idx]]
+            top_k = [retrieval_data[str(r_idx)][i] for i in k_indices[r_idx]]
             docs = wiki.filter(pl.col("idx").is_in(top_k))
 
 
             ## Generate prompt
             prompt = "Documents: \n"
             for doc_idx in range(len(top_k)-1, -1, -1):
-                prompt += f"Document[{self.config['k']-doc_idx}](Title: {docs.filter(pl.col('idx')==top_k[doc_idx])['title'].to_numpy().flatten()[0]}){docs.filter(pl.col('idx')==top_k[doc_idx])['title'].to_numpy().flatten()[0]}\n\n"
+                prompt += f"Document[{self.k-doc_idx}](Title: {docs.filter(pl.col('idx')==top_k[doc_idx])['title'].to_numpy().flatten()[0]}){docs.filter(pl.col('idx')==top_k[doc_idx])['title'].to_numpy().flatten()[0]}\n\n"
             prompt += f"Question: {questions[r_idx]['question'].to_numpy().flatten()[0]}\nAnswer: "
 
             ## Generate output
@@ -571,7 +569,7 @@ class RAGBasedExperimentPipeline:
                 config_params=model_configs
             )
 
-            generations[f"{r_idx}"] = [str(out["generated_text"]) for out in outputs]
+            generations[str(r_idx)] = [str(out["generated_text"]) for out in outputs]
 
             with open("generations/datamodels_generations.json", "w") as f:
                 json.dump(generations, f)
@@ -589,8 +587,7 @@ class RAGBasedExperimentPipeline:
         The json file is saved in the retrieval folder with the name rag_retrieval_indexes.json.
         The function also saves the retrieval data in the saving path specified in the config.
         """
-        self._load_datamodels_retrieval_config()
-        model_id = self.config_datamodels_retrieval["model_run_id"]
+        model_id = self.model_run_id
         load_weights_to_json(
             f"datamodels/models/{model_id}/weights.pt",
             "retrieval/rag_retrieval_indexes.json",
