@@ -2,7 +2,7 @@
 data
 ../models
 logs
-
+batch.sh
 pre_collection*
 
 
