@@ -18,6 +18,8 @@ from dmcr.datamodels.pipeline import DatamodelsIndexBasedNQPipeline
 from dmcr.datamodels.config import DatamodelIndexBasedConfig, LogConfig
 from dmcr.models import GenericInstructModelHF
 from dmcr.evaluators import Rouge_L_evaluator, SquadV2Evaluator
+from dmcr.datamodels.models import LinearRegressor
+
 
 from utils.weights_to_json import load_weights_to_json
 from utils.set_random_seed import set_random_seed
@@ -25,7 +27,7 @@ from utils.set_random_seed import set_random_seed
 
 
 ################################################
-## DEPRECATED - See RAGBasedExperimentPipeline
+## DEPRECATED - See RAGBasedExperimentPipeline 
 #################################################
 class RAGBasedExperimentPipelineWithConfig:
 
@@ -473,7 +475,14 @@ class RAGBasedExperimentPipelineWithConfig:
             tags=self.config_pre_collections["tags"].extend(["training"])
         )
 
+        model = LinearRegressor(
+            in_features=self.config["size_index"],
+            out_features=1,
+            device=str(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+        )
+
         datamodel.train_datamodels(
+            model,
             collection_name=self.config["train_collection_id"],	
             epochs=epochs,
             train_batches=train_batches,
