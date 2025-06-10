@@ -34,15 +34,15 @@ class Config:
     '''Path to the language model.'''
     project_log: str = "nq_experiment_subset_sizes"
     '''Project log name fgor wandb'''
-    model_run_id: str = "25_proportion"
+    model_run_id: str = "150_proportion"
     '''ID of the model run.'''
-    train_collection_id: str = "25_proportion"
+    train_collection_id: str = "150_proportion"
     '''ID of the training collection.'''
-    test_collection_id: str = "25_proportion"
+    test_collection_id: str = "150_proportion"
     '''ID of the testing collection.'''
     k: int = 16
     '''Number of top-k results to retrieve.'''
-    size_index: int = 25
+    size_index: int = 150
     '''Size of the index.'''
     num_models: int = 50
     '''Number of models to use.'''
@@ -101,7 +101,7 @@ if __name__ == "__main__":
     args.laguage_model_path = f"{root}/{args.laguage_model_path}"
     args.vector_db_path = f"{root}/{args.vector_db_path}"
 
-    args.tags.append("rag_25")
+    args.tags.append("rag_150")
 
 
     ## Explicit pass the arguments
