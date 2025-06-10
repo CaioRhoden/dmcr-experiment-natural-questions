@@ -9,3 +9,5 @@ torch==2.5.0
 tqdm==4.67.1
 transformers==4.51.3
 tyro==0.9.24
+llama-index-embeddings-huggingface
+
