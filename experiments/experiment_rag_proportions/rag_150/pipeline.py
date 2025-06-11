@@ -97,7 +97,7 @@ if __name__ == "__main__":
     ## Add root to paths (except test)
     args.wiki_path = f"{root}/{args.wiki_path}"
     args.embeder_path = f"{root}/{args.embeder_path}"
-    args.retrieval_path = f"{root}/{args.retrieval_path}"
+    
     args.laguage_model_path = f"{root}/{args.laguage_model_path}"
     args.vector_db_path = f"{root}/{args.vector_db_path}"
 
