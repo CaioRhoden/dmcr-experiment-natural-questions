@@ -1,7 +1,7 @@
 import argparse
 from dataclasses import dataclass, field
 from typing import List
-from utils.RAGBasedExperimentPipeline import RAGBasedExperimentPipeline
+from utils.pipelines.RAGBasedExperimentPipeline import RAGBasedExperimentPipeline
 from pathlib import Path
 import tyro
 
