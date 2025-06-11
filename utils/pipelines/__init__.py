@@ -1,4 +1,5 @@
 from .RAGBasedExperimentPipeline import RAGBasedExperimentPipeline
 from .RAGBasedExperimentPipelineWIthConfig import RAGBasedExperimentPipelineWithConfig
+from .LassoExperimentPipeline import LassoExperimentPipeline
 
-__all__ = ["RAGBasedExperimentPipeline", "RAGBasedExperimentPipelineWithConfig"]
+__all__ = ["RAGBasedExperimentPipeline", "RAGBasedExperimentPipelineWithConfig", "LassoExperimentPipeline"]
