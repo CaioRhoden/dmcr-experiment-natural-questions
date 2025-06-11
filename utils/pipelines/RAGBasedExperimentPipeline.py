@@ -131,6 +131,7 @@ class RAGBasedExperimentPipeline:
         os.mkdir("generations")
         os.mkdir("results")
         os.mkdir("datamodels")
+        os.mkdir("logs")
 
         ## Create Datamodels Structure
         os.mkdir("datamodels/datasets")
