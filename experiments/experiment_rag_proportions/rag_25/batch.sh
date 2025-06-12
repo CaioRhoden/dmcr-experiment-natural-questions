@@ -15,11 +15,11 @@ conda activate nq
 export WANDB_MODE="offline"
 
 # python3 pipeline.py --step setup
-python3 pipeline.py --step get_rag_retrieval
-python3 pipeline.py --step get_rag_generations
-python3 pipeline.py --step create_datamodels_datasets
-python3 pipeline.py --step run_pre_collections
+# python3 pipeline.py --step get_rag_retrieval
+# python3 pipeline.py --step get_rag_generations
+# python3 pipeline.py --step create_datamodels_datasets
+# python3 pipeline.py --step run_pre_collections
 # python3 pipeline.py --step run_collections
 #  python3 pipeline.py --step train_datamodels
 #  python3 pipeline.py --step evaluate_datamodels
-#  python3 pipeline.py --step get_datamodels_generations
+ python3 pipeline.py --step get_datamodels_generations

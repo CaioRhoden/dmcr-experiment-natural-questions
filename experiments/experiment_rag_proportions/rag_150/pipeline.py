@@ -6,7 +6,7 @@ from pathlib import Path
 import tyro
 
 root = Path(__file__).parent.parent.parent.parent
-
+tag = "rag_150"
 @dataclass
 class Config:
     '''
@@ -101,7 +101,7 @@ if __name__ == "__main__":
     args.laguage_model_path = f"{root}/{args.laguage_model_path}"
     args.vector_db_path = f"{root}/{args.vector_db_path}"
 
-    args.tags.append("rag_150")
+    args.tags.append(tag)
 
 
     ## Explicit pass the arguments
