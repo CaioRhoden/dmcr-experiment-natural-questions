@@ -180,3 +180,4 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+experiments/experiment_rag_proportions/rag_150/datamodels/collections/train/150_proportion_0.feather
