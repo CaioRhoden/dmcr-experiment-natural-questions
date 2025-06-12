@@ -1,12 +1,12 @@
 import argparse
 from dataclasses import dataclass, field
 from typing import List
-from utils.pipelines.RAGBasedExperimentPipeline import RAGBasedExperimentPipeline
+from utils.pipelines.LassoExperimentPipeline import LassoExperimentPipeline
 from pathlib import Path
 import tyro
 
 root = Path(__file__).parent.parent.parent.parent
-tag = "linear_regression"
+tag = "lasso_4"
 
 @dataclass
 class Config:
@@ -35,7 +35,7 @@ class Config:
     '''Path to the language model.'''
     project_log: str = "nq_experiment_lasso_regression"
     '''Project log name fgor wandb'''
-    model_run_id: str = "linear_regression"
+    model_run_id: str = "lasso_4"
     '''ID of the model run.'''
     train_collection_id: str = "linear_regression"
     '''ID of the training collection.'''
@@ -75,6 +75,8 @@ class Config:
     '''Checkpoint interval for testing.'''
     
     # Datamodels Training Config Fields
+    lambda_l1: float = 0.0001
+    '''L1 regularization coefficient for the model.'''
     epochs: int = 1000
     '''Number of epochs to train.'''
     lr: float = 0.0001
@@ -105,7 +107,7 @@ if __name__ == "__main__":
 
 
     ## Explicit pass the arguments
-    pipeline =RAGBasedExperimentPipeline(
+    pipeline =LassoExperimentPipeline(
         seed=args.seed,
         retrieval_path=args.retrieval_path,
         wiki_path=args.wiki_path,
@@ -132,6 +134,7 @@ if __name__ == "__main__":
         train_checkpoint=args.train_checkpoint,
         test_checkpoint=args.test_checkpoint,
         epochs=args.epochs,
+        lambda_l1=args.lambda_l1,
         lr=args.lr,
         train_batches=args.train_batches,
         val_batches=args.val_batches,

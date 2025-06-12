@@ -35,7 +35,7 @@ class Config:
     '''Path to the language model.'''
     project_log: str = "nq_experiment_lasso_regression"
     '''Project log name fgor wandb'''
-    model_run_id: str = "linear_regression"
+    model_run_id: str = "lasso_4"
     '''ID of the model run.'''
     train_collection_id: str = "linear_regression"
     '''ID of the training collection.'''
