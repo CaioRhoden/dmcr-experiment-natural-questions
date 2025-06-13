@@ -1,5 +1,5 @@
 import argparse
-from utils.BaselinePipeline import BaselinePipeline
+from utils.pipelines.BaselinePipelineWithConfig import BaselinePipelineWithConfig
 from utils.set_random_seed import set_random_seed
 
 if __name__ == "__main__":
@@ -10,6 +10,6 @@ if __name__ == "__main__":
 
     step = args.step
 
-    pipeline = BaselinePipeline(config_path="config.yaml")
+    pipeline = BaselinePipelineWithConfig(config_path="config.yaml")
     set_random_seed(42)
     pipeline.invoke_pipeline_step(step)
