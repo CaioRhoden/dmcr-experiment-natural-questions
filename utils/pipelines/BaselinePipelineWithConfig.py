@@ -1,24 +1,16 @@
 
 import polars as pl
 import os
-import torch
-import numpy as np
-import random
-from dmcr.datamodels.setter.IndexBasedSetter import IndexBasedSetter
-from dmcr.datamodels.setter.SetterConfig import IndexBasedSetterConfig
-from dmcr.datamodels.pipeline import DatamodelsIndexBasedNQPipeline
-from dmcr.datamodels.config import DatamodelIndexBasedConfig, LogConfig
 from dmcr.models import GenericInstructModelHF
-from dmcr.evaluators import Rouge_L_evaluator, SquadV2Evaluator
-import datetime
-import faiss
 import json
-from FlagEmbedding import FlagModel
+
 
 import yaml
 
-
-class BaselinePipeline:
+############################
+## DEPRECATED
+############################
+class BaselinePipelineWithConfig:
 
     def __init__(self, config_path: str):
         config = yaml.safe_load(open(config_path, "r"))
