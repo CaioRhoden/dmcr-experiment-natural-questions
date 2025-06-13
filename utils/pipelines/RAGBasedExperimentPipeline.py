@@ -44,6 +44,7 @@ class RAGBasedExperimentPipeline:
         evaluation_metric: str,
         evaluator: str,
         instruction: str,
+        
         train_samples: int,
         test_samples: int,
         train_start_idx: int,
@@ -60,6 +61,7 @@ class RAGBasedExperimentPipeline:
         patience: int,
         log_epochs: int,
         tags: list[str] = [],
+        lm_configs: Optional[dict[str, float]] = None,
         model_id_retrieval: str = "",
         **kwargs, # Use kwargs to gracefully handle any extra fields
     ):
@@ -88,6 +90,13 @@ class RAGBasedExperimentPipeline:
 
         ## Pre collection parameters
         self.instruction = instruction
+        self.lm_configs = lm_configs if lm_configs is not None else {
+            "temperature": 0.7,
+            "top_p": 0.9,
+            "max_length": 2048.0,
+            "max_new_tokens": 10.0,
+            "num_return_sequences": 5.0
+        }
         self.train_samples = train_samples
         self.test_samples = test_samples
         self.train_start_idx = train_start_idx
@@ -201,13 +210,7 @@ class RAGBasedExperimentPipeline:
         questions = pl.read_ipc(self.questions_path)
 
         model = GenericInstructModelHF(self.laguage_model_path)
-        model_configs = {
-                "temperature": 0.7,
-                "top_p": 0.9,
-                "max_length": 2048,
-                "max_new_tokens": 10,
-                "num_return_sequences": 5
-        }
+
 
         generations = {}
 
@@ -233,7 +236,7 @@ class RAGBasedExperimentPipeline:
             outputs = model.run(
                 prompt, 
                 instruction="You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens, you can use the available documents ", 
-                config_params=model_configs
+                config_params=self.lm_configs
             )
 
             generations[f"{r_idx}"] = [str(out["generated_text"]) for out in outputs]
