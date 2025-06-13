@@ -1,26 +1,33 @@
 
 import polars as pl
-import os
 from dmcr.models import GenericInstructModelHF
 import json
 
 
-import yaml
 
-############################
-## DEPRECATED
-############################
 class BaselinePipeline:
 
-    def __init__(self, config_path: str):
-        config = yaml.safe_load(open(config_path, "r"))
-        self.config = config["baseline_config"]
-        self._verify_config_structure()
-        if not os.path.exists("generations"):
-            os.mkdir("generations")
+    def __init__(self,
+                questions_path: str,
+                laguage_model_path: str,
+                lm_configs: dict[str, float] = {
+                    "temperature": 0.7,
+                    "top_p": 0.9,
+                    "max_length": 2048.0,
+                    "max_new_tokens": 10.0,
+                    "num_return_sequences": 5.0
+                },
+                generations_prefix: str = "llama-3.2-3b-instruct",
+                instruction: str = "You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens, you can use the available documents but if they are not helpful, try to answer without them",
+                seed: int = 42):
+    
 
-        
-
+        self.questions_path = questions_path
+        self.laguage_model_path = laguage_model_path
+        self.lm_configs = lm_configs
+        self.generations_prefix = generations_prefix
+        self.instruction = instruction
+        self.seed = seed
 
     def generate_inferences(self):
 
@@ -37,10 +44,10 @@ class BaselinePipeline:
 
 
         ## Setup variables
-        questions = pl.read_ipc(self.config["questions_path"])
+        questions = pl.read_ipc(self.questions_path)
 
-        model = GenericInstructModelHF(self.config["laguage_model_path"])
-        model_configs = self.config["model_configs"]
+        model = GenericInstructModelHF(self.laguage_model_path)
+        model_configs = self.lm_configs
         generations = {}
 
         ## Iterate questions
@@ -54,38 +61,20 @@ class BaselinePipeline:
             ## Generate output
             outputs = model.run(
                 prompt, 
-                instruction=self.config["instruction"], 
+                instruction=self.instruction, 
                 config_params=model_configs
             )
 
             generations[f"{idx}"] = [str(out["generated_text"]) for out in outputs]
 
-            if self.config["generations_prefix"] is None:
+            if self.generations_prefix is None:
                 with open("generations/baseline_generations.json", "w") as f:
                     json.dump(generations, f)
             
-            prefix = self.config["generations_prefix"]
+            prefix = self.generations_prefix
             with open(f"generations/{prefix}_baseline_generations.json", "w") as f:
                 json.dump(generations, f)
 
-    def _verify_config_structure(self):
-
-        expected_keys = [
-            "questions_path",
-            "laguage_model_path",
-            "model_configs",
-            "generations_prefix",
-            "seed"
-        ]
-
-        for key in expected_keys:
-            if key not in self.config:
-                raise ValueError(f"Missing key {key} in config")
         
 
-    def invoke_pipeline_step(self, step: str):
-
-        match step:
-
-            case "generate_inferences":
-                self.generate_inferences()
+        return
