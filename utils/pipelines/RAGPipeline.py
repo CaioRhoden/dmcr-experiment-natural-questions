@@ -10,13 +10,10 @@ from FlagEmbedding import FlagModel
 import wandb
 
 
-from dmcr.datamodels.setter.IndexBasedSetter import IndexBasedSetter
-from dmcr.datamodels.setter.SetterConfig import IndexBasedSetterConfig
-from dmcr.datamodels.pipeline import DatamodelsIndexBasedNQPipeline
-from dmcr.datamodels.config import DatamodelIndexBasedConfig, LogConfig
+
+from dmcr.datamodels.config import LogConfig
 from dmcr.models import GenericInstructModelHF
-from dmcr.evaluators import Rouge_L_evaluator, SquadV2Evaluator
-from dmcr.datamodels.models import LinearRegressor
+
 
 from utils.weights_to_json import load_weights_to_json
 from utils.set_random_seed import set_random_seed
@@ -34,8 +31,6 @@ class RAGPipeline:
         laguage_model_path: str,
         project_log: str,
         model_run_id: str,
-        train_collection_id: str,
-        test_collection_id: str,
         k: int,
         size_index: int,
         instruction: str,
@@ -59,8 +54,6 @@ class RAGPipeline:
         self.laguage_model_path = laguage_model_path
         self.project_log = project_log
         self.model_run_id = model_run_id
-        self.train_collection_id = train_collection_id
-        self.test_collection_id = test_collection_id
         self.k = k
         self.size_index = size_index
 
@@ -74,6 +67,7 @@ class RAGPipeline:
             "num_return_sequences": 5.0
         }
         self.tags = tags
+        self.log = True
 
 
     def setup(self):
@@ -115,6 +109,27 @@ class RAGPipeline:
         index = faiss.read_index(self.vector_db_path)
         # ip_index = faiss.read_index(IP_FAISS_INDEX_PATH)
         embedder = FlagModel(self.embeder_path, devices=["cuda:0"], use_fp16=True)
+        
+        if self.log:
+            wandb.init(
+                project=self.project_log,
+                name=f"RAG_retrieval_{self.model_run_id}",
+                id = f"RAG_{self.model_run_id}_{str(datetime.datetime.now())}",
+                config={
+                    "gpu": f"{torch.cuda.get_device_name(0)}",
+                    "size_index": self.size_index,
+                    "gpu": f"{torch.cuda.get_device_name(0)}",
+                    "index": self.vector_db_path,
+                    "questions_path": self.questions_path,
+                    "embeder_path": self.embeder_path,
+
+                },
+                tags = self.tags.extend(["RAG", "retrieval"]),
+            )
+
+            wandb.log({"start_time": str(datetime.datetime.now())})
+
+
 
 
 
@@ -142,6 +157,17 @@ class RAGPipeline:
 
         with open("retrieval/rag_retrieval_distances.json", "w") as f:
             json.dump(retrieval_distances, f)
+
+        if self.log:
+            artifact = wandb.Artifact(name="rag_retrieval", type="json", description="RAG retrieval data")
+            artifact.add_file("retrieval/rag_retrieval_indexes.json")
+            artifact.add_file("retrieval/rag_retrieval_distances.json")
+            wandb.log_artifact(artifact)
+            wandb.log({
+                "end_time": str(datetime.datetime.now()),
+                "duration": str(datetime.datetime.now() - datetime.datetime.strptime(wandb.config["start_time"], "%Y-%m-%d %H:%M:%S.%f"))
+            })
+            wandb.finish()
 
     def get_rag_generations(self):
 
