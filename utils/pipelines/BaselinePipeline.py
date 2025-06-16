@@ -2,6 +2,7 @@
 import polars as pl
 from dmcr.models import GenericInstructModelHF
 import json
+from utils.set_random_seed import set_random_seed
 
 
 
@@ -17,7 +18,7 @@ class BaselinePipeline:
                     "max_new_tokens": 10.0,
                     "num_return_sequences": 5.0
                 },
-                generations_prefix: str = "llama-3.2-3b-instruct",
+                model_run_id: str = "llama-3.2-3b-instruct",
                 instruction: str = "You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens, you can use the available documents but if they are not helpful, try to answer without them",
                 seed: int = 42):
     
@@ -25,9 +26,10 @@ class BaselinePipeline:
         self.questions_path = questions_path
         self.laguage_model_path = laguage_model_path
         self.lm_configs = lm_configs
-        self.generations_prefix = generations_prefix
+        self.model_run_id = model_run_id
         self.instruction = instruction
         self.seed = seed
+        set_random_seed(self.seed)
 
     def generate_inferences(self):
 
@@ -67,11 +69,11 @@ class BaselinePipeline:
 
             generations[f"{idx}"] = [str(out["generated_text"]) for out in outputs]
 
-            if self.generations_prefix is None:
+            if self.model_run_id is None:
                 with open("generations/baseline_generations.json", "w") as f:
                     json.dump(generations, f)
             
-            prefix = self.generations_prefix
+            prefix = self.model_run_id
             with open(f"generations/{prefix}_baseline_generations.json", "w") as f:
                 json.dump(generations, f)
 
