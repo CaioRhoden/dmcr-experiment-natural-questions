@@ -61,7 +61,7 @@ class RAGBasedExperimentPipeline:
         patience: int,
         log_epochs: int,
         tags: list[str] = [],
-        lm_configs: Optional[dict[str, float]] = None,
+        lm_configs: Optional[dict[str, int|float]] = None,
         model_id_retrieval: str = "",
         **kwargs, # Use kwargs to gracefully handle any extra fields
     ):
@@ -93,9 +93,9 @@ class RAGBasedExperimentPipeline:
         self.lm_configs = lm_configs if lm_configs is not None else {
             "temperature": 0.7,
             "top_p": 0.9,
-            "max_length": 2048.0,
-            "max_new_tokens": 10.0,
-            "num_return_sequences": 5.0
+            "max_length": 2048,
+            "max_new_tokens": 10,
+            "num_return_sequences": 5
         }
         self.train_samples = train_samples
         self.test_samples = test_samples
