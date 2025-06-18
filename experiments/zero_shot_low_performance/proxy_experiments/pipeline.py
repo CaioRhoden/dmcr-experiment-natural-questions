@@ -1,7 +1,7 @@
 import argparse
 from dataclasses import dataclass, field
 from typing import List
-from utils.pipelines.LassoExperimentPipeline import LassoExperimentPipeline
+from utils.pipelines.RAGBasedExperimentPipeline import RAGBasedExperimentPipeline
 from pathlib import Path
 import tyro
 
@@ -43,7 +43,7 @@ class Config:
     '''ID of the testing collection.'''
     k: int = 16
     '''Number of top-k results to retrieve.'''
-    size_index: int = 100
+    size_index: int = 25
     '''Size of the index.'''
     num_models: int = 50
     '''Number of models to use.'''
@@ -75,8 +75,6 @@ class Config:
     '''Checkpoint interval for testing.'''
     
     # Datamodels Training Config Fields
-    lambda_l1: float = 0.0001
-    '''L1 regularization coefficient for the model.'''
     epochs: int = 1000
     '''Number of epochs to train.'''
     lr: float = 0.0001
@@ -107,7 +105,7 @@ if __name__ == "__main__":
 
 
     ## Explicit pass the arguments
-    pipeline =LassoExperimentPipeline(
+    pipeline =RAGBasedExperimentPipeline(
         seed=args.seed,
         retrieval_path=args.retrieval_path,
         wiki_path=args.wiki_path,
@@ -134,7 +132,6 @@ if __name__ == "__main__":
         train_checkpoint=args.train_checkpoint,
         test_checkpoint=args.test_checkpoint,
         epochs=args.epochs,
-        lambda_l1=args.lambda_l1,
         lr=args.lr,
         train_batches=args.train_batches,
         val_batches=args.val_batches,
@@ -146,5 +143,3 @@ if __name__ == "__main__":
     ### Call the desiredf pipeline step
     pipeline.set_random_seed()
     pipeline.invoke_pipeline_stpe(args.step)
-
-    
