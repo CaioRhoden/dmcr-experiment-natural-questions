@@ -15,14 +15,12 @@ from dmcr.datamodels.config import LogConfig
 from dmcr.models import GenericInstructModelHF
 
 
-from utils.weights_to_json import load_weights_to_json
 from utils.set_random_seed import set_random_seed
 
 class RAGPipeline:
     def __init__(
         self,
         # We define a parameter for each field in the Config dataclass
-        seed: int,
         retrieval_path: str,
         wiki_path: str,
         embeder_path: str,
@@ -36,7 +34,8 @@ class RAGPipeline:
         instruction: str,
         tags: list[str] = [],
         lm_configs: Optional[dict[str, float]] = None,
-        model_id_retrieval: str = "",
+        root_path: str = ".",
+        seed: int|None = None,
         **kwargs, # Use kwargs to gracefully handle any extra fields
     ):
         
@@ -44,7 +43,6 @@ class RAGPipeline:
         Initializes the experiment pipeline with individual configuration arguments.
         '''
         # Assign all initialization parameters to instance attributes
-        self.seed = seed
 
         self.retrieval_path = retrieval_path
         self.wiki_path = wiki_path
@@ -68,6 +66,11 @@ class RAGPipeline:
         }
         self.tags = tags
         self.log = True
+        self.root_path = root_path
+        self.seed = seed
+
+        if self.seed is not None:
+            set_random_seed(self.seed)
 
 
     def setup(self):
@@ -78,10 +81,10 @@ class RAGPipeline:
         This function downloads the 100 question golden dataset, writes it to questions.feather and creates the retrieval, generations, results and datamodels folders.
         """
         ## Create structure
-        os.mkdir("retrieval")
-        os.mkdir("generations")
+        os.mkdir(f"{self.root_path}/retrieval")
+        os.mkdir(f"{self.root_path}/generations")
 
-        os.mkdir("logs")
+        os.mkdir(f"{self.root_path}/logs")
 
 
     def get_rag_retrieval(self):
@@ -152,16 +155,16 @@ class RAGPipeline:
             # retrieval_data["ip"][idx] = (ip_ids.tolist()[0], ip_scores.tolist()[0])
 
         ## Save into json
-        with open("retrieval/rag_retrieval_indexes.json", "w") as f:
+        with open(f"{self.root_path}/retrieval/rag_retrieval_indexes.json", "w") as f:
             json.dump(retrieval_indexes, f)
 
-        with open("retrieval/rag_retrieval_distances.json", "w") as f:
+        with open(f"{self.root_path}/retrieval/rag_retrieval_distances.json", "w") as f:
             json.dump(retrieval_distances, f)
 
         if self.log:
             artifact = wandb.Artifact(name="rag_retrieval", type="json", description="RAG retrieval data")
-            artifact.add_file("retrieval/rag_retrieval_indexes.json")
-            artifact.add_file("retrieval/rag_retrieval_distances.json")
+            artifact.add_file(f"{self.root_path}/retrieval/rag_retrieval_indexes.json")
+            artifact.add_file(f"{self.root_path}/retrieval/rag_retrieval_distances.json")
             wandb.log_artifact(artifact)
             wandb.log({
                 "end_time": str(datetime.datetime.now()),
@@ -208,13 +211,13 @@ class RAGPipeline:
 
             generations[f"{r_idx}"] = [str(out["generated_text"]) for out in outputs]
 
-            with open("generations/rag_generations.json", "w") as f:
+            with open(f"{self.root_path}/generations/rag_generations.json", "w") as f:
                 json.dump(generations, f)
 
         ## Save into json
         
         
-    def invoke_pipeline_stpe(self, step: str):
+    def invoke_pipeline_step(self, step: str):
 
         """
         This function is used to invoke the pipeline for a specific step.

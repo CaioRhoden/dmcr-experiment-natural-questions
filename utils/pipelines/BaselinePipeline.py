@@ -1,4 +1,5 @@
 
+import os
 import polars as pl
 from dmcr.models import GenericInstructModelHF
 import json
@@ -11,6 +12,7 @@ class BaselinePipeline:
     def __init__(self,
                 questions_path: str,
                 laguage_model_path: str,
+                root_path: str = ".",
                 lm_configs: dict[str, float] = {
                     "temperature": 0.7,
                     "top_p": 0.9,
@@ -29,6 +31,7 @@ class BaselinePipeline:
         self.model_run_id = model_run_id
         self.instruction = instruction
         self.seed = seed
+        self.root_path = root_path
         set_random_seed(self.seed)
 
     def generate_inferences(self):
@@ -44,6 +47,7 @@ class BaselinePipeline:
         None
         """
 
+        os.mkdir(f"{self.root_path}/generations")
 
         ## Setup variables
         questions = pl.read_ipc(self.questions_path)
@@ -70,11 +74,11 @@ class BaselinePipeline:
             generations[f"{idx}"] = [str(out["generated_text"]) for out in outputs]
 
             if self.model_run_id is None:
-                with open("generations/baseline_generations.json", "w") as f:
+                with open(f"{self.root_path}/generations/baseline_generations.json", "w") as f:
                     json.dump(generations, f)
             
             prefix = self.model_run_id
-            with open(f"generations/{prefix}_baseline_generations.json", "w") as f:
+            with open(f"{self.root_path}/generations/{prefix}_baseline_generations.json", "w") as f:
                 json.dump(generations, f)
 
         

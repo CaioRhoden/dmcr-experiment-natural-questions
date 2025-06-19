@@ -62,7 +62,7 @@ class RAGBasedExperimentPipeline:
         log_epochs: int,
         tags: list[str] = [],
         lm_configs: Optional[dict[str, int|float]] = None,
-        model_id_retrieval: str = "",
+        root_path: str = ".",
         **kwargs, # Use kwargs to gracefully handle any extra fields
     ):
         
@@ -116,8 +116,7 @@ class RAGBasedExperimentPipeline:
         self.log_epochs = log_epochs
         self.tags = tags
 
-        ##Retrieval json datamodels
-        self.model_id_retrieval = model_id_retrieval
+        self.root_path = root_path
         
 
 
@@ -136,17 +135,17 @@ class RAGBasedExperimentPipeline:
         This function downloads the 100 question golden dataset, writes it to questions.feather and creates the retrieval, generations, results and datamodels folders.
         """
         ## Create structure
-        os.mkdir("retrieval")
-        os.mkdir("generations")
-        os.mkdir("results")
-        os.mkdir("datamodels")
-        os.mkdir("logs")
+        os.mkdir(f"{self.root_path}/retrieval")
+        os.mkdir(f"{self.root_path}/generations")
+        os.mkdir(f"{self.root_path}/results")
+        os.mkdir(f"{self.root_path}/datamodels")
+        os.mkdir(f"{self.root_path}/logs")
 
         ## Create Datamodels Structure
-        os.mkdir("datamodels/datasets")
-        os.mkdir("datamodels/pre_collections")
-        os.mkdir("datamodels/collections")
-        os.mkdir("datamodels/models")
+        os.mkdir(f"{self.root_path}/datamodels/datasets")
+        os.mkdir(f"{self.root_path}/datamodels/pre_collections")
+        os.mkdir(f"{self.root_path}/datamodels/collections")
+        os.mkdir(f"{self.root_path}/datamodels/models")
 
 
     def get_rag_retrieval(self):
@@ -196,10 +195,10 @@ class RAGBasedExperimentPipeline:
             # retrieval_data["ip"][idx] = (ip_ids.tolist()[0], ip_scores.tolist()[0])
 
         ## Save into json
-        with open("retrieval/rag_retrieval_indexes.json", "w") as f:
+        with open(f"{self.root_path}/retrieval/rag_retrieval_indexes.json", "w") as f:
             json.dump(retrieval_indexes, f)
 
-        with open("retrieval/rag_retrieval_distances.json", "w") as f:
+        with open(f"{self.root_path}/retrieval/rag_retrieval_distances.json", "w") as f:
             json.dump(retrieval_distances, f)
 
     def get_rag_generations(self):
@@ -241,7 +240,7 @@ class RAGBasedExperimentPipeline:
 
             generations[f"{r_idx}"] = [str(out["generated_text"]) for out in outputs]
 
-            with open("generations/rag_generations.json", "w") as f:
+            with open(f"{self.root_path}/generations/rag_generations.json", "w") as f:
                 json.dump(generations, f)
 
         ## Save into json
@@ -289,7 +288,7 @@ class RAGBasedExperimentPipeline:
         config = DatamodelIndexBasedConfig(
             k = self.k,
             num_models= self.num_models,
-            datamodels_path = "datamodels",
+            datamodels_path = f"{self.root_path}/datamodels",
             train_set_path=self.wiki_path,
             test_set_path=self.questions_path
         )
@@ -341,7 +340,7 @@ class RAGBasedExperimentPipeline:
             checkpoint = self.train_checkpoint, 
             output_column = "answers",
             model_configs = model_configs,
-            rag_indexes_path="retrieval/rag_retrieval_indexes.json"
+            rag_indexes_path=f"{self.root_path}/retrieval/rag_retrieval_indexes.json"
         )
 
         print("Start Creating Test Pre Collection")
@@ -356,7 +355,7 @@ class RAGBasedExperimentPipeline:
             checkpoint = self.test_checkpoint, 
             output_column = "answers",
             model_configs = model_configs,
-            rag_indexes_path="retrieval/rag_retrieval_indexes.json"
+            rag_indexes_path=f"{self.root_path}/retrieval/rag_retrieval_indexes.json"
         )
 
 
@@ -367,7 +366,7 @@ class RAGBasedExperimentPipeline:
         config = DatamodelIndexBasedConfig(
             k = self.k,
             num_models= self.num_models,
-            datamodels_path = "datamodels",
+            datamodels_path = f"{self.root_path}/datamodels",
             train_set_path=self.wiki_path,
             test_set_path=self.questions_path
         )
@@ -447,7 +446,7 @@ class RAGBasedExperimentPipeline:
         config = DatamodelIndexBasedConfig(
             k = self.k,
             num_models= self.num_models,
-            datamodels_path = "datamodels",
+            datamodels_path = f"{self.root_path}/datamodels",
             train_set_path=self.wiki_path,
             test_set_path=self.questions_path
         )
@@ -500,7 +499,7 @@ class RAGBasedExperimentPipeline:
         config = DatamodelIndexBasedConfig(
             k = self.k,
             num_models= self.num_models,
-            datamodels_path = "datamodels",
+            datamodels_path = f"{self.root_path}/datamodels",
             train_set_path=self.wiki_path,
             test_set_path=self.questions_path
         )
@@ -556,7 +555,7 @@ class RAGBasedExperimentPipeline:
             retrieval_data = json.load(f)
 
         ## Load weights
-        weights = torch.load(f"datamodels/models/{self.model_run_id}/weights.pt")
+        weights = torch.load(f"{self.root_path}/datamodels/models/{self.model_run_id}/weights.pt")
 
         ## Get self.k highest weights
         k_values, k_indices = weights.topk(self.k, dim=1)
@@ -584,7 +583,7 @@ class RAGBasedExperimentPipeline:
 
             generations[str(r_idx)] = [str(out["generated_text"]) for out in outputs]
 
-            with open("generations/datamodels_generations.json", "w") as f:
+            with open(f"{self.root_path}/generations/datamodels_generations.json", "w") as f:
                 json.dump(generations, f)
 
 
@@ -602,9 +601,9 @@ class RAGBasedExperimentPipeline:
         """
         model_id = self.model_run_id
         load_weights_to_json(
-            f"datamodels/models/{model_id}/weights.pt",
-            "retrieval/rag_retrieval_indexes.json",
-            "retrieval",
+            f"{self.root_path}/datamodels/models/{model_id}/weights.pt",
+            f"{self.root_path}/retrieval/rag_retrieval_indexes.json",
+            f"{self.root_path}/retrieval",
             model_id
         )
 
@@ -612,7 +611,8 @@ class RAGBasedExperimentPipeline:
 
 
 
-    def invoke_pipeline_stpe(self, step: str):
+
+    def invoke_pipeline_step(self, step: str):
 
         """
         This function is used to invoke the pipeline for a specific step.

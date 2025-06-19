@@ -608,7 +608,7 @@ class RAGBasedExperimentPipelineWithConfig:
 
 
 
-    def invoke_pipeline_stpe(self, step: str):
+    def invoke_pipeline_step(self, step: str):
 
         """
         This function is used to invoke the pipeline for a specific step.
