@@ -142,6 +142,6 @@ if __name__ == "__main__":
 
     ### Call the desiredf pipeline step
     pipeline.set_random_seed()
-    pipeline.invoke_pipeline_stpe(args.step)
+    pipeline.invoke_pipeline_step(args.step)
 
     

@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
     pipeline =RAGBasedExperimentPipelineWithConfig(config_path="config.yaml")
     pipeline.set_random_seed()
-    pipeline.invoke_pipeline_stpe(step)
+    pipeline.invoke_pipeline_step(step)
 
    
 
