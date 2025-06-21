@@ -81,8 +81,9 @@ class BaselinePipeline:
                 },
                 tags = self.tags.extend(["generations"]),
             )
+            start_time = datetime.datetime.now()
 
-            wandb.log({"start_time": str(datetime.datetime.now())})
+            wandb.log({"start_time": str(start_time)})
 
         ## Iterate questions
         for idx in range(len(questions)):
@@ -117,7 +118,7 @@ class BaselinePipeline:
                 wandb.log_artifact(artifact)
                 wandb.log({
                     "end_time": str(datetime.datetime.now()),
-                    "duration": str(datetime.datetime.now() - datetime.datetime.strptime(wandb.config["start_time"], "%Y-%m-%d %H:%M:%S.%f"))
+                    "duration": str(datetime.datetime.now() - start_time),
                 })
                 wandb.finish()
 
