@@ -72,6 +72,6 @@ def load_weights_to_json(
     subset_documents = json.load(open(subset_documents_path, "r"))
     result = weights_to_dict(weights, subset_documents)
 
-    print("Saving wieghts to json in: ", saving_path)
+    print("Saving weights to json in: ", saving_path)
     json.dump(result[0], open(f"{saving_path}/{saving_id}_indexes.json", "w"))
     json.dump(result[1], open(f"{saving_path}/{saving_id}_weights.json", "w"))

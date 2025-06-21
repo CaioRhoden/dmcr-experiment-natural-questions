@@ -1,8 +1,13 @@
 
+import datetime
 import os
+from git import Optional
 import polars as pl
 from dmcr.models import GenericInstructModelHF
 import json
+
+import torch
+import wandb
 from utils.set_random_seed import set_random_seed
 
 
@@ -20,9 +25,12 @@ class BaselinePipeline:
                     "max_new_tokens": 10.0,
                     "num_return_sequences": 5.0
                 },
+                tags: list[str] = [],
+                log: bool = False,
+                project_log: str = "dmcr_baseline",
                 model_run_id: str = "llama-3.2-3b-instruct",
                 instruction: str = "You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens, you can use the available documents but if they are not helpful, try to answer without them",
-                seed: int = 42):
+                seed: Optional[int] = None):
     
 
         self.questions_path = questions_path
@@ -32,7 +40,12 @@ class BaselinePipeline:
         self.instruction = instruction
         self.seed = seed
         self.root_path = root_path
-        set_random_seed(self.seed)
+        self.tags = tags
+        self.log = log
+        self.project_log = project_log
+        
+        if seed:
+            set_random_seed(seed)
 
     def generate_inferences(self):
 
@@ -46,8 +59,8 @@ class BaselinePipeline:
         Returns:
         None
         """
-
-        os.mkdir(f"{self.root_path}/generations")
+        if not os.path.exists(f"{self.root_path}/generations"):
+            os.mkdir(f"{self.root_path}/generations")
 
         ## Setup variables
         questions = pl.read_ipc(self.questions_path)
@@ -55,6 +68,21 @@ class BaselinePipeline:
         model = GenericInstructModelHF(self.laguage_model_path)
         model_configs = self.lm_configs
         generations = {}
+
+        if self.log:
+            wandb.init(
+                project=self.project_log,
+                name=f"RAG_retrieval_{self.model_run_id}",
+                id = f"RAG_{self.model_run_id}_{str(datetime.datetime.now())}",
+                config={
+                    "gpu": f"{torch.cuda.get_device_name(0)}",
+                    "questions_path": self.questions_path,
+
+                },
+                tags = self.tags.extend(["generations"]),
+            )
+
+            wandb.log({"start_time": str(datetime.datetime.now())})
 
         ## Iterate questions
         for idx in range(len(questions)):
@@ -74,12 +102,24 @@ class BaselinePipeline:
             generations[f"{idx}"] = [str(out["generated_text"]) for out in outputs]
 
             if self.model_run_id is None:
-                with open(f"{self.root_path}/generations/baseline_generations.json", "w") as f:
+                path = f"{self.root_path}/generations/baseline_generations.json"
+                with open(path, "w") as f:
                     json.dump(generations, f)
             
-            prefix = self.model_run_id
-            with open(f"{self.root_path}/generations/{prefix}_baseline_generations.json", "w") as f:
-                json.dump(generations, f)
+            else:
+                path = f"{self.root_path}/generations/{self.model_run_id}_baseline_generations.json"
+                with open(path, "w") as f:
+                    json.dump(generations, f)
+            
+            if self.log:
+                artifact = wandb.Artifact(name="generations", type="json", description="Baseline generations data")
+                artifact.add_file(path)
+                wandb.log_artifact(artifact)
+                wandb.log({
+                    "end_time": str(datetime.datetime.now()),
+                    "duration": str(datetime.datetime.now() - datetime.datetime.strptime(wandb.config["start_time"], "%Y-%m-%d %H:%M:%S.%f"))
+                })
+                wandb.finish()
 
         
 
