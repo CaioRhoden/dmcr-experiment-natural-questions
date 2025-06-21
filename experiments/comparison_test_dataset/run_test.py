@@ -10,6 +10,7 @@ import numpy as np
 import random
 import os
 
+set_random_seed(42)
 root = Path(__file__).parent.parent.parent.parent
 @dataclass
 class ParametersConfig:
@@ -38,13 +39,13 @@ class ParametersConfig:
     '''Path to the questions dataset file.'''
     laguage_model_path: str = "models/llms/Llama-3.2-3B-Instruct"
     '''Path to the language model.'''
-    project_log: str = "nq_experiment_subset_sizes"
+    project_log: str = "nq_experiment_test_set"
     '''Project log name fgor wandb'''
-    model_run_id: str = "150_proportion"
+    model_run_id: str = "test_experiment"
     '''ID of the model run.'''
-    train_collection_id: str = "150_proportion"
+    train_collection_id: str = "test_experiment"
     '''ID of the training collection.'''
-    test_collection_id: str = "150_proportion"
+    test_collection_id: str = "test_experiment"
     '''ID of the testing collection.'''
     k: int = 16
     '''Number of top-k results to retrieve.'''
@@ -115,6 +116,7 @@ def initiate_baseline_pipeline(args: ParametersConfig, seed: int) -> BaselinePip
     """
     args.tags.append("baseline")
     args.tags.append(f"seed_{seed}")
+    args.model_run_id = f"{args.step}_{seed}"
     return BaselinePipeline(
         questions_path=args.questions_path,
         laguage_model_path=args.laguage_model_path,
