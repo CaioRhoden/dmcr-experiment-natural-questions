@@ -11,7 +11,7 @@ import random
 import os
 
 set_random_seed(42)
-root = Path(__file__).parent.parent.parent.parent
+root = Path(__file__).parent.parent.parent
 @dataclass
 class ParametersConfig:
     '''
@@ -23,8 +23,9 @@ class ParametersConfig:
     '''Random index seed for reproducibility.'''
     run_type: str = "setup"
     '''Tag for the experiment section.'''
-    step: str = "setup"
-    '''Step to run.'''
+    log: bool = True
+    '''Flag to enable logging. Options: "setup", "baseline", "rag", "datamodels".'''
+
     
     # RAG Based configs Config Fields
     retrieval_path: str = "retrieval/rag_retrieval_indexes.json"
@@ -35,7 +36,7 @@ class ParametersConfig:
     '''Path to the embedder model.'''
     vector_db_path: str = "data/wiki_dump2018_nq_open/wiki_ip.index"
     '''Path to the vector database.'''
-    questions_path: str = "../50_test.feather"
+    questions_path: str = "data/nq_open_gold/processed/test.feather"
     '''Path to the questions dataset file.'''
     laguage_model_path: str = "models/llms/Llama-3.2-3B-Instruct"
     '''Path to the language model.'''
@@ -49,9 +50,9 @@ class ParametersConfig:
     '''ID of the testing collection.'''
     k: int = 16
     '''Number of top-k results to retrieve.'''
-    size_index: int = 150
+    size_index: int = 100
     '''Size of the index.'''
-    num_models: int = 50
+    num_models: int = 2889
     '''Number of models to use.'''
     evaluation_metric: str = "mse"
     '''Evaluation metric to use.'''
@@ -61,12 +62,12 @@ class ParametersConfig:
     # Pre-collections Config Fields
     instruction: str = "You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens, you can use the available documents but if they are not helpful, try to answer without them"
     '''Instruction for the pre-collections step.'''
-    lm_configs: dict[str, float] = field(default_factory=lambda: {
+    lm_configs: dict[str, float|int] = field(default_factory=lambda: {
             "temperature": 0.7,
             "top_p": 0.9,
-            "max_length": 2048.0,
-            "max_new_tokens": 10.0,
-            "num_return_sequences": 5.0
+            "max_length": 2048,
+            "max_new_tokens": 10,
+            "num_return_sequences": 5
         })
     train_samples: int = 2000
     '''Number of training samples.'''
@@ -116,7 +117,7 @@ def initiate_baseline_pipeline(args: ParametersConfig, seed: int) -> BaselinePip
     """
     args.tags.append("baseline")
     args.tags.append(f"seed_{seed}")
-    args.model_run_id = f"{args.step}_{seed}"
+    args.model_run_id = f"{args.run_type}_{seed}"
     return BaselinePipeline(
         questions_path=args.questions_path,
         laguage_model_path=args.laguage_model_path,
@@ -125,7 +126,8 @@ def initiate_baseline_pipeline(args: ParametersConfig, seed: int) -> BaselinePip
         instruction=args.instruction,
         seed=seed,
         root_path=f"experiments_{seed}",
-        tags = args.tags
+        tags = args.tags,
+        log=args.log,
     )
 def initiate_datamodels_pipeline(args: ParametersConfig, seed: int) -> RAGBasedExperimentPipeline:
 
@@ -235,7 +237,7 @@ if __name__ == "__main__":
     ## Add root to paths (except test)
     args.wiki_path = f"{root}/{args.wiki_path}"
     args.embeder_path = f"{root}/{args.embeder_path}"
-    
+    args.questions_path = f"{root}/{args.questions_path}"
     args.laguage_model_path = f"{root}/{args.laguage_model_path}"
     args.vector_db_path = f"{root}/{args.vector_db_path}"
 
@@ -244,7 +246,7 @@ if __name__ == "__main__":
         exit(0)
 
     seeds = np.load("random_seeds.npy")
-    seed = seeds[args.seed_idx]
+    seed = int(seeds[args.seed_idx])
     set_random_seed(seed)
     print(f"Using seed: {seed}")
 

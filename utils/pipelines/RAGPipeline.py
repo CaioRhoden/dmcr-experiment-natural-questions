@@ -35,7 +35,8 @@ class RAGPipeline:
         tags: list[str] = [],
         lm_configs: Optional[dict[str, float]] = None,
         root_path: str = ".",
-        seed: int|None = None,
+        seed: Optional[int] = None,
+        log: bool = False,
         **kwargs, # Use kwargs to gracefully handle any extra fields
     ):
         
@@ -54,6 +55,7 @@ class RAGPipeline:
         self.model_run_id = model_run_id
         self.k = k
         self.size_index = size_index
+        self.log = log
 
         ## Pre collection parameters
         self.instruction = instruction
@@ -188,7 +190,6 @@ class RAGPipeline:
         with open(self.retrieval_path, "r") as f:
             retrieval_data = json.load(f)
 
-        print(retrieval_data)
         ## Iterate questions
         for r_idx in range(len(retrieval_data)):
 
@@ -211,8 +212,19 @@ class RAGPipeline:
 
             generations[f"{r_idx}"] = [str(out["generated_text"]) for out in outputs]
 
-            with open(f"{self.root_path}/generations/rag_generations.json", "w") as f:
+            path = f"{self.root_path}/generations/rag_generations.json"
+            with open(path, "w") as f:
                 json.dump(generations, f)
+            
+            if self.log:
+                artifact = wandb.Artifact(name="rag_generation", type="json", description="RAG generations")
+                artifact.add_file(path)
+                wandb.log_artifact(artifact)
+                wandb.log({
+                    "end_time": str(datetime.datetime.now()),
+                    "duration": str(datetime.datetime.now() - datetime.datetime.strptime(wandb.config["start_time"], "%Y-%m-%d %H:%M:%S.%f"))
+                })
+                wandb.finish()
 
         ## Save into json
         

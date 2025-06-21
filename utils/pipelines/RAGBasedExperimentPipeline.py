@@ -1,16 +1,13 @@
 
-from typing import Optional, Set
+from typing import Optional
 import polars as pl
 import os
 import torch
-import numpy as np
-import random
 import datetime
 import faiss
 import json
 from FlagEmbedding import FlagModel
-import yaml
-
+import wandb
 
 from dmcr.datamodels.setter.IndexBasedSetter import IndexBasedSetter
 from dmcr.datamodels.setter.SetterConfig import IndexBasedSetterConfig
@@ -27,7 +24,6 @@ class RAGBasedExperimentPipeline:
     def __init__(
         self,
         # We define a parameter for each field in the Config dataclass
-        seed: int,
         retrieval_path: str,
         wiki_path: str,
         embeder_path: str,
@@ -61,7 +57,9 @@ class RAGBasedExperimentPipeline:
         patience: int,
         log_epochs: int,
         tags: list[str] = [],
+        seed: Optional[int] = None,
         lm_configs: Optional[dict[str, int|float]] = None,
+        log: bool = False,
         root_path: str = ".",
         **kwargs, # Use kwargs to gracefully handle any extra fields
     ):
@@ -115,15 +113,11 @@ class RAGBasedExperimentPipeline:
         self.patience = patience
         self.log_epochs = log_epochs
         self.tags = tags
+        self.log = log
 
         self.root_path = root_path
-        
-
-
-    def set_random_seed(self):
-        set_random_seed(self.seed)
-    
-
+        if seed:
+            set_random_seed(seed)
 
 
 
@@ -174,7 +168,23 @@ class RAGBasedExperimentPipeline:
         # ip_index = faiss.read_index(IP_FAISS_INDEX_PATH)
         embedder = FlagModel(self.embeder_path, devices=["cuda:0"], use_fp16=True)
 
+        if self.log:
+            wandb.init(
+                project=self.project_log,
+                name=f"RAG_retrieval_{self.model_run_id}",
+                id = f"RAG_retrieval_{self.model_run_id}_{str(datetime.datetime.now())}",
+                config={
+                    "gpu": f"{torch.cuda.get_device_name(0)}",
+                    "size_index": self.size_index,
+                    "index": self.vector_db_path,
+                    "questions_path": self.questions_path,
+                    "embeder_path": self.embeder_path,
 
+                },
+                tags = self.tags.extend(["RAG", "retrieval"]),
+            )
+
+            wandb.log({"start_time": str(datetime.datetime.now())})
 
         ### Iterate questions
         for idx in range(len(df)):
@@ -195,11 +205,29 @@ class RAGBasedExperimentPipeline:
             # retrieval_data["ip"][idx] = (ip_ids.tolist()[0], ip_scores.tolist()[0])
 
         ## Save into json
+
+
         with open(f"{self.root_path}/retrieval/rag_retrieval_indexes.json", "w") as f:
             json.dump(retrieval_indexes, f)
 
         with open(f"{self.root_path}/retrieval/rag_retrieval_distances.json", "w") as f:
             json.dump(retrieval_distances, f)
+
+        if self.log:
+            artifact = wandb.Artifact(
+                name="rag_retrieval_data",
+                type="json",
+                description="RAG retrieval daa"
+            )
+
+            artifact.add_file(f"{self.root_path}/retrieval/rag_retrieval_indexes.json")
+            artifact.add_file(f"{self.root_path}/retrieval/rag_retrieval_distances.json")
+            wandb.log_artifact(artifact)
+            wandb.log({
+                "end_time": str(datetime.datetime.now()),
+                "total_duration": str(datetime.datetime.now() - datetime.datetime.strptime(wandb.config["start_time"], "%Y-%m-%d %H:%M:%S.%f"))
+            })
+            wandb.finish()
 
     def get_rag_generations(self):
 
@@ -217,7 +245,23 @@ class RAGBasedExperimentPipeline:
         with open(self.retrieval_path, "r") as f:
             retrieval_data = json.load(f)
 
-        print(retrieval_data)
+        if self.log:
+            wandb.init(
+                project=self.project_log,
+                name=f"RAG_generations_{self.model_run_id}",
+                id = f"RAG_generations_{self.model_run_id}_{str(datetime.datetime.now())}",
+                config={
+                    "gpu": f"{torch.cuda.get_device_name(0)}",
+                    "size_index": self.size_index,
+                    "index": self.vector_db_path,
+                    "questions_path": self.questions_path,
+                    "embeder_path": self.embeder_path,
+
+                },
+                tags = self.tags.extend(["RAG", "generations"]),
+            )
+
+            wandb.log({"start_time": str(datetime.datetime.now())})
         ## Iterate questions
         for r_idx in range(len(retrieval_data)):
 
@@ -242,6 +286,21 @@ class RAGBasedExperimentPipeline:
 
             with open(f"{self.root_path}/generations/rag_generations.json", "w") as f:
                 json.dump(generations, f)
+
+            if self.log:
+                artifact = wandb.Artifact(
+                    name="rag_retrieval_data",
+                    type="json",
+                    description="RAG generation daa"
+                )
+
+                artifact.add_file(f"{self.root_path}/generations/rag_generations.json")
+                wandb.log_artifact(artifact)
+                wandb.log({
+                    "end_time": str(datetime.datetime.now()),
+                    "total_duration": str(datetime.datetime.now() - datetime.datetime.strptime(wandb.config["start_time"], "%Y-%m-%d %H:%M:%S.%f"))
+                })
+                wandb.finish()
 
         ## Save into json
         
@@ -293,36 +352,39 @@ class RAGBasedExperimentPipeline:
             test_set_path=self.questions_path
         )
 
-        train_log_config = LogConfig(
-            project=self.project_log,
-            dir="logs",
-            id=f"pre_collection_{self.train_collection_id}_{str(datetime.datetime.now)}",
-            name=f"pre_collection_{self.train_collection_id}",
-            config={
-                "llm": f"{self.laguage_model_path}",
-                "gpu": f"{torch.cuda.get_device_name(0)}",
-                "size_index": self.size_index,
-                "model_configs": model_configs,
-                "datamodel_configs": repr(config)
-            },
-            tags=self.tags.extend(["train", "pre_collection"])
-        )
+        train_log_config = None
+        test_log_config = None
+        if self.log:
+            train_log_config = LogConfig(
+                project=self.project_log,
+                dir="logs",
+                id=f"pre_collection_{self.train_collection_id}_{str(datetime.datetime.now)}",
+                name=f"pre_collection_{self.train_collection_id}",
+                config={
+                    "llm": f"{self.laguage_model_path}",
+                    "gpu": f"{torch.cuda.get_device_name(0)}",
+                    "size_index": self.size_index,
+                    "model_configs": model_configs,
+                    "datamodel_configs": repr(config)
+                },
+                tags=self.tags.extend(["train", "pre_collection"])
+            )
 
-        test_log_config = LogConfig(
-            project=self.project_log,
-            dir="logs",
-            id=f"pre_collection_{self.test_collection_id}_{str(datetime.datetime.now)}",
-            name=f"pre_collection_{self.test_collection_id}",
-            config={
-                "llm": f"{self.laguage_model_path}",
-                "gpu": f"{torch.cuda.get_device_name(0)}",
-                "size_index": self.size_index,
-                "model_configs": model_configs,
-                "datamodel_configs": repr(config)
-            },
-            tags=self.tags.extend(["test", "pre_collection"])
-            
-        )
+            test_log_config = LogConfig(
+                project=self.project_log,
+                dir="logs",
+                id=f"pre_collection_{self.test_collection_id}_{str(datetime.datetime.now)}",
+                name=f"pre_collection_{self.test_collection_id}",
+                config={
+                    "llm": f"{self.laguage_model_path}",
+                    "gpu": f"{torch.cuda.get_device_name(0)}",
+                    "size_index": self.size_index,
+                    "model_configs": model_configs,
+                    "datamodel_configs": repr(config)
+                },
+                tags=self.tags.extend(["test", "pre_collection"])
+                
+            )
 
 
 
@@ -335,7 +397,7 @@ class RAGBasedExperimentPipeline:
             start_idx = self.train_start_idx, 
             end_idx = self.train_end_idx, 
             mode = "train", 
-            log = True, 
+            log = self.log, 
             log_config = train_log_config, 
             checkpoint = self.train_checkpoint, 
             output_column = "answers",
@@ -350,7 +412,7 @@ class RAGBasedExperimentPipeline:
             start_idx = self.test_start_idx, 
             end_idx = self.test_end_idx, 
             mode = "test", 
-            log = True, 
+            log = self.log, 
             log_config = test_log_config, 
             checkpoint = self.test_checkpoint, 
             output_column = "answers",
@@ -381,43 +443,45 @@ class RAGBasedExperimentPipeline:
 
 
         datamodel = DatamodelsIndexBasedNQPipeline(config)
+        train_log_config = None
+        test_log_config = None
+        if self.log:
+            test_log_config = LogConfig(
+                project=self.project_log,
+                dir="logs",
+                id=f"test_collections_{str(datetime.datetime.now)}",
+                name=self.test_collection_id,
+                config={
+                    "evaluator": "Rouge-L",
+                    "gpu": f"{torch.cuda.get_device_name(0)}",
+                    "index": "FAISS_L2",
+                    "size_index": self.size_index,
+                    "datamodel_configs": repr(config)
+                },
+                tags=self.tags.extend(["test", "collections"])
+            )
 
-        test_log_config = LogConfig(
-            project=self.project_log,
-            dir="logs",
-            id=f"test_collections_{str(datetime.datetime.now)}",
-            name=self.test_collection_id,
-            config={
-                "evaluator": "Rouge-L",
-                "gpu": f"{torch.cuda.get_device_name(0)}",
-                "index": "FAISS_L2",
-                "size_index": self.size_index,
-                "datamodel_configs": repr(config)
-            },
-            tags=self.tags.extend(["test", "collections"])
-        )
-
-        train_log_config = LogConfig(
-            project=self.project_log,
-            dir="logs",
-            id=f"train_collections_{str(datetime.datetime.now)}",
-            name=self.train_collection_id,
-            config={
-                "evaluator": self.evaluator,
-                "gpu": f"{torch.cuda.get_device_name(0)}",
-                "index": "FAISS_L2",
-                "size_index": self.size_index,
-                "datamodel_configs": repr(config)
-            },
-            tags=self.tags.extend(["train", "collections"])
-        )
+            train_log_config = LogConfig(
+                project=self.project_log,
+                dir="logs",
+                id=f"train_collections_{str(datetime.datetime.now)}",
+                name=self.train_collection_id,
+                config={
+                    "evaluator": self.evaluator,
+                    "gpu": f"{torch.cuda.get_device_name(0)}",
+                    "index": "FAISS_L2",
+                    "size_index": self.size_index,
+                    "datamodel_configs": repr(config)
+                },
+                tags=self.tags.extend(["train", "collections"])
+            )
 
         print("Start Creating Train Collection")
         datamodel.create_collection(
             evaluator = evaluator,
             mode = "train",
             collection_name = self.train_collection_id,
-            log = True,
+            log = self.log,
             log_config = train_log_config
         )
 
@@ -427,7 +491,7 @@ class RAGBasedExperimentPipeline:
             evaluator = evaluator,
             mode = "test",
             collection_name = self.test_collection_id,	
-            log = True,
+            log = self.log,
             log_config = test_log_config
         )
 
@@ -454,21 +518,22 @@ class RAGBasedExperimentPipeline:
 
 
         datamodel = DatamodelsIndexBasedNQPipeline(config)
+        log_config = None
+        if self.log:
+            log_config = LogConfig(
+                project=self.project_log,
+                dir="logs",
+                id=f"test_train_datamoles_{str(datetime.datetime.now)}",
+                name=self.model_run_id,
+                config={
+                    "gpu": f"{torch.cuda.get_device_name(0)}",
+                    "index": "FAISS_L2",
+                    "size_index": self.size_index,
+                    "datamodel_configs": repr(config),
 
-        log_config = LogConfig(
-            project=self.project_log,
-            dir="logs",
-            id=f"test_train_datamoles_{str(datetime.datetime.now)}",
-            name=self.model_run_id,
-            config={
-                "gpu": f"{torch.cuda.get_device_name(0)}",
-                "index": "FAISS_L2",
-                "size_index": self.size_index,
-                "datamodel_configs": repr(config),
-
-            },
-            tags=self.tags.extend(["training"])
-        )
+                },
+                tags=self.tags.extend(["training"])
+            )
 
 
         model = LinearRegressor(
@@ -486,7 +551,7 @@ class RAGBasedExperimentPipeline:
             val_size=val_size,
             lr=lr,
             patience=patience,
-            log=True,
+            log = self.log,
             log_config=log_config,
             log_epochs=log_epochs,
             run_id=self.model_run_id,
@@ -504,21 +569,23 @@ class RAGBasedExperimentPipeline:
             test_set_path=self.questions_path
         )
 
-        log_config = LogConfig(
-            project=self.project_log,
-            dir="logs",
-            id=f"{self.model_run_id}_evaluate_datamodels_{str(datetime.datetime.now)}",
-            name=f"{self.model_run_id}_evaluate_datamodels",
-            config={
-                "gpu": f"{torch.cuda.get_device_name(0)}",
-                "index": "FAISS_L2",
-                "size_index": self.size_index,
-                "datamodel_configs": repr(config),
-                "metrics": "mse"
+        log_config = None
+        if self.log:
+            log_config = LogConfig(
+                project=self.project_log,
+                dir="logs",
+                id=f"{self.model_run_id}_evaluate_datamodels_{str(datetime.datetime.now)}",
+                name=f"{self.model_run_id}_evaluate_datamodels",
+                config={
+                    "gpu": f"{torch.cuda.get_device_name(0)}",
+                    "index": "FAISS_L2",
+                    "size_index": self.size_index,
+                    "datamodel_configs": repr(config),
+                    "metrics": "mse"
 
-            },
-            tags=self.tags.extend(["evaluation"])
-        )
+                },
+                tags=self.tags.extend(["evaluation"])
+            )
 
         datamodel = DatamodelsIndexBasedNQPipeline(config)
             
@@ -526,7 +593,7 @@ class RAGBasedExperimentPipeline:
                 evaluation_id=f"evaluation_{self.model_run_id}_{self.evaluation_metric}",
                 collection_name=self.test_collection_id,
                 model_id=self.model_run_id,
-                log=True,
+                log = self.log,
                 log_config=log_config,
                 metric=self.evaluation_metric
             )
@@ -560,6 +627,19 @@ class RAGBasedExperimentPipeline:
         ## Get self.k highest weights
         k_values, k_indices = weights.topk(self.k, dim=1)
 
+        if self.log:
+            wandb.init(
+                project=self.project_log,
+                name=f"datamodels_generations_{self.model_run_id}",
+                id = f"datamodels_generations_{self.model_run_id}_{str(datetime.datetime.now())}",
+                config={
+                    "gpu": f"{torch.cuda.get_device_name(0)}",
+                    "size_index": self.size_index,
+
+                },
+                tags = self.tags.extend(["datamodels", "generation"]),
+            )
+
 
         ## Iterate questions
         for r_idx in range(len(retrieval_data)):
@@ -586,6 +666,21 @@ class RAGBasedExperimentPipeline:
             with open(f"{self.root_path}/generations/datamodels_generations.json", "w") as f:
                 json.dump(generations, f)
 
+            if self.log:
+                artifact = wandb.Artifact(
+                    name="datamodels_generation_data",
+                    type="json",
+                    description="Datamodels generation daa"
+                )
+
+                artifact.add_file(f"{self.root_path}/generations/datamodels_generations.json")
+                wandb.log_artifact(artifact)
+                wandb.log({
+                    "end_time": str(datetime.datetime.now()),
+                    "total_duration": str(datetime.datetime.now() - datetime.datetime.strptime(wandb.config["start_time"], "%Y-%m-%d %H:%M:%S.%f"))
+                })
+                wandb.finish()
+
 
     def get_datamodels_retrieval(self):
 
@@ -599,6 +694,23 @@ class RAGBasedExperimentPipeline:
         The json file is saved in the retrieval folder with the name rag_retrieval_indexes.json.
         The function also saves the retrieval data in the saving path specified in the config.
         """
+
+        if self.log:
+            wandb.init(
+                project=self.project_log,
+                name=f"datamodels_retrieval_{self.model_run_id}",
+                id = f"datmaodels_{self.model_run_id}_{str(datetime.datetime.now())}",
+                config={
+                    "gpu": f"{torch.cuda.get_device_name(0)}",
+                    "size_index": self.size_index,
+
+                },
+                tags = self.tags.extend(["datamodels", "retrieval"]),
+            )
+
+            wandb.log({"start_time": str(datetime.datetime.now())})
+
+
         model_id = self.model_run_id
         load_weights_to_json(
             f"{self.root_path}/datamodels/models/{model_id}/weights.pt",
@@ -606,6 +718,22 @@ class RAGBasedExperimentPipeline:
             f"{self.root_path}/retrieval",
             model_id
         )
+
+        if self.log:
+            artifact = wandb.Artifact(
+                name="datamodels_retrieval_data",
+                type="json",
+                description="Datamodels retrieval daa"
+            )
+
+            artifact.add_file(f"{self.root_path}/retrieval/{model_id}_indexes.json")
+            artifact.add_file(f"{self.root_path}/retrieval/{model_id}_weights.json")
+            wandb.log_artifact(artifact)
+            wandb.log({
+                "end_time": str(datetime.datetime.now()),
+                "total_duration": str(datetime.datetime.now() - datetime.datetime.strptime(wandb.config["start_time"], "%Y-%m-%d %H:%M:%S.%f"))
+            })
+            wandb.finish()
 
         
 
