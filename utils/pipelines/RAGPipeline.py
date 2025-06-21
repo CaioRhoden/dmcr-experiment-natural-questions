@@ -1,4 +1,5 @@
 
+from tracemalloc import start
 from typing import Optional
 import polars as pl
 import os
@@ -9,9 +10,6 @@ import json
 from FlagEmbedding import FlagModel
 import wandb
 
-
-
-from dmcr.datamodels.config import LogConfig
 from dmcr.models import GenericInstructModelHF
 
 
@@ -33,7 +31,7 @@ class RAGPipeline:
         size_index: int,
         instruction: str,
         tags: list[str] = [],
-        lm_configs: Optional[dict[str, float]] = None,
+        lm_configs: Optional[dict[str, float|int]] = None,
         root_path: str = ".",
         seed: Optional[int] = None,
         log: bool = False,
@@ -62,9 +60,9 @@ class RAGPipeline:
         self.lm_configs = lm_configs if lm_configs is not None else {
             "temperature": 0.7,
             "top_p": 0.9,
-            "max_length": 2048.0,
-            "max_new_tokens": 10.0,
-            "num_return_sequences": 5.0
+            "max_length": 2048,
+            "max_new_tokens": 10,
+            "num_return_sequences": 5
         }
         self.tags = tags
         self.log = True
@@ -116,14 +114,14 @@ class RAGPipeline:
         embedder = FlagModel(self.embeder_path, devices=["cuda:0"], use_fp16=True)
         
         if self.log:
+            start_time = datetime.datetime.now()
             wandb.init(
                 project=self.project_log,
                 name=f"RAG_retrieval_{self.model_run_id}",
-                id = f"RAG_retrieval_{self.model_run_id}_{str(datetime.datetime.now())}",
+                id = f"RAG_retrieval_{self.model_run_id}_{start_time.strftime('%Y-%m-%d_%H-%M-%S')}",
                 config={
                     "gpu": f"{torch.cuda.get_device_name(0)}",
                     "size_index": self.size_index,
-                    "gpu": f"{torch.cuda.get_device_name(0)}",
                     "index": self.vector_db_path,
                     "questions_path": self.questions_path,
                     "embeder_path": self.embeder_path,
@@ -131,8 +129,8 @@ class RAGPipeline:
                 },
                 tags = self.tags.extend(["RAG", "retrieval"]),
             )
-            start_time = datetime.datetime.now()
-            wandb.log({"start_time": str(start_time)})
+            
+            wandb.log({"start_time": start_time.strftime('%Y-%m-%d_%H-%M-%S')})
 
 
 
@@ -169,22 +167,22 @@ class RAGPipeline:
             artifact.add_file(f"{self.root_path}/retrieval/rag_retrieval_distances.json")
             wandb.log_artifact(artifact)
             wandb.log({
-                "end_time": str(datetime.datetime.now()),
-                "duration": str(datetime.datetime.now() - start_time)
+                "end_time": datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
+                "duration": (datetime.datetime.now() - start_time).total_seconds()
             })
             wandb.finish()
 
     def get_rag_generations(self):
 
         if self.log:
+            start_time = datetime.datetime.now()
             wandb.init(
                 project=self.project_log,
                 name=f"RAG_generations_{self.model_run_id}",
-                id = f"RAG_generations_{self.model_run_id}_{str(datetime.datetime.now())}",
+                id = f"RAG_generations_{self.model_run_id}_{start_time.strftime('%Y-%m-%d_%H-%M-%S')}",
                 config={
                     "gpu": f"{torch.cuda.get_device_name(0)}",
                     "size_index": self.size_index,
-                    "gpu": f"{torch.cuda.get_device_name(0)}",
                     "index": self.vector_db_path,
                     "questions_path": self.questions_path,
                     "embeder_path": self.embeder_path,
@@ -192,8 +190,7 @@ class RAGPipeline:
                 },
                 tags = self.tags.extend(["RAG", "generations"]),
             )
-            start_time = datetime.datetime.now()
-            wandb.log({"start_time": str(start_time)})
+            wandb.log({"start_time": start_time.strftime('%Y-%m-%d_%H-%M-%S')})
 
 
         ## Setup variables
@@ -244,8 +241,8 @@ class RAGPipeline:
                 artifact.add_file(path)
                 wandb.log_artifact(artifact)
                 wandb.log({
-                    "end_time": str(datetime.datetime.now()),
-                    "duration": str(datetime.datetime.now() - start_time)
+                    "end_time": datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
+                    "duration": (datetime.datetime.now() - start_time).total_seconds()
                 })
                 wandb.finish()
 
