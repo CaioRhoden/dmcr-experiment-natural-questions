@@ -70,10 +70,11 @@ class BaselinePipeline:
         generations = {}
 
         if self.log:
+            start_time = datetime.datetime.now()
             wandb.init(
                 project=self.project_log,
-                name=f"RAG_retrieval_{self.model_run_id}",
-                id = f"RAG_{self.model_run_id}_{str(datetime.datetime.now())}",
+                name=f"Baselien_{self.model_run_id}",
+                id = f"Baseline_{self.model_run_id}_{start_time.strftime('%Y-%m-%d_%H-%M-%S')}",
                 config={
                     "gpu": f"{torch.cuda.get_device_name(0)}",
                     "questions_path": self.questions_path,
@@ -81,9 +82,8 @@ class BaselinePipeline:
                 },
                 tags = self.tags.extend(["generations"]),
             )
-            start_time = datetime.datetime.now()
-
-            wandb.log({"start_time": str(start_time)})
+            artifact = wandb.Artifact(name="generations", type="json", description="Baseline generations data")
+            
 
         ## Iterate questions
         for idx in range(len(questions)):
@@ -112,15 +112,14 @@ class BaselinePipeline:
                 with open(path, "w") as f:
                     json.dump(generations, f)
             
-            if self.log:
-                artifact = wandb.Artifact(name="generations", type="json", description="Baseline generations data")
-                artifact.add_file(path)
-                wandb.log_artifact(artifact)
-                wandb.log({
-                    "end_time": str(datetime.datetime.now()),
-                    "duration": str(datetime.datetime.now() - start_time),
-                })
-                wandb.finish()
+        if self.log:
+            artifact.add_file(path)
+            wandb.log_artifact(artifact)
+            wandb.log({
+                "end_time": datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
+                "duration": (datetime.datetime.now() - start_time).total_seconds(),
+            })
+            wandb.finish()
 
         
 
