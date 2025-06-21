@@ -124,10 +124,11 @@ def initiate_baseline_pipeline(args: ParametersConfig, seed: int) -> BaselinePip
         lm_configs=args.lm_configs,
         model_run_id=f"baseline_{seed}",
         instruction=args.instruction,
-        seed=seed,
         root_path=f"experiments_{seed}",
+        project_log=args.project_log,
         tags = args.tags,
         log=args.log,
+        seed=seed,
     )
 def initiate_datamodels_pipeline(args: ParametersConfig, seed: int) -> RAGBasedExperimentPipeline:
 
