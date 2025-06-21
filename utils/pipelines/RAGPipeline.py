@@ -119,7 +119,7 @@ class RAGPipeline:
             wandb.init(
                 project=self.project_log,
                 name=f"RAG_retrieval_{self.model_run_id}",
-                id = f"RAG_{self.model_run_id}_{str(datetime.datetime.now())}",
+                id = f"RAG_retrieval_{self.model_run_id}_{str(datetime.datetime.now())}",
                 config={
                     "gpu": f"{torch.cuda.get_device_name(0)}",
                     "size_index": self.size_index,
@@ -131,8 +131,8 @@ class RAGPipeline:
                 },
                 tags = self.tags.extend(["RAG", "retrieval"]),
             )
-
-            wandb.log({"start_time": str(datetime.datetime.now())})
+            start_time = datetime.datetime.now()
+            wandb.log({"start_time": str(start_time)})
 
 
 
@@ -170,11 +170,30 @@ class RAGPipeline:
             wandb.log_artifact(artifact)
             wandb.log({
                 "end_time": str(datetime.datetime.now()),
-                "duration": str(datetime.datetime.now() - datetime.datetime.strptime(wandb.config["start_time"], "%Y-%m-%d %H:%M:%S.%f"))
+                "duration": str(datetime.datetime.now() - start_time)
             })
             wandb.finish()
 
     def get_rag_generations(self):
+
+        if self.log:
+            wandb.init(
+                project=self.project_log,
+                name=f"RAG_generations_{self.model_run_id}",
+                id = f"RAG_generations_{self.model_run_id}_{str(datetime.datetime.now())}",
+                config={
+                    "gpu": f"{torch.cuda.get_device_name(0)}",
+                    "size_index": self.size_index,
+                    "gpu": f"{torch.cuda.get_device_name(0)}",
+                    "index": self.vector_db_path,
+                    "questions_path": self.questions_path,
+                    "embeder_path": self.embeder_path,
+
+                },
+                tags = self.tags.extend(["RAG", "generations"]),
+            )
+            start_time = datetime.datetime.now()
+            wandb.log({"start_time": str(start_time)})
 
 
         ## Setup variables
@@ -186,9 +205,13 @@ class RAGPipeline:
 
         generations = {}
 
+
+
         ## Load retrieval data
         with open(self.retrieval_path, "r") as f:
             retrieval_data = json.load(f)
+
+            
 
         ## Iterate questions
         for r_idx in range(len(retrieval_data)):
@@ -222,7 +245,7 @@ class RAGPipeline:
                 wandb.log_artifact(artifact)
                 wandb.log({
                     "end_time": str(datetime.datetime.now()),
-                    "duration": str(datetime.datetime.now() - datetime.datetime.strptime(wandb.config["start_time"], "%Y-%m-%d %H:%M:%S.%f"))
+                    "duration": str(datetime.datetime.now() - start_time)
                 })
                 wandb.finish()
 
