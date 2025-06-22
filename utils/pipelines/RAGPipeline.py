@@ -81,10 +81,13 @@ class RAGPipeline:
         This function downloads the 100 question golden dataset, writes it to questions.feather and creates the retrieval, generations, results and datamodels folders.
         """
         ## Create structure
-        os.mkdir(f"{self.root_path}/retrieval")
-        os.mkdir(f"{self.root_path}/generations")
-
-        os.mkdir(f"{self.root_path}/logs")
+        if not os.path.exists(f"{self.root_path}/retrieval"):
+            os.mkdir(f"{self.root_path}/retrieval")
+        if not os.path.exists(f"{self.root_path}/generations"):
+            os.mkdir(f"{self.root_path}/generations")
+        
+        if not os.path.exists(f"{self.root_path}/logs"):
+            os.mkdir(f"{self.root_path}/logs")
 
 
     def get_rag_retrieval(self):
@@ -205,7 +208,7 @@ class RAGPipeline:
 
 
         ## Load retrieval data
-        with open(self.retrieval_path, "r") as f:
+        with open(f"{self.root_path}/retrieval/rag_retrieval_indexes.json", "r") as f:
             retrieval_data = json.load(f)
 
             
