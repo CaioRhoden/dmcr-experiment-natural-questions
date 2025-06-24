@@ -239,15 +239,15 @@ class RAGPipeline:
             with open(path, "w") as f:
                 json.dump(generations, f)
             
-            if self.log:
-                artifact = wandb.Artifact(name="rag_generation", type="json", description="RAG generations")
-                artifact.add_file(path)
-                wandb.log_artifact(artifact)
-                wandb.log({
-                    "end_time": datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
-                    "duration": (datetime.datetime.now() - start_time).total_seconds()
-                })
-                wandb.finish()
+        if self.log:
+            artifact = wandb.Artifact(name="rag_generation", type="json", description="RAG generations")
+            artifact.add_file(path)
+            wandb.log_artifact(artifact)
+            wandb.log({
+                "end_time": datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
+                "duration": (datetime.datetime.now() - start_time).total_seconds()
+            })
+            wandb.finish()
 
         ## Save into json
         
