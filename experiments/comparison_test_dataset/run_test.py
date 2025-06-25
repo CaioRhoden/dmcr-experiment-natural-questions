@@ -65,9 +65,7 @@ class ParametersConfig:
     lm_configs: dict[str, float|int] = field(default_factory=lambda: {
             "temperature": 0.7,
             "top_p": 0.9,
-            "max_length": 2048,
             "max_new_tokens": 10,
-            "num_return_sequences": 5
         })
     train_samples: int = 2000
     '''Number of training samples.'''
@@ -77,15 +75,15 @@ class ParametersConfig:
     '''List of tags for the experiment.'''
     train_start_idx: int = 0
     '''Starting index for the training set.'''
-    train_end_idx: int = 2000
+    train_end_idx: int = -1
     '''Ending index for the training set.'''
     test_start_idx: int = 0
     '''Starting index for the testing set.'''
-    test_end_idx: int = 400
+    test_end_idx: int = -1
     '''Ending index for the testing set.'''
-    train_checkpoint: int = 200
+    train_checkpoint: int = 50
     '''Checkpoint interval for training.'''
-    test_checkpoint: int = 200
+    test_checkpoint: int = 50
     '''Checkpoint interval for testing.'''
     
     # Datamodels Training Config Fields
@@ -272,17 +270,35 @@ if __name__ == "__main__":
         rag.get_rag_generations()
         exit(0)
 
-    elif args.run_type == "datamodels":
+    elif args.run_type == "datamodels_pre_collections":
 
-        args.retrieval_path = f"expirements_{seed}/{args.retrieval_path}"
+        args.retrieval_path = f"experiments_{seed}/{args.retrieval_path}"
 
         pipeline = initiate_datamodels_pipeline(args, seed)
         pipeline.setup()
         pipeline.create_datamodels_datasets()
         pipeline.run_pre_colections()
+        exit(0)
+    
+    elif args.run_type == "datamodels_collections":
+
+        args.retrieval_path = f"experiments_{seed}/{args.retrieval_path}"
+        pipeline = initiate_datamodels_pipeline(args, seed)
         pipeline.run_collections()
+        exit(0)
+    
+    elif args.run_type == "datamodels_training":
+
+        args.retrieval_path = f"experiments_{seed}/{args.retrieval_path}"
+        pipeline = initiate_datamodels_pipeline(args, seed)
         pipeline.train_datamodels()
         pipeline.evaluate_datamodels()
+        exit(0)
+
+    elif args.run_type == "datamodels_generations":
+
+        args.retrieval_path = f"experiments_{seed}/{args.retrieval_path}"
+        pipeline = initiate_datamodels_pipeline(args, seed)
         pipeline.get_datamodels_generations()
         pipeline.get_datamodels_retrieval()
         exit(0)
