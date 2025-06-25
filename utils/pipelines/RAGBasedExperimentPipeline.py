@@ -131,17 +131,29 @@ class RAGBasedExperimentPipeline:
         This function downloads the 100 question golden dataset, writes it to questions.feather and creates the retrieval, generations, results and datamodels folders.
         """
         ## Create structure
-        os.mkdir(f"{self.root_path}/retrieval")
-        os.mkdir(f"{self.root_path}/generations")
-        os.mkdir(f"{self.root_path}/results")
-        os.mkdir(f"{self.root_path}/datamodels")
-        os.mkdir(f"{self.root_path}/logs")
+        if not os.path.exists(self.root_path):
+            os.mkdir(self.root_path)
+        
+        if not os.path.exists(f"{self.root_path}/retrieval"):
+            os.mkdir(f"{self.root_path}/retrieval")
+        if not os.path.exists(f"{self.root_path}/generations"):
+            os.mkdir(f"{self.root_path}/generations")
+        if not os.path.exists(f"{self.root_path}/results"):
+            os.mkdir(f"{self.root_path}/results")
+        if not os.path.exists(f"{self.root_path}/datamodels"):
+            os.mkdir(f"{self.root_path}/datamodels")
+        if not os.path.exists(f"{self.root_path}/logs"):
+            os.mkdir(f"{self.root_path}/logs")
 
         ## Create Datamodels Structure
-        os.mkdir(f"{self.root_path}/datamodels/datasets")
-        os.mkdir(f"{self.root_path}/datamodels/pre_collections")
-        os.mkdir(f"{self.root_path}/datamodels/collections")
-        os.mkdir(f"{self.root_path}/datamodels/models")
+        if not os.path.exists(f"{self.root_path}/datamodels/datasets"):
+            os.mkdir(f"{self.root_path}/datamodels/datasets")
+        if not os.path.exists(f"{self.root_path}/datamodels/pre_collections"):
+            os.mkdir(f"{self.root_path}/datamodels/pre_collections")
+        if not os.path.exists(f"{self.root_path}/datamodels/collections"):
+            os.mkdir(f"{self.root_path}/datamodels/collections")
+        if not os.path.exists(f"{self.root_path}/datamodels/models"):
+            os.mkdir(f"{self.root_path}/datamodels/models")
 
 
     def get_rag_retrieval(self):
@@ -319,7 +331,7 @@ class RAGBasedExperimentPipeline:
         the same
         """
 
-        DATASET_PATH = "datamodels"
+        DATASET_PATH = f"{self.root_path}/datamodels"
         setter_config = IndexBasedSetterConfig(
             save_path=DATASET_PATH,
             size_index=self.size_index,
