@@ -93,7 +93,6 @@ class RAGBasedExperimentPipeline:
         self.lm_configs = lm_configs if lm_configs is not None else {
             "temperature": 0.7,
             "top_p": 0.9,
-            "max_length": 2048,
             "max_new_tokens": 10,
             "num_return_sequences": 5
         }
@@ -355,13 +354,6 @@ class RAGBasedExperimentPipeline:
         """
         model = GenericInstructModelHF(self.laguage_model_path)
 
-        model_configs = {
-                "temperature": 0.7,
-                "top_p": 0.9,
-                "max_length": 2048,
-                "max_new_tokens": 10
-        }
-
         config = DatamodelIndexBasedConfig(
             k = self.k,
             num_models= self.num_models,
@@ -382,7 +374,7 @@ class RAGBasedExperimentPipeline:
                     "llm": f"{self.laguage_model_path}",
                     "gpu": f"{torch.cuda.get_device_name(0)}",
                     "size_index": self.size_index,
-                    "model_configs": model_configs,
+                    "model_configs": self.lm_configs,
                     "datamodel_configs": repr(config)
                 },
                 tags=self.tags.extend(["train", "pre_collection"])
@@ -397,7 +389,7 @@ class RAGBasedExperimentPipeline:
                     "llm": f"{self.laguage_model_path}",
                     "gpu": f"{torch.cuda.get_device_name(0)}",
                     "size_index": self.size_index,
-                    "model_configs": model_configs,
+                    "model_configs": self.lm_configs,
                     "datamodel_configs": repr(config)
                 },
                 tags=self.tags.extend(["test", "pre_collection"])
@@ -409,6 +401,7 @@ class RAGBasedExperimentPipeline:
         datamodel = DatamodelsIndexBasedNQPipeline(config=config)
 
         print("Start Creating Train Pre Collection")
+
         datamodel.create_pre_collection(
             instruction= self.instruction,
             llm = model,
@@ -419,7 +412,7 @@ class RAGBasedExperimentPipeline:
             log_config = train_log_config, 
             checkpoint = self.train_checkpoint, 
             output_column = "answers",
-            model_configs = model_configs,
+            model_configs = self.lm_configs,
             rag_indexes_path=f"{self.root_path}/retrieval/rag_retrieval_indexes.json"
         )
 
@@ -434,7 +427,7 @@ class RAGBasedExperimentPipeline:
             log_config = test_log_config, 
             checkpoint = self.test_checkpoint, 
             output_column = "answers",
-            model_configs = model_configs,
+            model_configs = self.lm_configs,
             rag_indexes_path=f"{self.root_path}/retrieval/rag_retrieval_indexes.json"
         )
 
