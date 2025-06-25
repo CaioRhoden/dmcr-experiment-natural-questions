@@ -1,4 +1,5 @@
 
+from typing import Optional
 import polars as pl
 import torch
 import numpy as np
@@ -13,87 +14,32 @@ from dmcr.datamodels.models import LASSOLinearRegressor
 
 
 from utils.pipelines import RAGBasedExperimentPipeline
+from utils.set_random_seed import set_random_seed
 
 class LassoExperimentPipeline(RAGBasedExperimentPipeline):
 
-    def __init__(self,
-        # We define a parameter for each field in the Config dataclass
-        seed: int,
-        retrieval_path: str,
-        wiki_path: str,
-        embeder_path: str,
-        vector_db_path: str,
-        questions_path: str,
-        laguage_model_path: str,
-        project_log: str,
-        model_run_id: str,
-        train_collection_id: str,
-        test_collection_id: str,
-        k: int,
-        size_index: int,
-        num_models: int,
-        evaluation_metric: str,
-        evaluator: str,
-        instruction: str,
-        train_samples: int,
-        test_samples: int,
-        train_start_idx: int,
-        train_end_idx: int,
-        test_start_idx: int,
-        test_end_idx: int,
-        train_checkpoint: int,
-        test_checkpoint: int,
-        epochs: int,
-        lr: float,
-        train_batches: int,
-        val_batches: int,
-        val_size: float,
-        patience: int,
-        log_epochs: int,
-        lambda_l1: float,
-        tags: list[str] = [],
-        model_id_retrieval: str = "",
-        **kwargs, # Use kwargs to gracefully handle any extra fields
-    ):
-        
-        super().__init__(
-            seed=seed,
-            retrieval_path=retrieval_path,
-            wiki_path=wiki_path,
-            embeder_path=embeder_path,
-            vector_db_path=vector_db_path,
-            questions_path=questions_path,
-            laguage_model_path=laguage_model_path,
-            project_log=project_log,
-            model_run_id=model_run_id,
-            train_collection_id=train_collection_id,
-            test_collection_id=test_collection_id,
-            k=k,
-            size_index=size_index,
-            num_models=num_models,
-            evaluation_metric=evaluation_metric,
-            evaluator=evaluator,
-            instruction=instruction,
-            train_samples=train_samples,
-            test_samples=test_samples,
-            train_start_idx=train_start_idx,
-            train_end_idx=train_end_idx,
-            test_start_idx=test_start_idx,
-            test_end_idx=test_end_idx,
-            train_checkpoint=train_checkpoint,
-            test_checkpoint=test_checkpoint,    
-            epochs=epochs, 
-            lr=lr,
-            train_batches=train_batches,
-            val_batches=val_batches,
-            val_size=val_size,
-            patience=patience,
-            log_epochs=log_epochs,
-            tags=tags,
-            model_id_retrieval=model_id_retrieval,
-        )
-
+    def __init__(self, 
+                lambda_l1: float,
+                tags: list[str] = [],
+                seed: Optional[int] = None,
+                lm_configs: Optional[dict[str, int|float]] = None,
+                log: bool = False,
+                root_path: str = ".",
+                *args,
+                **kwargs,
+                 
+                 
+                ): # Use kwargs to gracefully handle any extra fields):
+        super().__init__(*args, **kwargs)
         self.lambda_l1 = lambda_l1
+        self.tags = tags
+        self.seed = seed
+        self.lm_configs = lm_configs if lm_configs is not None else {}
+        self.log = log
+        self.root_path = root_path
+
+        if seed:
+            set_random_seed(seed)
     
 
     def train_datamodels(self):
