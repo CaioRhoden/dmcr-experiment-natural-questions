@@ -174,7 +174,8 @@ def initiate_datamodels_pipeline(args: ParametersConfig, seed: int) -> RAGBasedE
         val_batches=args.val_batches,
         val_size=args.val_size,
         patience=args.patience,
-        log_epochs=args.log_epochs
+        log_epochs=args.log_epochs,
+        root_path=f"experiments_{seed}",
     )
 
 
@@ -242,6 +243,8 @@ if __name__ == "__main__":
     args.laguage_model_path = f"{root}/{args.laguage_model_path}"
     args.vector_db_path = f"{root}/{args.vector_db_path}"
 
+    
+
     if args.run_type == "setup":
         create_random_seeds()
         exit(0)
@@ -251,6 +254,7 @@ if __name__ == "__main__":
     args.model_run_id = f"{args.run_type}_{seed}"
     set_random_seed(seed)
     print(f"Using seed: {seed}")
+
 
     if args.run_type == "baseline":
 
@@ -270,17 +274,19 @@ if __name__ == "__main__":
 
     elif args.run_type == "datamodels":
 
-        ## Run entire RAG pipeline (setup, retrieval, generations) for one seed index
+        args.retrieval_path = f"expirements_{seed}/{args.retrieval_path}"
 
         pipeline = initiate_datamodels_pipeline(args, seed)
         pipeline.setup()
-        pipeline.get_rag_retrieval()
         pipeline.create_datamodels_datasets()
         pipeline.run_pre_colections()
         pipeline.run_collections()
         pipeline.train_datamodels()
+        pipeline.evaluate_datamodels()
         pipeline.get_datamodels_generations()
         pipeline.get_datamodels_retrieval()
         exit(0)
-
+    
+    else:
+        raise ValueError(f"Unknown run type: {args.run_type}. Please choose from 'setup', 'baseline', 'rag' or 'datamodels'.")
 
