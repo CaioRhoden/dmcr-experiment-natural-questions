@@ -1,6 +1,7 @@
 
 from typing import Optional
 import polars as pl
+from sympy import factor
 import torch
 import numpy as np
 import datetime
@@ -10,7 +11,7 @@ import datetime
 from dmcr.datamodels.pipeline import DatamodelsIndexBasedNQPipeline
 from dmcr.datamodels.config import DatamodelIndexBasedConfig, LogConfig
 
-from dmcr.datamodels.models import LASSOLinearRegressor
+from dmcr.datamodels.models import FactoryLASSOLinearRegressor
 
 
 from utils.pipelines import RAGBasedExperimentPipeline
@@ -107,15 +108,15 @@ class LassoExperimentPipeline(RAGBasedExperimentPipeline):
         )
 
 
-        model = LASSOLinearRegressor(
+        factory = FactoryLASSOLinearRegressor(
             in_features=self.size_index,
             out_features=1,
-            lambda_l1=self.lambda_l1,
-            device=str(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+            device="cuda" if torch.cuda.is_available() else "cpu",
+            **{"lambda_l1": self.lambda_l1}  # Unpack lm_configs
         )
 
         datamodel.train_datamodels(
-            model=model,
+            model_factory=factory,
             collection_name=self.train_collection_id,	
             epochs=epochs,
             train_batches=train_batches,
