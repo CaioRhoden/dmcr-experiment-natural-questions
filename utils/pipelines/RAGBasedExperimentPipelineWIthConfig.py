@@ -214,7 +214,6 @@ class RAGBasedExperimentPipelineWithConfig:
         with open(self.config["retrieval_path"], "r") as f:
             retrieval_data = json.load(f)
 
-        print(retrieval_data)
         ## Iterate questions
         for r_idx in range(len(retrieval_data)):
 
