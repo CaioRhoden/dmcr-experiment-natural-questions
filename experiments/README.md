@@ -46,3 +46,15 @@ They're represented by each subfolder:
 **Folder organization**:
 
 **Results**:
+
+## perplexity_proxy_groundtruth
+
+**Creation Date**: 30-06-2025
+
+**Objective**: Related with the following [task]() the goal is to investigate the possibility of the usage of the perplexity metric with the own test input query. 
+
+**Setup**:
+
+**Folder organization**:
+
+**Results**:
