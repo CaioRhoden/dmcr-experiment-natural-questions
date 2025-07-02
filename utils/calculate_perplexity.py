@@ -1,7 +1,7 @@
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-def calculate_perplexity(text, model: AutoModelForCausalLM, tokenizer: AutoTokenizer, context=None):
+def calculate_perplexity(text, model: AutoModelForCausalLM, tokenizer: AutoTokenizer, context=None, device="cpu"):
     """
     Calculate perplexity of a given text using a causal language model.
 
@@ -20,7 +20,7 @@ def calculate_perplexity(text, model: AutoModelForCausalLM, tokenizer: AutoToken
         full_text, 
         return_tensors="pt", 
         truncation=True
-    )
+    ).to(device)
     
     if context:
         context_tokens = tokenizer(
