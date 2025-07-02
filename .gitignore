@@ -3,7 +3,7 @@ data
 ../models
 logs
 batch.sh
-pre_collection*
+pre_collection_*
 wandb
 
 # Byte-compiled / optimized / DLL files
