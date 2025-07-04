@@ -3,8 +3,9 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from tqdm import tqdm
 import polars as pl
+from wandb import config
 
-def calculate_perplexity(text, model: AutoModelForCausalLM, tokenizer: AutoTokenizer, context=None, device="cpu"):
+def calculate_perplexity(text, model: AutoModelForCausalLM, tokenizer: AutoTokenizer, context=None, device="cpu", configs=None):
     """
     Calculate perplexity of a given text using a causal language model.
 
@@ -16,7 +17,15 @@ def calculate_perplexity(text, model: AutoModelForCausalLM, tokenizer: AutoToken
 
     Returns:
         float: The calculated perplexity.
+        
     """
+    if configs is None:
+        configs = {
+            "temperature": 0.7,
+            "top_p": 0.9,
+            "max_length": 2048
+        }
+
     full_text = context + text if context else text
     
     inputs = tokenizer(
@@ -38,7 +47,7 @@ def calculate_perplexity(text, model: AutoModelForCausalLM, tokenizer: AutoToken
         labels = inputs.input_ids
     
     with torch.no_grad():
-        outputs = model(**inputs, labels=labels)
+        outputs = model(**inputs, labels=labels, **configs)
         loss = outputs.loss
     
     return torch.exp(loss).item()
