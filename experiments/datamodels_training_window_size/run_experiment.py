@@ -1,14 +1,15 @@
-import argparse
 from dataclasses import dataclass, field
-from utils.pipelines.RAGBasedExperimentPipeline import RAGBasedExperimentPipeline
-from utils.pipelines.BaselinePipeline import BaselinePipeline
-from utils.pipelines.RAGPipeline import RAGPipeline
-from utils.set_random_seed import set_random_seed
+import sys
 from pathlib import Path
 import tyro
 import numpy as np
-import random
 import os
+
+
+from utils.pipelines.RAGBasedExperimentPipeline import RAGBasedExperimentPipeline
+from utils.set_random_seed import set_random_seed
+from utils.get_random_nq_dataset import get_random_nq_dataset
+
 
 set_random_seed(42)
 root = Path(__file__).parent.parent.parent
@@ -36,7 +37,7 @@ class ParametersConfig:
     '''Path to the embedder model.'''
     vector_db_path: str = "data/wiki_dump2018_nq_open/wiki_ip.index"
     '''Path to the vector database.'''
-    questions_path: str = "experiments/datamodels_training_window_size/50_test.feather"
+    questions_path: str = "test"
     '''Path to the questions dataset file.'''
     laguage_model_path: str = "models/llms/Llama-3.2-3B-Instruct"
     '''Path to the language model.'''
@@ -152,16 +153,18 @@ def initiate_datamodels_pipeline(args: ParametersConfig, seed: int) -> RAGBasedE
 
 
 
-def create_random_seeds() -> None:
+def create_random_experiments(num_experiments: int) -> None:
     """
     Create and save a numpy array with 5 random seeds.
     """
     
-    seeds = np.random.randint(0, 10000, size=5)
-    np.save("random_seeds.npy", seeds)
-    for seed in seeds:
-        os.mkdir(f"experiments_{seed}")
-    print(f"Random seeds saved: {seeds}")
+    random_seeds = np.random.randint(0, 10000, size=num_experiments)
+    np.save("random_seeds.npy", random_seeds)
+    for s in random_seeds:
+        os.mkdir(f"experiments_{s}")
+        get_random_nq_dataset(root_path=root, n_samples=50, save_path=f"experiments_{s}/questions.feather", partition="dev", seed=s)
+        
+        
 
 
 if __name__ == "__main__":
@@ -179,8 +182,8 @@ if __name__ == "__main__":
     
 
     if args.run_type == "setup":
-        create_random_seeds()
-        exit(0)
+        create_random_experiments(5)
+        sys.exit(0)
 
     seeds = np.load("random_seeds.npy")
     seed = int(seeds[args.seed_idx])
@@ -188,40 +191,43 @@ if __name__ == "__main__":
     set_random_seed(seed)
     print(f"Using seed: {seed}")
 
+    ### Beginning pipeline step run
+    args.retrieval_path = f"experiments_{seed}/{args.retrieval_path}"
+    args.questions_path = f"experiments_{seed}/questions.feather"
+    pipeline = initiate_datamodels_pipeline(args, seed)
+
+    #### What each step will do:
+    ## 'datamodels_pre_collections': run datamodels_pre_collections generating the models output for each array attriuted to collection
+    ## 'datamodels_collections': run datamodels_collections generating the models evaluation (ROUGE) for each collection
+    ## 'datamodels_training': run datamodels_training creates a linear regressor model for each test sample, saving the weights and bias and the evaluation of the model (R^2)
+    ## 'datamodels_generations': run datamodels_generations generating the models output using the re-ranking from the datamodels weights (importance estimation)
+    ## Else: raise error
+
 
     if args.run_type == "datamodels_pre_collections":
 
-        args.retrieval_path = f"experiments_{seed}/{args.retrieval_path}"
-
-        pipeline = initiate_datamodels_pipeline(args, seed)
         pipeline.setup()
         pipeline.get_rag_retrieval()
         pipeline.create_datamodels_datasets()
         pipeline.run_pre_colections()
-        exit(0)
+        sys.exit(0)
     
     elif args.run_type == "datamodels_collections":
 
-        args.retrieval_path = f"experiments_{seed}/{args.retrieval_path}"
-        pipeline = initiate_datamodels_pipeline(args, seed)
         pipeline.run_collections()
-        exit(0)
+        sys.exit(0)
     
     elif args.run_type == "datamodels_training":
 
-        args.retrieval_path = f"experiments_{seed}/{args.retrieval_path}"
-        pipeline = initiate_datamodels_pipeline(args, seed)
         pipeline.train_datamodels()
         pipeline.evaluate_datamodels()
-        exit(0)
+        sys.exit(0)
 
     elif args.run_type == "datamodels_generations":
 
-        args.retrieval_path = f"experiments_{seed}/{args.retrieval_path}"
-        pipeline = initiate_datamodels_pipeline(args, seed)
         pipeline.get_datamodels_generations()
         pipeline.get_datamodels_retrieval()
-        exit(0)
+        sys.exit(0)
     
     else:
         raise ValueError(f"Unknown run type: {args.run_type}. Please choose from 'setup', 'baseline', 'rag' or 'datamodels'.")
