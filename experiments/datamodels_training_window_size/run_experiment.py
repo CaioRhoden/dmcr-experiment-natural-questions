@@ -203,12 +203,14 @@ if __name__ == "__main__":
     ## 'datamodels_generations': run datamodels_generations generating the models output using the re-ranking from the datamodels weights (importance estimation)
     ## Else: raise error
 
-
-    if args.run_type == "datamodels_pre_collections":
-
+    if args.run_type == "datamodels_setup":
         pipeline.setup()
         pipeline.get_rag_retrieval()
         pipeline.create_datamodels_datasets()
+        sys.exit(0)
+        
+    if args.run_type == "datamodels_pre_collections":
+
         pipeline.run_pre_colections()
         sys.exit(0)
     
