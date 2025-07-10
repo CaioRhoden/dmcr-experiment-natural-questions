@@ -30,7 +30,7 @@ class ParametersConfig:
     Configuration class for saving perplexity collections.
     """
 
-    seed_idx: int = 7270
+    seed: int = 7270
     """Random index seed for reproducibility."""
     
     saving_prefix: str = "non_normalized_perplexity_collections"
@@ -133,7 +133,7 @@ if __name__ == "__main__":
 
     args = tyro.cli(ParametersConfig)
 
-    perplexity_collections = PerplexityCollections(seed=args.seed_idx)
+    perplexity_collections = PerplexityCollections(seed=args.seed)
     perplexity_collections.create_perplexity_collections(
         type="train",
         saving_prefix=args.saving_prefix,
