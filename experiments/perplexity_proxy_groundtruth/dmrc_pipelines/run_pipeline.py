@@ -237,12 +237,12 @@ if __name__ == "__main__":
     args.questions_path = f"{root}/{args.questions_path}"
     args.laguage_model_path = f"{root}/{args.laguage_model_path}"
     args.vector_db_path = f"{root}/{args.vector_db_path}"
-    args.retrieval_path = f"{args.seed}/{args.retrieval_path}"
+    args.retrieval_path = f"{args.retrieval_path}"
 
     
 
     seed = args.seed
-    args.model_run_id = f"{args.run_type}_{seed}"
+    args.model_run_id = f"{seed}"
     set_random_seed(seed)
     print(f"Using seed: {seed}")
 
