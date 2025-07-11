@@ -32,7 +32,7 @@ class NormalizationParametersConfig:
     Configuration class for saving perplexity collections.
     """
 
-    seed_idx: int = 7270
+    seed: int = 7270
     """Random index seed for reproducibility."""
 
     saving_prefix: str = "normalized_perplexity_collections"
@@ -71,7 +71,7 @@ def nomalize_perplexity(
         df.join(_grouped_min_max, on="test_idx", how="left")
         .with_columns(
             ((pl.col("evaluation") - pl.col("min"))
-            / (pl.col("max") - pl.col("min"))).alias("normalized_evaluation")
+            / (pl.col("max") - pl.col("min"))).cast(pl.Float32).alias("normalized_evaluation")
         )
         .drop(["min", "max", "evaluation"])
         .rename({"normalized_evaluation": "evaluation"})
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     args = tyro.cli(NormalizationParametersConfig)
 
     nomalize_perplexity(
-        seed=args.seed_idx,
+        seed=args.seed,
         target_prefix=args.target_prefix,
         saving_prefix=args.saving_prefix,
     )
