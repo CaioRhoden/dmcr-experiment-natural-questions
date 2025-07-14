@@ -6,7 +6,9 @@ import numpy as np
 import os
 
 
+from utils.pipelines.BaselinePipeline import BaselinePipeline
 from utils.pipelines.RAGBasedExperimentPipeline import RAGBasedExperimentPipeline
+from utils.pipelines.RAGPipeline import RAGPipeline
 from utils.set_random_seed import set_random_seed
 from utils.get_random_nq_dataset import get_random_nq_dataset
 
@@ -153,6 +155,63 @@ def initiate_datamodels_pipeline(args: ParametersConfig, seed: int) -> RAGBasedE
 
 
 
+def initiate_rag_pipeline(args: ParametersConfig, seed: int) -> RAGPipeline:
+    """
+    Initiates the RAG pipeline with the provided arguments.
+    
+    Args:
+        args (ParametersConfig): The configuration parameters for the pipeline.
+        seed (int): The random seed for reproducibility.
+    
+    Returns:
+        RAGPipeline: An instance of the RAG pipeline.
+    """
+    return RAGPipeline(
+        seed=seed,
+        retrieval_path=args.retrieval_path,
+        wiki_path=args.wiki_path,
+        embeder_path=args.embeder_path,
+        vector_db_path=args.vector_db_path,
+        questions_path=args.questions_path,
+        laguage_model_path=args.laguage_model_path,
+        project_log=args.project_log,
+        model_run_id=args.model_run_id,
+        train_collection_id=args.train_collection_id,
+        test_collection_id=args.test_collection_id,
+        k=args.k,
+        size_index=args.size_index,
+        lm_configs=args.lm_configs,
+        instruction=args.instruction,
+        root_path=f"experiments_{seed}",
+    )
+
+def initiate_baseline_pipeline(args: ParametersConfig, seed: int) -> BaselinePipeline:
+    """
+    Initiates the baseline pipeline with the provided arguments.
+    
+    Args:
+        args (ParametersConfig): The configuration parameters for the pipeline.
+        seed (int): The random seed for reproducibility.
+    
+    Returns:
+        BaselinePipeline: An instance of the baseline pipeline.
+    """
+    args.tags.append("baseline")
+    args.tags.append(f"seed_{seed}")
+    args.model_run_id = f"{args.run_type}_{seed}"
+    return BaselinePipeline(
+        questions_path=args.questions_path,
+        laguage_model_path=args.laguage_model_path,
+        lm_configs=args.lm_configs,
+        model_run_id=f"baseline_{seed}",
+        instruction=args.instruction,
+        root_path=f"experiments_{seed}",
+        project_log=args.project_log,
+        tags = args.tags,
+        log=args.log,
+        seed=seed,
+    )
+
 def create_random_experiments(num_experiments: int) -> None:
     """
     Create and save a numpy array with 5 random seeds.
@@ -193,6 +252,28 @@ if __name__ == "__main__":
     ### Beginning pipeline step run
     args.retrieval_path = f"experiments_{seed}/{args.retrieval_path}"
     args.questions_path = f"experiments_{seed}/questions.feather"
+
+
+    if args.run_type == "rag":
+
+        ## Run entire RAG piline (setup, retrieval, generations) for one seed index
+
+        rag = initiate_rag_pipeline(args, seed)
+        rag.setup()
+        rag.get_rag_retrieval()
+        rag.get_rag_generations()
+        sys.exit(0)
+
+    if args.run_type == "baseline":
+
+        baseline = initiate_baseline_pipeline(args, seed)
+        baseline.generate_inferences()
+        sys.exit(0)
+
+
+
+
+
     pipeline = initiate_datamodels_pipeline(args, seed)
 
     #### What each step will do:
@@ -208,7 +289,7 @@ if __name__ == "__main__":
         pipeline.create_datamodels_datasets()
         sys.exit(0)
         
-    if args.run_type == "datamodels_pre_collections":
+    elif args.run_type == "datamodels_pre_collections":
 
         pipeline.run_pre_colections()
         sys.exit(0)
