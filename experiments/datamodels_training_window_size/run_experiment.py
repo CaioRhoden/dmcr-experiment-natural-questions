@@ -187,7 +187,6 @@ if __name__ == "__main__":
 
     seeds = np.load("random_seeds.npy")
     seed = int(seeds[args.seed_idx])
-    args.model_run_id = f"{args.run_type}_{seed}"
     set_random_seed(seed)
     print(f"Using seed: {seed}")
 
