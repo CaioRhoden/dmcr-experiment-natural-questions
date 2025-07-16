@@ -26,7 +26,7 @@ def compile_result():
     LR = "linear_regressor"
     
 
-    rag_generations = f"{PREFIX_PATH}/{LR}/generations/rag_generations.json",
+    rag_generations = f"{PREFIX_PATH}/{LR}/generations/rag_generations.json"
 
     datamodels_generations = [
         f"{PREFIX_PATH}/{LR}/generations/datamodels_generations.json",
