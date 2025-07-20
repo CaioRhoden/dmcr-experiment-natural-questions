@@ -63,11 +63,10 @@ class ParametersConfig:
     '''Evaluator to use.'''
     
     # Pre-collections Config Fields
-    instruction: str = "You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens, you can use the available documents but if they are not helpful, try to answer without them"
+    instruction: str = "You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens, you can use the available documents but if they are not helpful, answer without them"
     '''Instruction for the pre-collections step.'''
     lm_configs: dict[str, float|int] = field(default_factory=lambda: {
             "temperature": 0.7,
-            "top_p": 0.9,
             "max_new_tokens": 10,
         })
     train_samples: int = 2000
