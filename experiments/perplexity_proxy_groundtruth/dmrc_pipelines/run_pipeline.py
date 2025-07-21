@@ -241,7 +241,7 @@ if __name__ == "__main__":
     
 
     seed = args.seed
-    args.model_run_id = f"{seed}"
+    args.model_run_id = f"{args.model_run_id}_{seed}"
     set_random_seed(seed)
     print(f"Using seed: {seed}")
 

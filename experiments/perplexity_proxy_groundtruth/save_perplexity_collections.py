@@ -38,7 +38,6 @@ class ParametersConfig:
 
     model_configs: dict[str, float|int] = field(default_factory=lambda: {
             "temperature": 0.7,
-            "top_p": 0.9,
             "max_length": 2048,
         })
 
