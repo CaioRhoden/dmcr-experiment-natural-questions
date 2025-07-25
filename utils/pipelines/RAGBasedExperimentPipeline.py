@@ -296,7 +296,7 @@ class RAGBasedExperimentPipeline:
             ## Generate output
             outputs = model.run(
                 prompt, 
-                instruction="You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens, you can use the available documents ", 
+                instruction= self.instruction, 
                 config_params=self.lm_configs
             )
 
@@ -626,7 +626,7 @@ class RAGBasedExperimentPipeline:
                 "top_p": 0.9,
                 "max_length": 2048,
                 "max_new_tokens": 10,
-                "num_return_sequences": 5
+                "num_return_sequences": 1
         }
 
         generations = {}
@@ -668,13 +668,13 @@ class RAGBasedExperimentPipeline:
             ## Generate prompt
             prompt = "Documents: \n"
             for doc_idx in range(len(top_k)-1, -1, -1):
-                prompt += f"Document[{self.k-doc_idx}](Title: {docs.filter(pl.col('idx')==top_k[doc_idx])['title'].to_numpy().flatten()[0]}){docs.filter(pl.col('idx')==top_k[doc_idx])['title'].to_numpy().flatten()[0]}\n\n"
+                prompt += f"Document[{self.k-doc_idx}](Title: {docs.filter(pl.col('idx')==top_k[doc_idx])['title'].to_numpy().flatten()[0]}){docs.filter(pl.col('idx')==top_k[doc_idx])['text'].to_numpy().flatten()[0]}\n\n"
             prompt += f"Question: {questions[r_idx]['question'].to_numpy().flatten()[0]}\nAnswer: "
 
             ## Generate output
             outputs = model.run(
                 prompt, 
-                instruction="You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens, you can use the available documents ", 
+                instruction=self.instruction, 
                 config_params=model_configs
             )
 
