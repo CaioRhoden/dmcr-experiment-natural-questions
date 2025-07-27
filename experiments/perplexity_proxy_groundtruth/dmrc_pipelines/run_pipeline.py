@@ -99,7 +99,7 @@ class ParametersConfig:
     '''Number of batches for validation.'''
     val_size: float = 0.15
     '''Proportion of data for validation.'''
-    patience: int = 30
+    patience: int = 20
     '''Patience for early stopping.'''
     log_epochs: int = 25
     '''Interval for logging.'''

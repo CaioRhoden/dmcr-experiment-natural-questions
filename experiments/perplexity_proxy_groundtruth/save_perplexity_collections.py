@@ -37,7 +37,6 @@ class ParametersConfig:
     """Prefix for the saved collections."""
 
     model_configs: dict[str, float|int] = field(default_factory=lambda: {
-            "temperature": 0.7,
             "max_length": 2048,
         })
 
@@ -98,6 +97,7 @@ class PerplexityCollections:
                 .filter(pl.col("test_idx") == idx)
                 .sort("collection_idx")
                 .select("collection_idx", "test_idx", "input")
+                .with_columns("collection_idx", pl.lit(self.create_binary_collection(list(collections_dataset[idx]))))
                 .with_columns(pl.Series("evaluation", perplexity.cpu().numpy()).cast(pl.Float32))
             )
         
@@ -121,11 +121,17 @@ class PerplexityCollections:
 
     def load_collections_dataset(self, type, seed) -> NDArray:
         for file in os.listdir(f"collections_dataset/{seed}"):
-            if file.endswith(".h5") and file.startswith(f"{type}_collection"):
+            if file.endswith(".h5") and file.startswith(f"{type}_collection."):
                 with h5py.File(f"collections_dataset/{seed}/{file}", "r") as f:
                     return f[f"{type}_collection"][()]
             
+    def create_binary_collection(self, indices):
+        result = [0] * 100
+        for idx in indices:
+            if 0 <= idx < 100:
+                result[idx] = 1
 
+        return result
 
 
 if __name__ == "__main__":
