@@ -8,7 +8,7 @@ import os
 import accelerate
 from pandas import DataFrame
 import tyro
-from utils.calculate_perplexity import calculate_batch_perplexity
+from utils.metrics.calculate_perplexity import calculate_batch_perplexity
 from utils.set_random_seed import set_random_seed
 from utils.generate_context import get_batch_context
 from pathlib import Path

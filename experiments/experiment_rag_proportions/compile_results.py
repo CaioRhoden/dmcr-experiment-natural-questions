@@ -1,5 +1,5 @@
 from utils.set_random_seed import set_random_seed
-from utils.calculate_metric import calculate_agg_metric
+from utils.metrics.calculate_metric import calculate_agg_metric
 import datetime
 import os
 
