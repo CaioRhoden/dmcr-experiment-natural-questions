@@ -302,7 +302,7 @@ if __name__ == "__main__":
     elif args.run_type == "datamodels_training":
 
         pipeline.train_datamodels()
-        pipeline.evaluate_datamodels()
+        # pipeline.evaluate_datamodels()
         sys.exit(0)
 
     elif args.run_type == "datamodels_generations":

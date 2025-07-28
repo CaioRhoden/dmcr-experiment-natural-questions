@@ -2,7 +2,8 @@
 data
 ../models
 logs
-batch.sh
+*.sh
+!run.sh
 pre_collection_*
 wandb
 
