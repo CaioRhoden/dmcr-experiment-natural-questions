@@ -3,13 +3,14 @@
 # Step 2: Iterate over the test data to collect the perplexity values and save them as non_normalized_collections
 ##############################
 
+from bz2 import compress
 from dataclasses import dataclass, field
 from locale import normalize
 import os
 import accelerate
 from pandas import DataFrame
 import tyro
-from utils.calculate_perplexity import calculate_batch_perplexity
+from utils.metrics.calculate_perplexity import calculate_batch_perplexity
 from utils.set_random_seed import set_random_seed
 from utils.generate_context import get_batch_context
 from pathlib import Path
@@ -70,14 +71,14 @@ def nomalize_perplexity(
     normalized_df = (
         df.join(_grouped_min_max, on="test_idx", how="left")
         .with_columns(
-            ((pl.col("evaluation") - pl.col("min"))
-            / (pl.col("max") - pl.col("min"))).cast(pl.Float32).alias("normalized_evaluation")
+            (1-((pl.col("evaluation") - pl.col("min"))
+            / (pl.col("max") - pl.col("min")))).cast(pl.Float32).alias("normalized_evaluation")
         )
         .drop(["min", "max", "evaluation"])
         .rename({"normalized_evaluation": "evaluation"})
     )
 
-    normalized_df.write_ipc(f"collections/{seed}/{saving_prefix}.feather")
+    normalized_df.write_ipc(f"collections/{seed}/{saving_prefix}.feather", compression="zstd")
 
 
 if __name__ == "__main__":
