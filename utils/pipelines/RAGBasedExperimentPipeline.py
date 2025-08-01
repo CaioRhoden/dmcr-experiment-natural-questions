@@ -65,6 +65,7 @@ class RAGBasedExperimentPipeline:
         lm_configs: Optional[dict[str, int|float]] = None,
         log: bool = False,
         root_path: str = ".",
+        datamodels_generation_name: Optional[str] = "datamodels_generations",
         **kwargs, # Use kwargs to gracefully handle any extra fields
     ):
         
@@ -119,6 +120,7 @@ class RAGBasedExperimentPipeline:
         self.log = log
 
         self.root_path = root_path
+        self.datamodels_generation_name = datamodels_generation_name
         if seed:
             set_random_seed(seed)
 
@@ -690,7 +692,7 @@ class RAGBasedExperimentPipeline:
                     description="Datamodels generation daa"
                 )
 
-                artifact.add_file(f"{self.root_path}/generations/datamodels_generations.json")
+                artifact.add_file(f"{self.root_path}/generations/{self.datamodels_generation_name}.json")
                 wandb.log_artifact(artifact)
                 wandb.log({
                     "end_time": datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
