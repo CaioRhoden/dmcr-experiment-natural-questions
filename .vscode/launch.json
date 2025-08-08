@@ -1,0 +1,23 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Debug Pipeline",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/experiments/perplexity_proxy_groundtruth/dmrc_pipelines/run_pipeline.py",
+            "args": [
+                "--run_type", "datamodels_generations",
+                "--seed", "7270",
+                "--train_collection_id", "nomarlized_no_top_p",
+                "--model_run_id", "nomralized_no_top_p"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "0"
+            },
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}/experiments/perplexity_proxy_groundtruth/dmrc_pipelines"
+        }
+    ]
+}
