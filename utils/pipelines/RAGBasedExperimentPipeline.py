@@ -1,5 +1,6 @@
 
 from curses import start_color
+from pyexpat import model
 from tracemalloc import start
 from typing import Optional
 import polars as pl
@@ -16,7 +17,7 @@ from dmcr.datamodels.setter.SetterConfig import IndexBasedSetterConfig
 from dmcr.datamodels.pipeline import DatamodelsIndexBasedNQPipeline
 from dmcr.datamodels.config import DatamodelIndexBasedConfig, LogConfig
 from dmcr.models import GenericInstructModelHF
-from dmcr.evaluators import Rouge_L_evaluator, SquadV2Evaluator
+from dmcr.evaluators import Rouge_L_evaluator, SquadV2Evaluator, JudgeEvaluator
 from dmcr.datamodels.models import LinearRegressor
 from dmcr.datamodels.models import FactoryLinearRegressor
 
@@ -453,6 +454,28 @@ class RAGBasedExperimentPipeline:
             evaluator = Rouge_L_evaluator()
         elif self.evaluator == "SquadV2":
             evaluator = SquadV2Evaluator("best_f1")
+        elif self.evaluator == "Judge":
+            def format_input(question, response):
+                return f""""
+                [System] 
+                Please act as an impartial judge and evaluate the quality of the response provided by an AI assistant to a question displayed below. Your evaluation should consider factors such as relevance and accuracy. Begin your evaluation by providing a short explanation. Be as objective as possible. After providing your explanation, please rate the response on a scale of 1 to 10 by strictly following this format: "[[rating]]", for example: "Rating: [[5]]".  
+                [Question] 
+                {question}  
+                [The Start of Assistant’s Answer] 
+                {response}
+                [The End of Assistant’s Answer]
+                """
+            evaluator = JudgeEvaluator(
+                model_path=self.laguage_model_path,
+                model_configs = {
+                    "temperature": 0.5,
+                    "top_p": 0.9,
+                    "num_return_sequences": 5,
+                },
+                instruction="",
+                format_template=format_input
+            )
+
         else:
             raise ValueError(f"Invalid evaluator")
 
