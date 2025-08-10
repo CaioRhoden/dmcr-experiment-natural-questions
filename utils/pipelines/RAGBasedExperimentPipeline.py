@@ -470,7 +470,7 @@ class RAGBasedExperimentPipeline:
                 model_configs = {
                     "temperature": 0.5,
                     "top_p": 0.9,
-                    "num_return_sequences": 5,
+                    "num_return_sequences": 1,
                 },
                 instruction="",
                 format_template=format_input
@@ -520,7 +520,10 @@ class RAGBasedExperimentPipeline:
             mode = "train",
             collection_name = self.train_collection_id,
             log = self.log,
-            log_config = train_log_config
+            log_config = train_log_config,
+            checkpoint = self.train_checkpoint,
+            start_idx = self.train_start_idx,
+            end_idx = self.train_end_idx,
         )
 
 
@@ -530,7 +533,9 @@ class RAGBasedExperimentPipeline:
             mode = "test",
             collection_name = self.test_collection_id,	
             log = self.log,
-            log_config = test_log_config
+            log_config = test_log_config,
+            checkpoint = self.test_checkpoint
+
         )
 
 
