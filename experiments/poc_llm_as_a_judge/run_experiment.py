@@ -104,6 +104,8 @@ class ParametersConfig:
     '''Patience for early stopping.'''
     log_epochs: int = 25
     '''Interval for logging.'''
+    datamodels_generation_name: str = "datamodels_generations"
+    '''Name for the datamodels generations.'''
 
 def initiate_datamodels_pipeline(args: ParametersConfig, seed: int) -> RAGBasedExperimentPipeline:
 
@@ -151,6 +153,7 @@ def initiate_datamodels_pipeline(args: ParametersConfig, seed: int) -> RAGBasedE
         patience=args.patience,
         log_epochs=args.log_epochs,
         root_path=f"experiments_{seed}",
+        datamodels_generation_name=args.datamodels_generation_name
     )
 
 
