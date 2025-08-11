@@ -710,7 +710,7 @@ class RAGBasedExperimentPipeline:
 
             generations[str(r_idx)] = [str(out["generated_text"]) for out in outputs]
 
-            with open(f"{self.root_path}/generations/datamodels_generations.json", "w") as f:
+            with open(f"{self.root_path}/generations/{self.datamodels_generation_name}.", "w") as f:
                 json.dump(generations, f)
 
             if self.log:
