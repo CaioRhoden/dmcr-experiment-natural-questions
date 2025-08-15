@@ -60,18 +60,19 @@ class PerplexityCollections:
 
     def create_perplexity_collections(
             self,
-            type: str,
+            collection_type: str,
             saving_prefix: str,
             start_idx: int,
             end_idx: int,
             len_collection: int,
             collection_reference: str = "datamodels_training_window_0",
+            optinal_instructions: str = "You are an assintant in question generation. Your task is to generate a certain question, the provided context could be helpful for you. Create it in a concise manner",
     ):
         ### Load data
-        collection = self.load_collection(type, collection_reference, self.seed)
+        collection = self.load_collection(collection_type, collection_reference, self.seed)
         wiki = self.load_wiki()
         questions = self.load_questions()
-        collections_dataset = self.load_collections_dataset(type, self.seed)
+        collections_dataset = self.load_collections_dataset(collection_type, self.seed)
         retrievals = self.load_retrievals(self.seed)
 
         ### Setup model and tokenizer
@@ -79,13 +80,15 @@ class PerplexityCollections:
         model_path = f"{root}/models/llms/Llama-3.2-3B-Instruct"
         tokenizer = AutoTokenizer.from_pretrained(model_path)
         tokenizer.pad_token = tokenizer.eos_token  # Set pad token to eos token for Llama models
-        model = AutoModelForCausalLM.from_pretrained(model_path,  device_map={"": accelerator.process_index}, torch_dtype=torch.bfloat16,)
+        model = AutoModelForCausalLM.from_pretrained(model_path,  device_map={"": accelerator.process_index})
 
 
         perplexity_list = []
         for idx in range(start_idx, end_idx):
             print("Calculating perplexity for collection", idx)
+
             contexts = get_batch_context(collections_dataset, retrievals, wiki, idx, list(range(len_collection)))
+            contexts = [f"{optinal_instructions}\n{context}" for context in contexts]
             perplexity = calculate_batch_perplexity(
                 texts=[questions[idx].select("question").item() for _ in range(len_collection)],
                 model=model,
@@ -104,19 +107,19 @@ class PerplexityCollections:
             )
         
         print("Saving perplexity collections...")
-        pl.concat(perplexity_list).write_ipc(f"{root}/experiments/perplexity_proxy_groundtruth/collections/{self.seed}/{saving_prefix}_{start_idx}_{end_idx-1}.feather", compression="zstd")
+        pl.concat(perplexity_list).write_ipc(f"experiments_{self.seed}/datamodels/collections/{self.seed}/{collection_type}/{saving_prefix}_{start_idx}_{end_idx-1}.feather", compression="zstd")
 
 
 
     def load_retrievals(self, seed: int) -> dict:
-        with open(f"experiment_{seed}/retrieval/rag_retrieval_indexes.json", "r") as f:
+        with open(f"experiments_{seed}/retrieval/rag_retrieval_indexes.json", "r") as f:
             return json.load(f)
 
-    def load_collection(self, type: str, collection_reference: str, seed: int) -> pl.DataFrame:
-        for file in os.listdir(f"experiment_{seed}/datamodels/collections/train"):
+    def load_collection(self, collection_type: str, collection_reference: str, seed: int) -> pl.DataFrame:
+        for file in os.listdir(f"experiments_{seed}/datamodels/collections/train"):
             if file.endswith(".feather") and file.startswith(f"{collection_reference}."):
                 print(f"Loading collection from {file}")
-                return pl.read_ipc(f"experiment_{seed}/datamodels/collections/{type}/{file}")
+                return pl.read_ipc(f"experiments_{seed}/datamodels/collections/{collection_type}/{file}")
     
     def load_wiki(self) -> pl.DataFrame:
         return pl.read_ipc(f"{root}/data/wiki_dump2018_nq_open/processed/wiki.feather")
@@ -124,11 +127,11 @@ class PerplexityCollections:
     def load_questions(self) -> pl.DataFrame:
         return pl.read_ipc(f"{root}/data/nq_open_gold/processed/test.feather")
 
-    def load_collections_dataset(self, type, seed) -> NDArray:
-        for file in os.listdir(f"experiment_{seed}/datamodels"):
-            if file.endswith(".h5") and file.startswith(f"{type}_collection."):
-                with h5py.File(f"experiment_{seed}/datamodels/{file}", "r") as f:
-                    return f[f"{type}_collection"][()]
+    def load_collections_dataset(self, collection_type, seed) -> NDArray:
+        for file in os.listdir(f"experiments_{seed}/datamodels"):
+            if file.endswith(".h5") and file.startswith(f"{collection_type}_collection."):
+                with h5py.File(f"experiments_{seed}/datamodels/{file}", "r") as f:
+                    return f[f"{collection_type}_collection"][()]
             
     def create_binary_collection(self, indices):
         result = [0] * 100
@@ -145,7 +148,7 @@ if __name__ == "__main__":
 
     perplexity_collections = PerplexityCollections(seed=args.seed)
     perplexity_collections.create_perplexity_collections(
-        type="train",
+        collection_type="train",
         saving_prefix=args.saving_prefix,
         start_idx=args.start_idx,
         end_idx=args.end_idx,
