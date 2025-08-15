@@ -3,6 +3,7 @@
 # Step 2: Iterate over the test data to collect the perplexity values and save them as non_normalized_collections
 ##############################
 
+import collections
 from dataclasses import dataclass, field
 import os
 import accelerate
@@ -63,10 +64,11 @@ class PerplexityCollections:
             saving_prefix: str,
             start_idx: int,
             end_idx: int,
-            len_collection: int
+            len_collection: int,
+            collection_reference: str = "datamodels_training_window_0",
     ):
         ### Load data
-        collection = self.load_collection(type, self.seed)
+        collection = self.load_collection(type, collection_reference, self.seed)
         wiki = self.load_wiki()
         questions = self.load_questions()
         collections_dataset = self.load_collections_dataset(type, self.seed)
@@ -107,11 +109,14 @@ class PerplexityCollections:
 
 
     def load_retrievals(self, seed: int) -> dict:
-        with open(f"retrieval/{seed}/rag_retrieval_indexes.json", "r") as f:
+        with open(f"experiment_{seed}/retrieval/rag_retrieval_indexes.json", "r") as f:
             return json.load(f)
 
-    def load_collection(self, type: str, seed: int) -> pl.DataFrame:
-        return pl.read_ipc(f"collections/{seed}/{type}.feather")
+    def load_collection(self, type: str, collection_reference: str, seed: int) -> pl.DataFrame:
+        for file in os.listdir(f"experiment_{seed}/datamodels/collections/train"):
+            if file.endswith(".feather") and file.startswith(f"{collection_reference}."):
+                print(f"Loading collection from {file}")
+                return pl.read_ipc(f"experiment_{seed}/datamodels/collections/{type}/{file}")
     
     def load_wiki(self) -> pl.DataFrame:
         return pl.read_ipc(f"{root}/data/wiki_dump2018_nq_open/processed/wiki.feather")
@@ -120,9 +125,9 @@ class PerplexityCollections:
         return pl.read_ipc(f"{root}/data/nq_open_gold/processed/test.feather")
 
     def load_collections_dataset(self, type, seed) -> NDArray:
-        for file in os.listdir(f"collections_dataset/{seed}"):
+        for file in os.listdir(f"experiment_{seed}/datamodels"):
             if file.endswith(".h5") and file.startswith(f"{type}_collection."):
-                with h5py.File(f"collections_dataset/{seed}/{file}", "r") as f:
+                with h5py.File(f"experiment_{seed}/datamodels/{file}", "r") as f:
                     return f[f"{type}_collection"][()]
             
     def create_binary_collection(self, indices):
