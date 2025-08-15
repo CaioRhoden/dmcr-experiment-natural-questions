@@ -47,6 +47,7 @@ def nomalize_perplexity(
     seed: int,
     target_prefix: str,
     saving_prefix: str,
+    type: str = "train"
 ):
     """
     This function receives a path for colletion within this folder indicated by 'collections/{seed}' where the files beggining with the target prefix will be extracted.
@@ -55,9 +56,9 @@ def nomalize_perplexity(
     """
 
     collections = []
-    for file in os.listdir(f"collections/{seed}"):
+    for file in os.listdir(f"experiments_{seed}/datamodels/collections/{type}"):
         if file.startswith(target_prefix):
-            collections.append(pl.read_ipc(f"collections/{seed}/{file}"))
+            collections.append(pl.read_ipc(f"experiments_{seed}/datamodels/collections/{type}/{file}"))
 
     df = pl.concat(collections)
 
@@ -78,7 +79,7 @@ def nomalize_perplexity(
         .rename({"normalized_evaluation": "evaluation"})
     )
 
-    normalized_df.write_ipc(f"collections/{seed}/{saving_prefix}.feather", compression="zstd")
+    normalized_df.write_ipc(f"experiments_{seed}/datamodels/collections/{type}/{saving_prefix}.feather", compression="zstd")
 
 
 if __name__ == "__main__":

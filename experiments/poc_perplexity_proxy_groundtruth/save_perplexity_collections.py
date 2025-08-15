@@ -107,7 +107,7 @@ class PerplexityCollections:
             )
         
         print("Saving perplexity collections...")
-        pl.concat(perplexity_list).write_ipc(f"experiments_{self.seed}/datamodels/collections/{self.seed}/{collection_type}/{saving_prefix}_{start_idx}_{end_idx-1}.feather", compression="zstd")
+        pl.concat(perplexity_list).write_ipc(f"experiments_{self.seed}/datamodels/collections/{collection_type}/{saving_prefix}_{start_idx}_{end_idx-1}.feather", compression="zstd")
 
 
 
