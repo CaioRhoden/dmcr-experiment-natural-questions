@@ -713,20 +713,20 @@ class RAGBasedExperimentPipeline:
             with open(f"{self.root_path}/generations/{self.datamodels_generation_name}.json", "w") as f:
                 json.dump(generations, f)
 
-            if self.log:
-                artifact = wandb.Artifact(
-                    name="datamodels_generation_data",
-                    type="json",
-                    description="Datamodels generation daa"
-                )
+        if self.log:
+            artifact = wandb.Artifact(
+                name="datamodels_generation_data",
+                type="json",
+                description="Datamodels generation daa"
+            )
 
-                artifact.add_file(f"{self.root_path}/generations/{self.datamodels_generation_name}.json")
-                wandb.log_artifact(artifact)
-                wandb.log({
-                    "end_time": datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
-                    "total_duration": (datetime.datetime.now() - start_time).total_seconds(),
-                })
-                wandb.finish()
+            artifact.add_file(f"{self.root_path}/generations/{self.datamodels_generation_name}.json")
+            wandb.log_artifact(artifact)
+            wandb.log({
+                "end_time": datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
+                "total_duration": (datetime.datetime.now() - start_time).total_seconds(),
+            })
+            wandb.finish()
 
 
     def get_datamodels_retrieval(self):
