@@ -14,7 +14,7 @@ from utils.set_random_seed import set_random_seed
 
 
 set_random_seed(42)
-root = Path(__file__).parent.parent.parent.parent
+root = Path(__file__).parent.parent.parent
 @dataclass
 class ParametersConfig:
     '''
@@ -208,7 +208,7 @@ def initiate_datamodels_pipeline(args: ParametersConfig, seed: int) -> RAGBasedE
         val_size=args.val_size,
         patience=args.patience,
         log_epochs=args.log_epochs,
-        root_path=f"{seed}",
+        root_path=f"experiments_{seed}",
     )
 
 
@@ -236,12 +236,10 @@ if __name__ == "__main__":
     args.questions_path = f"{root}/{args.questions_path}"
     args.laguage_model_path = f"{root}/{args.laguage_model_path}"
     args.vector_db_path = f"{root}/{args.vector_db_path}"
-    args.retrieval_path = f"{args.retrieval_path}"
 
     
 
     seed = args.seed
-    args.model_run_id = f"{args.model_run_id}_{seed}"
     set_random_seed(seed)
     print(f"Using seed: {seed}")
 
@@ -265,7 +263,7 @@ if __name__ == "__main__":
 
     elif args.run_type == "datamodels_generations":
 
-        args.retrieval_path = f"{seed}/{args.retrieval_path}"
+        args.retrieval_path = f"experiments_{seed}/{args.retrieval_path}"
         pipeline = initiate_datamodels_pipeline(args, seed)
         pipeline.get_datamodels_generations()
         pipeline.get_datamodels_retrieval()
