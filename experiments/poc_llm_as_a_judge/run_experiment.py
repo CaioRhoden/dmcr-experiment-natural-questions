@@ -22,7 +22,7 @@ class ParametersConfig:
     '''
 
     ## Run config
-    seed_idx: int = 0
+    seed: int = 0
     '''Random index seed for reproducibility.'''
     run_type: str = "setup"
     '''Tag for the experiment section.'''
@@ -172,7 +172,7 @@ if __name__ == "__main__":
     
 
     seeds = np.load("random_seeds.npy")
-    seed = int(seeds[args.seed_idx])
+    seed = args.seed
     set_random_seed(seed)
     print(f"Using seed: {seed}")
 
