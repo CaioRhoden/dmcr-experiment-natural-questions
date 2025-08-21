@@ -209,7 +209,8 @@ def initiate_datamodels_pipeline(args: ParametersConfig, seed: int) -> RAGBasedE
         patience=args.patience,
         log_epochs=args.log_epochs,
         root_path=f"experiments_{seed}",
-        log=args.log
+        log=args.log,
+        datamodels_generation_name=args.model_run_id
     )
 
 
