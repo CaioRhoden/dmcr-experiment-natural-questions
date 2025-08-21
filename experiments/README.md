@@ -47,14 +47,21 @@ They're represented by each subfolder:
 
 **Results**:
 
-## perplexity_proxy_groundtruth
+## poc_perplexity_proxy_groundtruth
 
 **Creation Date**: 30-06-2025
 
-**Objective**: Related with the following [task]() the goal is to investigate the possibility of the usage of the perplexity metric with the own test input query. 
+**Objective**: This experiment aims to evaluate the use of perplexity as a proxy for retrieval-augmented generation (RAG) model performance. The core idea is to assess whether lower perplexity scores on a language model, given a set of retrieved documents, correlate with higher-quality generated answers. For more details, see the [experiment's README](./poc_perplexity_proxy_groundtruth/README.md).
 
-**Setup**:
+**Setup**: The experiment uses the `Llama-3.2-3B-Instruct` model and its tokenizer. The main libraries used are `accelerate` for distributed training, `polars` for data manipulation, `numpy` for numerical operations, `torch` for the deep learning framework, `h5py` for handling HDF5 files, and `tyro` for command-line argument parsing.
 
-**Folder organization**:
+**Folder organization**: The experiment is organized into the following directories:
+- **`experiments_.../`**: Each experiment has its own directory, identified by a unique seed.
+    - **`datamodels/`**: Contains the data models and collections for the experiment.
+        - **`collections/`**: Contains the generated collections of documents for each experiment.
+        - **`models/`**: Contains the trained models.
+    - **`generations/`**: Contains the generated answers for each run type.
+    - **`retrieval/`**: Contains the retrieval indexes used by the RAG models.
+- **`results/`**: Stores the evaluation results of the experiments in Feather format.
 
-**Results**:
+**Results**: The `datamodels` run consistently achieves the highest ROUGE-L scores across all seeds, indicating that the data models significantly improve the quality of the generated answers. The `perplexity` runs, on the other hand, perform poorly, which is expected since it is not a generation model but a metric. The `rag` and `baseline` runs show similar performance, with the `rag` model having a slight edge. For a detailed table with the results, please refer to the [experiment's README](./poc_perplexity_proxy_groundtruth/README.md#rouge-l-scores).
