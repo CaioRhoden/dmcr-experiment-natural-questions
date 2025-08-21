@@ -6,12 +6,18 @@ This experiment aims to evaluate the use of perplexity as a proxy for retrieval-
 
 The project is organized into the following directories:
 
-- **`collections/`**: Contains the generated collections of documents for each experiment, identified by a unique seed. These collections are stored in Feather format.
-- **`collections_dataset/`**: Holds the dataset versions of the collections in HDF5 format, which are used for training and testing the models.
-- **`dmrc_pipelines/`**: Contains the main pipeline scripts for running the experiments.
-  - **`run_pipeline.py`**: The main script for executing the different stages of the experiment (setup, training, generation).
+- **`experiments_.../`**: Each experiment has its own directory, identified by a unique seed.
+    - **`datamodels/`**: Contains the data models and collections for the experiment.
+        - **`collections/`**: Contains the generated collections of documents for each experiment.
+        - **`models/`**: Contains the trained models.
+    - **`generations/`**: Contains the generated answers for each run type.
+    - **`retrieval/`**: Contains the retrieval indexes used by the RAG models.
 - **`results/`**: Stores the evaluation results of the experiments in Feather format.
-- **`retrieval/`**: Contains the retrieval indexes used by the RAG models.
+- **`normalize_perplexity.py`**: Script for normalizing perplexity scores.
+- **`proxy_perplexity.ipynb`**: Notebook for perplexity analysis.
+- **`run_pipeline.py`**: Main script for executing the different stages of the experiment.
+- **`save_perplexity_collections.py`**: Script for calculating and saving perplexity scores.
+- **`run.sh`**: Shell script to run the pipeline.
 
 ## Scripts
 
@@ -19,38 +25,70 @@ The project is organized into the following directories:
 
 - **`save_perplexity_collections.py`**: This script is the core of the perplexity calculation process. It iterates through the test dataset and, for each question, calculates the perplexity of a large language model (Llama-3.2-3B-Instruct) when conditioned on different sets of retrieved documents. The script loads the necessary data, including the document collections, the wiki text, the questions, and the retrieval indexes. It then uses the `calculate_batch_perplexity` function to compute the perplexity scores and saves them in a Feather file.
 
-- **`dmrc_pipelines/run_pipeline.py`**: This script acts as the main entry point for the entire experiment. It orchestrates the different stages of the pipeline, from setting up the environment to training the models and generating the final results. The script is highly configurable through the `ParametersConfig` data class, which allows for easy modification of the experiment's parameters. The pipeline is divided into three main parts:
+- **`run_pipeline.py`**: This script acts as the main entry point for the entire experiment. It orchestrates the different stages of the pipeline, from setting up the environment to training the models and generating the final results. The script is highly configurable through the `ParametersConfig` data class, which allows for easy modification of the experiment's parameters. The pipeline is divided into three main parts:
     - **`datamodels_setup`**: This stage prepares the environment for the experiment. It copies the necessary files, such as the collections and retrieval indexes, to the experiment's directory.
     - **`datamodels_training`**: In this stage, the script trains the data models using the pre-processed collections.
     - **`datamodels_generations`**: This final stage uses the trained models to generate answers and saves them for evaluation.
 
-## Usage
+## How to run it
 
-To run the experiment, you can use the `dmrc_pipelines/run_pipeline.py` script with different arguments. The `run_type` argument specifies which part of the pipeline to execute.
+There are two ways to run the experiments: using the `run.sh` script or by running the commands individually.
 
-### Setup
+### Using the `run.sh` script
 
-To set up the experiment, run the following command:
+The `run.sh` script is the easiest way to run the entire pipeline for all the seeds. It will execute all the necessary steps, from calculating the perplexity to generating the final results.
 
-```bash
-python dmrc_pipelines/run_pipeline.py --run_type="datamodels_setup" --seed=<your_seed>
-```
-
-### Training
-
-To train the data models, use the following command:
+To run the script, simply execute the following command in your terminal:
 
 ```bash
-python dmrc_pipelines/run_pipeline.py --run_type="datamodels_training" --seed=<your_seed>
+bash run.sh
 ```
 
-### Generation
+### Running the commands individually
 
-To generate answers using the trained models, run:
+You can also run the commands individually if you want to have more control over the process. The following commands are executed by the `run.sh` script for each seed.
 
-```bash
-python dmrc_pipelines/run_pipeline.py --run_type="datamodels_generations" --seed=<your_seed>
-```
+1.  **Calculate perplexity without instruction:**
+
+    ```bash
+    python save_perplexity_collections.py --seed <your_seed> --start_idx 0 --end_idx 50 --optional_instruction "" --saving_prefix non_normalized_perplexity_baseline
+    ```
+
+2.  **Calculate perplexity with instruction:**
+
+    ```bash
+    python save_perplexity_collections.py --seed <your_seed> --start_idx 0 --end_idx 50 --saving_prefix non_normalized_perplexity_collections
+    ```
+
+3.  **Normalize perplexity:**
+
+    ```bash
+    python normalize_perplexity.py --seed <your_seed> --target_prefix non_normalized_perplexity_collections --saving_prefix normalized_perplexity_baseline
+    ```
+
+4.  **Train the data models with instruction:**
+
+    ```bash
+    python run_pipeline.py --seed <your_seed> --run_type datamodels_training  --model_run_id perplexity_with_instruction --train_collection_id perplexity_with_instruction
+    ```
+
+5.  **Generate answers with the data models with instruction:**
+
+    ```bash
+    python run_pipeline.py --seed <your_seed> --run_type datamodels_generations  --model_run_id perplexity_with_instruction --train_collection_id perplexity_with_instruction
+    ```
+
+6.  **Train the data models without instruction:**
+
+    ```bash
+    python run_pipeline.py --seed <your_seed> --run_type datamodels_training --model_run_id perplexity_baseline --train_collection_id perplexity_baseline
+    ```
+
+7.  **Generate answers with the data models without instruction:**
+
+    ```bash
+    python run_pipeline.py --seed <your_seed> --run_type datamodels_generations --model_run_id perplexity_baseline --train_collection_id perplexity_baseline
+    ```
 
 ## Results
 
@@ -60,19 +98,25 @@ The results of the experiments are stored in the `results/` directory. The `prev
 
 The following table summarizes the mean ROUGE-L scores for the different experiment runs:
 
-| Seed | Run Type   | Mean ROUGE-L |
-|------|------------|--------------|
-| 7270 | baseline   | 0.286462     |
-| 7270 | datamodels | 0.606403     |
-| 7270 | perplexity | 0.006154     |
-| 7270 | rag        | 0.255143     |
-| 860  | baseline   | 0.165779     |
-| 860  | datamodels | 0.735651     |
-| 860  | perplexity | 0.003077     |
-| 860  | rag        | 0.202825     |
+| Seed | Run Type | Mean ROUGE-L |
+|---|---|---|
+| 5191 | baseline | 0.117714 |
+| 5191 | datamodels | 0.58269 |
+| 5191 | perplexity_with_instruction | 0.01641 |
+| 5191 | rag | 0.173952 |
+| 5734 | baseline | 0.149668 |
+| 5734 | datamodels | 0.69123 |
+| 5734 | perplexity_with_instruction | 0.01493 |
+| 5734 | rag | 0.19233 |
+| 7270 | baseline | 0.286462 |
+| 7270 | datamodels | 0.606403 |
+| 7270 | perplexity_baseline | 0.006154 |
+| 7270 | perplexity_with_instruction | 0.010909 |
+| 7270 | rag | 0.255143 |
+| 860 | baseline | 0.165779 |
+| 860 | datamodels | 0.735651 |
+| 860 | perplexity_baseline | 0.003077 |
+| 860 | perplexity_with_instruction | 0.010909 |
+| 860 | rag | 0.202825 |
 
-As shown in the table, the `datamodels` run consistently achieves the highest ROUGE-L scores for both seeds, indicating that the data models significantly improve the quality of the generated answers. The `perplexity` run, on the other hand, performs poorly, which is expected since it is not a generation model but a metric.
-
-### Retrieval Intersection
-
-The notebook also analyzes the intersection of retrieved documents between the different retrieval strategies. The results show that there is a considerable overlap between the documents retrieved by the RAG, perplexity, and ROUGE-based methods. This suggests that the different methods are selecting similar documents, which is a positive sign for the validity of the perplexity-based approach.
+As shown in the table, the `datamodels` run consistently achieves the highest ROUGE-L scores across all seeds, indicating that the data models significantly improve the quality of the generated answers. The `perplexity` runs, on the other hand, perform poorly, which is expected since it is not a generation model but a metric. The `rag` and `baseline` runs show similar performance, with the `rag` model having a slight edge.
