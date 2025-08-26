@@ -17,4 +17,4 @@ def get_random_nq_dataset(root_path: str, n_samples: int, save_path: str, partit
     NQ_PATH = f"{root_path}/data/nq_open_gold/processed/{partition}.feather"
 
     nq_test = pl.read_ipc(NQ_PATH).sample(n=n_samples, seed=seed)
-    nq_test.write_ipc(save_path)
+    nq_test.write_ipc(save_path, compression="zstd")
