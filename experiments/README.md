@@ -1,11 +1,6 @@
 # Experiments
 
 This folder aggregates all experiments running with the Datamodels for Context Reduction (dmcr) using the Natural Questions dataset.
-They're represented by each subfolder:
-- prompt_validation_experiment
-- selected_question_experiment
-- subpartition_rag_datamodel
-- rag_prompts_comparison
 
 ## prompt_validation_experiment
 
@@ -65,3 +60,17 @@ They're represented by each subfolder:
 - **`results/`**: Stores the evaluation results of the experiments in Feather format.
 
 **Results**: The `datamodels` run consistently achieves the highest ROUGE-L scores across all seeds, indicating that the data models significantly improve the quality of the generated answers. The `perplexity` runs, on the other hand, perform poorly, which is expected since it is not a generation model but a metric. The `rag` and `baseline` runs show similar performance, with the `rag` model having a slight edge. For a detailed table with the results, please refer to the [experiment's README](./poc_perplexity_proxy_groundtruth/README.md#rouge-l-scores).
+
+
+## qualitative_analysis_context_quality
+
+**Creation Data**: 22-08-2025
+
+**Objective**: We have strong indications in small and controlled sets that points that the datamodels (knowing the groundtruth) can retrieve a certain context and achieve better reuslts than the naive RAG or baseline. The goal of this notebook is to undestand the differences of the context retrievers, how far away is the context retrieved through internal product from the relations encountered by the datamodels
+
+**Folder organization**:
+- **`experiments`/**: contains the experiments with the generations and the distances/indexes returned for both RAG and Datamodels
+- **global_comparison.ipynb**: 
+- **showcases.ipynb**:
+
+**Results**::
