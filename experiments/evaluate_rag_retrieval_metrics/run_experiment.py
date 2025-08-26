@@ -1,0 +1,113 @@
+from dataclasses import dataclass, field
+import sys
+from pathlib import Path
+import tyro
+import numpy as np
+import os
+
+
+
+from utils.pipelines.RAGPipeline import RAGPipeline
+from utils.set_random_seed import set_random_seed
+
+
+set_random_seed(42)
+root = Path(__file__).parent.parent.parent
+@dataclass
+class RAGRetrievalsConfig:
+    '''
+    Configuration class for the experiment.
+    '''
+    # --- General Config ---
+    run_type: str = "setup"
+    '''Tag for the experiment section. Options: "setup", "baseline", "rag", "datamodels".'''
+    tag: str = "ip"
+
+    # --- RAG Pipeline Config ---
+    retrieval_path: str = "retrieval/rag_retrieval_indexes.json"
+    '''Path to the retrieval indexes JSON file.'''
+    wiki_path: str = "none"
+    '''Path to the wiki dataset file.'''
+    embeder_path: str = "models/llms/bge-base-en-v1.5"
+    '''Path to the embedder model.'''
+    vector_db_path: str = "data/wiki_dump2018_nq_open/wiki_ip.index"
+    '''Path to the vector database.'''
+    questions_path: str = "test"
+    '''Path to the questions dataset file.'''
+    laguage_model_path: str = "models/llms/Llama-3.2-3B-Instruct"
+    '''Path to the language model.'''
+    project_log: str = "nq_experiment_datamodels_training_window"
+    '''Project log name for wandb'''
+    model_run_id: str = "test_experiment"
+    '''ID of the model run.'''
+    train_collection_id: str = "datamodels_training_window"
+    '''ID of the training collection.'''
+    test_collection_id: str = "datamodels_training_window"
+    '''ID of the testing collection.'''
+    k: int = 16
+    '''Number of top-k results to retrieve.'''
+    size_index: int = 100
+    '''Size of the index.'''
+    instruction: str = "You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens, you can use the available documents but if they are not helpful, try to answer without them"
+    '''Instruction for the generation step.'''
+    lm_configs: dict[str, float|int] = field(default_factory=lambda: {
+            "temperature": 0.7,
+            "top_p": 0.9,
+            "max_new_tokens": 10,
+        })
+    '''Configuration for the language model generation.'''
+
+
+def initiate_rag_pipeline(args:RAGRetrievalsConfig, tag: str) -> RAGPipeline:
+    """
+    Initiates the RAG pipeline with the provided arguments.
+    
+    Args:
+        args (ParametersConfig): The configuration parameters for the pipeline.
+        seed (int): The random seed for reproducibility.
+    
+    Returns:
+        RAGPipeline: An instance of the RAG pipeline.
+    """
+    return RAGPipeline(
+        seed=42,
+        retrieval_path=args.retrieval_path,
+        wiki_path=args.wiki_path,
+        embeder_path=args.embeder_path,
+        vector_db_path=args.vector_db_path,
+        questions_path=args.questions_path,
+        laguage_model_path=args.laguage_model_path,
+        project_log=args.project_log,
+        model_run_id=args.model_run_id,
+        train_collection_id=args.train_collection_id,
+        test_collection_id=args.test_collection_id,
+        k=args.k,
+        size_index=args.size_index,
+        lm_configs=args.lm_configs,
+        instruction=args.instruction,
+        root_path=f"experiments_{tag}",
+    )
+        
+
+
+if __name__ == "__main__":
+
+    ## Load dataclass as args
+    args = tyro.cli(RAGRetrievalsConfig)
+    tag = args.tag
+
+    ## Add root to paths (except test)
+    args.wiki_path = f"{root}/data/wiki_dump2018_nq_open/processed/wiki_{tag}.feather"
+    args.embeder_path = f"{root}/{args.embeder_path}"
+    args.questions_path = f"{root}/{args.questions_path}"
+    args.laguage_model_path = f"{root}/{args.laguage_model_path}"
+    args.vector_db_path = f"{root}/{args.vector_db_path}"
+
+
+    set_random_seed(42)
+    rag = initiate_rag_pipeline(args, tag)
+    rag.setup()
+    rag.get_rag_retrieval()
+    rag.get_rag_generations()
+
+
