@@ -7,40 +7,33 @@ from FlagEmbedding import FlagModel
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from sentence_transformers import SentenceTransformer
 import torch.nn.functional as F
-
-
-
 import faiss
 import gc
 from tqdm import tqdm  
 
-
-torch.backends.cudnn.enabled = False
-# NumPy
-seed = 42
-np.random.seed(seed)
-random.seed(seed)
-# PyTorch
-torch.manual_seed(seed)
-if torch.cuda.is_available():
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
+from utils.set_random_seed import set_random_seed
 
 
-def create_cosine_flag_embeeder():
+def create_flag_embedder(
+    saving_path = str,
+    metric: str = faiss.METRIC_INNER_PRODUCT
+):
 
     
 
-
+    set_random_seed(42)
     EMBERDDER_PATH = "../models/llms/bge-base-en-v1.5"
     embedder = FlagModel(EMBERDDER_PATH, devices=["cuda:0"], use_fp16=True)
     nlist = 100  # Number of IVF clusters
     quantizer = faiss.IndexFlatIP(768)
-    index = faiss.IndexIVFScalarQuantizer(
-        quantizer, 768, nlist, faiss.ScalarQuantizer.QT_fp16, faiss.METRIC_INNER_PRODUCT
-    )
+    if metric == "cosine":
+        index = faiss.IndexIVFScalarQuantizer(
+            quantizer, 768, nlist, faiss.ScalarQuantizer.QT_fp16, faiss.METRIC_INNER_PRODUCT
+        )
+    else:
+        index = faiss.IndexIVFScalarQuantizer(
+            quantizer, 768, nlist, faiss.ScalarQuantizer.QT_fp16, metric
+        )
 
     # index = faiss.read_index("wiki.index")
     WIKI_PATH = "../data/wiki_dump2018_nq_open/processed/wiki.feather"
@@ -64,7 +57,8 @@ def create_cosine_flag_embeeder():
             batch_texts,
             convert_to_numpy=True,
         )
-        faiss.normalize_L2(batch_embeddings.astype('float32'))
+        if metric == "cosine":
+            faiss.normalize_L2(batch_embeddings.astype('float32'))
 
         if start == 0:
             index.train(batch_embeddings)
@@ -145,6 +139,7 @@ def create_hf_embedder(
         embedding_size: int, 
         batch_size=80000, 
         nlist:int = 100,
+        metric = faiss.METRIC_INNER_PRODUCT,
         encode_kwargs: dict = {},
     ):
 
@@ -156,7 +151,7 @@ def create_hf_embedder(
 
     quantizer = faiss.IndexFlatIP(embedding_size)
     index = faiss.IndexIVFScalarQuantizer(
-        quantizer, embedding_size, nlist, faiss.ScalarQuantizer.QT_fp16, faiss.METRIC_INNER_PRODUCT
+        quantizer, embedding_size, nlist, faiss.ScalarQuantizer.QT_fp16, metric
     )
 
     # index = faiss.read_index("wiki.index")

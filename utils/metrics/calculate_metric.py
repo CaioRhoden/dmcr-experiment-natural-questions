@@ -88,6 +88,6 @@ def calculate_agg_metric(
             results["max"].append(np.max(results_i))
             results["metric"].append(metric)
             df_results = pl.DataFrame(results)
-            df_results.write_ipc(saving_path)
+            df_results.write_ipc(saving_path, compression="zstd")
 
     df_results = pl.DataFrame(results)
