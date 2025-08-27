@@ -19,8 +19,6 @@ class RAGRetrievalsConfig:
     Configuration class for the experiment.
     '''
     # --- General Config ---
-    run_type: str = "setup"
-    '''Tag for the experiment section. Options: "setup", "baseline", "rag", "datamodels".'''
     tag: str = "ip"
 
     # --- RAG Pipeline Config ---
@@ -36,14 +34,8 @@ class RAGRetrievalsConfig:
     '''Path to the questions dataset file.'''
     laguage_model_path: str = "models/llms/Llama-3.2-3B-Instruct"
     '''Path to the language model.'''
-    project_log: str = "nq_experiment_datamodels_training_window"
+    project_log: str = "evaluate_rag_retrieval_metrics"
     '''Project log name for wandb'''
-    model_run_id: str = "test_experiment"
-    '''ID of the model run.'''
-    train_collection_id: str = "datamodels_training_window"
-    '''ID of the training collection.'''
-    test_collection_id: str = "datamodels_training_window"
-    '''ID of the testing collection.'''
     k: int = 16
     '''Number of top-k results to retrieve.'''
     size_index: int = 100
@@ -78,14 +70,15 @@ def initiate_rag_pipeline(args:RAGRetrievalsConfig, tag: str) -> RAGPipeline:
         questions_path=args.questions_path,
         laguage_model_path=args.laguage_model_path,
         project_log=args.project_log,
-        model_run_id=args.model_run_id,
-        train_collection_id=args.train_collection_id,
-        test_collection_id=args.test_collection_id,
+        model_run_id=args.tag,
+        train_collection_id=args.tag,
+        test_collection_id=args.tag,
         k=args.k,
         size_index=args.size_index,
         lm_configs=args.lm_configs,
         instruction=args.instruction,
         root_path=f"experiments_{tag}",
+        log=True
     )
         
 
