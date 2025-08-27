@@ -8,7 +8,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--metric", type=str, default="cosine")
     parser.add_argument("--saving_path", type=str, default="../../data/wiki_dump2018_nq_open/processed/wiki.index")
+    
     args = parser.parse_args()
+    print(f"Saving path: {args.saving_path}, Type: {type(args.saving_path)}")
 
     if args.metric == "ip":
         args.metric = faiss.METRIC_INNER_PRODUCT
