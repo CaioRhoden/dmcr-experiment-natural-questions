@@ -43,7 +43,7 @@ class ParametersConfig:
     '''Path to the questions dataset file.'''
     laguage_model_path: str = "models/llms/Llama-3.2-3B-Instruct"
     '''Path to the language model.'''
-    project_log: str = "nq_experiment_datamodels_training_window"
+    project_log: str = "llm_as_a_judge_poc"
     '''Project log name fgor wandb'''
     model_run_id: str = "judge_llm"
     '''ID of the model run.'''
@@ -153,7 +153,8 @@ def initiate_datamodels_pipeline(args: ParametersConfig, seed: int) -> RAGBasedE
         patience=args.patience,
         log_epochs=args.log_epochs,
         root_path=f"experiments_{seed}",
-        datamodels_generation_name=args.datamodels_generation_name
+        datamodels_generation_name=args.datamodels_generation_name,
+        log=args.log,
     )
 
 
