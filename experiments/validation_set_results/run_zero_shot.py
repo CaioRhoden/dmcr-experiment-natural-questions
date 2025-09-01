@@ -31,6 +31,10 @@ class ZeroShotConfig:
     '''Project log name fgor wandb'''
     model_run_id: str = "test_experiment"
     '''ID of the model run.'''
+    batch_size: int = 8
+    '''Size of inferences to be done at the same time'''
+    attn_implementation: str = "sdpa"
+    '''Attn implementation for the desired gpu, recommended default "sdpa" and "flash_attention_2" when possible'''
 
     
     # Pre-collections Config Fields
@@ -68,8 +72,10 @@ def initiate_pipeline(args: ZeroShotConfig) -> ZeroShotBaselinePipeline:
         root_path=f"{args.model}_zero_shot",
         project_log=args.project_log,
         tags = args.tags,
-
-        log=args.log,    )
+        batch_size = args.batch_size,
+        log=args.log,
+        attn_implementation=args.attn_implementation
+    )
 
 
 if __name__ == "__main__":
