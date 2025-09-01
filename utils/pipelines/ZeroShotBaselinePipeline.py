@@ -1,8 +1,6 @@
-
 import datetime
 import os
 from git import Optional
-from numpy import isin
 import polars as pl
 from dmcr.models import GenericInstructModelHF, GenericInstructBatchHF
 import json
@@ -17,7 +15,7 @@ class ZeroShotBaselinePipeline:
 
     def __init__(self,
                 questions_path: str,
-                laguage_model_path: str,
+                language_model_path: str,
                 root_path: str = ".",
                 lm_configs: dict[str, float] = {
                     "temperature": 0.7,
@@ -52,23 +50,39 @@ class ZeroShotBaselinePipeline:
         if seed:
             set_random_seed(seed)
 
-    def generate_inferences(self):
-
-        ## Setup variables
+    def generate_inferences(self, start_index: int = 0, end_index: Optional[int] = None):
         """
         Make baseline generations for a specific set and save them to the "generations" folder with "baseline_generations.json"
 
         Parameters:
-        None
+        start_index: int - starting index for questions (inclusive)
+        end_index: Optional[int] - ending index for questions (exclusive), None means process all questions
 
         Returns:
         None
         """
+
+        if not os.path.exists(f"{self.root_path}"):
+            os.mkdir(f"{self.root_path}")
         if not os.path.exists(f"{self.root_path}/generations"):
             os.mkdir(f"{self.root_path}/generations")
+        
+
 
         ## Setup variables
         questions = pl.read_ipc(self.questions_path)
+        
+        # Set end_index to total questions if not specified
+        if end_index is None:
+            end_index = len(questions)
+        
+        # Validate indices
+        if start_index < 0:
+            raise ValueError("start_index cannot be negative")
+        if end_index > len(questions):
+            raise ValueError(f"end_index ({end_index}) cannot exceed total questions ({len(questions)})")
+        if start_index >= end_index:
+            raise ValueError("start_index must be less than end_index")
 
         if self.batch_size == 1:
             model = GenericInstructModelHF(self.laguage_model_path, attn_implementation=self.attn_implementation)
@@ -90,15 +104,16 @@ class ZeroShotBaselinePipeline:
                 config={
                     "gpu": f"{torch.cuda.get_device_name(0)}",
                     "questions_path": self.questions_path,
-
+                    "start_index": start_index,
+                    "end_index": end_index,
                 },
                 tags = self.tags.extend(["generations"]),
             )
             artifact = wandb.Artifact(name="generations", type="json", description="Baseline generations data")
             
 
-        ## Iterate questions
-        for idx, _ in enumerate(questions):
+        ## Iterate questions within the specified range
+        for idx in range(start_index, end_index):
 
             ## Generate prompt
             prompt = f"Question: {questions[idx]['question'].to_numpy().flatten()[0]}\nAnswer: "
@@ -107,15 +122,14 @@ class ZeroShotBaselinePipeline:
                 if len(batch_list) < self.batch_size:
                     batch_list.append((idx, prompt))
                 
-                if len(batch_list) == self.batch_size or idx == len(questions)-1:
+                if len(batch_list) == self.batch_size or idx == end_index - 1:
                     outputs = model.run(
                     [str(_q[1]) for _q in batch_list], 
                     instruction=self.instruction, 
                     config_params=model_configs
                     )
-                    for _q in batch_list:
-                        generations[f"{_q[0]}"] = [str(out[0]["generated_text"]) for out in outputs]
-                    
+                    for i, _q in enumerate(batch_list):
+                        generations[f"{_q[0]}"] = [str(outputs[i][0]["generated_text"])]
                     batch_list = []
                 
                     if self.model_run_id is None:
@@ -140,12 +154,12 @@ class ZeroShotBaselinePipeline:
                 generations[f"{idx}"] = [str(out["generated_text"]) for out in outputs]
 
                 if self.model_run_id is None:
-                    path = f"{self.root_path}/generations/baseline_zero_shot_generations.json"
+                    path = f"{self.root_path}/generations/baseline_zero_shot_generations_{start_index}_{end_index}.json"
                     with open(path, "w") as f:
                         json.dump(generations, f)
                 
                 else:
-                    path = f"{self.root_path}/generations/{self.model_run_id}_baseline_zero_shot_generations.json"
+                    path = f"{self.root_path}/generations/{self.model_run_id}_baseline_zero_shot_generations_{start_index}_{end_index}.json"
                     with open(path, "w") as f:
                         json.dump(generations, f)
             
