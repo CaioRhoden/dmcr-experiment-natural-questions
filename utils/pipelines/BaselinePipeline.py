@@ -12,7 +12,7 @@ from utils.set_random_seed import set_random_seed
 
 
 
-class BaselinePipeline:
+class ZeroShotBaselinePipeline:
 
     def __init__(self,
                 questions_path: str,
@@ -29,7 +29,7 @@ class BaselinePipeline:
                 log: bool = False,
                 project_log: str = "dmcr_baseline",
                 model_run_id: str = "llama-3.2-3b-instruct",
-                instruction: str = "You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens, you can use the available documents but if they are not helpful, try to answer without them",
+                instruction: str = "You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens",
                 seed: Optional[int] = None):
     
 
