@@ -31,7 +31,7 @@ class Config:
     '''Path to the vector database.'''
     questions_path: str = "../50_test.feather"
     '''Path to the questions dataset file.'''
-    laguage_model_path: str = "models/llms/Llama-3.2-3B-Instruct"
+    language_model_path: str = "models/llms/Llama-3.2-3B-Instruct"
     '''Path to the language model.'''
     project_log: str = "nq_experiment_lasso_regression"
     '''Project log name fgor wandb'''
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     ## Add root to paths (except test)
     args.wiki_path = f"{root}/{args.wiki_path}"
     args.embeder_path = f"{root}/{args.embeder_path}"
-    args.laguage_model_path = f"{root}/{args.laguage_model_path}"
+    args.language_model_path = f"{root}/{args.language_model_path}"
     args.vector_db_path = f"{root}/{args.vector_db_path}"
 
     args.tags.append(tag)
@@ -114,7 +114,7 @@ if __name__ == "__main__":
         embeder_path=args.embeder_path,
         vector_db_path=args.vector_db_path,
         questions_path=args.questions_path,
-        laguage_model_path=args.laguage_model_path,
+        language_model_path=args.language_model_path,
         project_log=args.project_log,
         model_run_id=args.model_run_id,
         train_collection_id=args.train_collection_id,
