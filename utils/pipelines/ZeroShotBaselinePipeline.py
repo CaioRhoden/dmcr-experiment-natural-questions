@@ -35,7 +35,7 @@ class ZeroShotBaselinePipeline:
     
 
         self.questions_path = questions_path
-        self.laguage_model_path = laguage_model_path
+        self.language_model_path = language_model_path
         self.lm_configs = lm_configs
         self.model_run_id = model_run_id
         self.instruction = instruction
@@ -85,9 +85,9 @@ class ZeroShotBaselinePipeline:
             raise ValueError("start_index must be less than end_index")
 
         if self.batch_size == 1:
-            model = GenericInstructModelHF(self.laguage_model_path, attn_implementation=self.attn_implementation)
+            model = GenericInstructModelHF(self.language_model_path, attn_implementation=self.attn_implementation)
         elif self.batch_size > 1:
-            model = GenericInstructBatchHF(self.laguage_model_path, attn_implementation=self.attn_implementation)
+            model = GenericInstructBatchHF(self.language_model_path, attn_implementation=self.attn_implementation)
             batch_list = []
         else:
             raise ValueError("Batch size must be at least 1")

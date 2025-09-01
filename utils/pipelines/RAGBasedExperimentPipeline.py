@@ -34,7 +34,7 @@ class RAGBasedExperimentPipeline:
         embeder_path: str,
         vector_db_path: str,
         questions_path: str,
-        laguage_model_path: str,
+        language_model_path: str,
         project_log: str,
         model_run_id: str,
         train_collection_id: str,
@@ -81,7 +81,7 @@ class RAGBasedExperimentPipeline:
         self.embeder_path = embeder_path
         self.vector_db_path = vector_db_path
         self.questions_path = questions_path
-        self.laguage_model_path = laguage_model_path
+        self.language_model_path = language_model_path
         self.project_log = project_log
         self.model_run_id = model_run_id
         self.train_collection_id = train_collection_id
@@ -256,7 +256,7 @@ class RAGBasedExperimentPipeline:
         wiki = pl.read_ipc(self.wiki_path).with_row_index("idx")
         questions = pl.read_ipc(self.questions_path)
 
-        model = GenericInstructModelHF(self.laguage_model_path)
+        model = GenericInstructModelHF(self.language_model_path)
 
 
         generations = {}
@@ -357,7 +357,7 @@ class RAGBasedExperimentPipeline:
         log_config, checkpoint, output_column, model_configs, and rag_indexes_path
         as parameters. It returns nothing.
         """
-        model = GenericInstructModelHF(self.laguage_model_path)
+        model = GenericInstructModelHF(self.language_model_path)
 
         config = DatamodelIndexBasedConfig(
             k = self.k,
@@ -376,7 +376,7 @@ class RAGBasedExperimentPipeline:
                 id=f"pre_collection_{self.train_collection_id}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
                 name=f"pre_collection_{self.train_collection_id}",
                 config={
-                    "llm": f"{self.laguage_model_path}",
+                    "llm": f"{self.language_model_path}",
                     "gpu": f"{torch.cuda.get_device_name(0)}",
                     "size_index": self.size_index,
                     "model_configs": self.lm_configs,
@@ -391,7 +391,7 @@ class RAGBasedExperimentPipeline:
                 id=f"pre_collection_{self.test_collection_id}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
                 name=f"pre_collection_{self.test_collection_id}",
                 config={
-                    "llm": f"{self.laguage_model_path}",
+                    "llm": f"{self.language_model_path}",
                     "gpu": f"{torch.cuda.get_device_name(0)}",
                     "size_index": self.size_index,
                     "model_configs": self.lm_configs,
@@ -466,7 +466,7 @@ class RAGBasedExperimentPipeline:
                 [The End of Assistant’s Answer]
                 """
             evaluator = JudgeEvaluator(
-                model_path=self.laguage_model_path,
+                model_path=self.language_model_path,
                 model_configs = {
                     "temperature": 0.5,
                     "top_p": 0.9,
@@ -650,7 +650,7 @@ class RAGBasedExperimentPipeline:
         wiki = pl.read_ipc(self.wiki_path).with_row_index("idx")
         questions = pl.read_ipc(self.questions_path)
 
-        model = GenericInstructModelHF(self.laguage_model_path)
+        model = GenericInstructModelHF(self.language_model_path)
         model_configs = {
                 "temperature": 0.7,
                 "top_p": 0.9,

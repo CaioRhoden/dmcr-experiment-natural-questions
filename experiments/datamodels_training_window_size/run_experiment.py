@@ -41,7 +41,7 @@ class ParametersConfig:
     '''Path to the vector database.'''
     questions_path: str = "test"
     '''Path to the questions dataset file.'''
-    laguage_model_path: str = "models/llms/Llama-3.2-3B-Instruct"
+    language_model_path: str = "models/llms/Llama-3.2-3B-Instruct"
     '''Path to the language model.'''
     project_log: str = "nq_experiment_datamodels_training_window"
     '''Project log name fgor wandb'''
@@ -124,7 +124,7 @@ def initiate_datamodels_pipeline(args: ParametersConfig, seed: int) -> RAGBasedE
         embeder_path=args.embeder_path,
         vector_db_path=args.vector_db_path,
         questions_path=args.questions_path,
-        laguage_model_path=args.laguage_model_path,
+        language_model_path=args.language_model_path,
         project_log=args.project_log,
         model_run_id=args.model_run_id,
         train_collection_id=args.train_collection_id,
@@ -173,7 +173,7 @@ def initiate_rag_pipeline(args: ParametersConfig, seed: int) -> RAGPipeline:
         embeder_path=args.embeder_path,
         vector_db_path=args.vector_db_path,
         questions_path=args.questions_path,
-        laguage_model_path=args.laguage_model_path,
+        language_model_path=args.language_model_path,
         project_log=args.project_log,
         model_run_id=args.model_run_id,
         train_collection_id=args.train_collection_id,
@@ -201,7 +201,7 @@ def initiate_baseline_pipeline(args: ParametersConfig, seed: int) -> ZeroShotBas
     args.model_run_id = f"{args.run_type}_{seed}"
     return ZeroShotBaselinePipeline(
         questions_path=args.questions_path,
-        laguage_model_path=args.laguage_model_path,
+        language_model_path=args.language_model_path,
         lm_configs=args.lm_configs,
         model_run_id=f"baseline_{seed}",
         instruction=args.instruction,
@@ -235,7 +235,7 @@ if __name__ == "__main__":
     args.wiki_path = f"{root}/{args.wiki_path}"
     args.embeder_path = f"{root}/{args.embeder_path}"
     args.questions_path = f"{root}/{args.questions_path}"
-    args.laguage_model_path = f"{root}/{args.laguage_model_path}"
+    args.language_model_path = f"{root}/{args.language_model_path}"
     args.vector_db_path = f"{root}/{args.vector_db_path}"
 
     
