@@ -6,7 +6,7 @@ import numpy as np
 import os
 
 
-from utils.pipelines.BaselinePipeline import BaselinePipeline
+from utils.pipelines.ZeroShotBaselinePipeline import ZeroShotBaselinePipeline
 from utils.pipelines.RAGBasedExperimentPipeline import RAGBasedExperimentPipeline
 from utils.pipelines.RAGPipeline import RAGPipeline
 from utils.set_random_seed import set_random_seed
@@ -185,7 +185,7 @@ def initiate_rag_pipeline(args: ParametersConfig, seed: int) -> RAGPipeline:
         root_path=f"experiments_{seed}",
     )
 
-def initiate_baseline_pipeline(args: ParametersConfig, seed: int) -> BaselinePipeline:
+def initiate_baseline_pipeline(args: ParametersConfig, seed: int) -> ZeroShotBaselinePipeline:
     """
     Initiates the baseline pipeline with the provided arguments.
     
@@ -194,12 +194,12 @@ def initiate_baseline_pipeline(args: ParametersConfig, seed: int) -> BaselinePip
         seed (int): The random seed for reproducibility.
     
     Returns:
-        BaselinePipeline: An instance of the baseline pipeline.
+        ZeroShotBaselinePipeline: An instance of the baseline pipeline.
     """
     args.tags.append("baseline")
     args.tags.append(f"seed_{seed}")
     args.model_run_id = f"{args.run_type}_{seed}"
-    return BaselinePipeline(
+    return ZeroShotBaselinePipeline(
         questions_path=args.questions_path,
         laguage_model_path=args.laguage_model_path,
         lm_configs=args.lm_configs,
