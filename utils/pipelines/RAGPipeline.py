@@ -24,7 +24,7 @@ class RAGPipeline:
         embeder_path: str,
         vector_db_path: str,
         questions_path: str,
-        laguage_model_path: str,
+        language_model_path: str,
         project_log: str,
         model_run_id: str,
         k: int,
@@ -48,7 +48,7 @@ class RAGPipeline:
         self.embeder_path = embeder_path
         self.vector_db_path = vector_db_path
         self.questions_path = questions_path
-        self.laguage_model_path = laguage_model_path
+        self.language_model_path = language_model_path
         self.project_log = project_log
         self.model_run_id = model_run_id
         self.k = k
@@ -202,7 +202,7 @@ class RAGPipeline:
         wiki = pl.read_ipc(self.wiki_path).with_row_index("idx")
         questions = pl.read_ipc(self.questions_path)
 
-        model = GenericInstructModelHF(self.laguage_model_path)
+        model = GenericInstructModelHF(self.language_model_path)
 
 
         generations = {}
