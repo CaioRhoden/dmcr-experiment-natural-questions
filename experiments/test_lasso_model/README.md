@@ -46,7 +46,7 @@ This table describes the parameters available in the `pipeline.py` script, which
 | `embeder_path`        | `str`        | Path to the embedder model.                                                                                 |
 | `vector_db_path`      | `str`        | Path to the vector database.                                                                                |
 | `questions_path`      | `str`        | Path to the questions dataset file.                                                                         |
-| `laguage_model_path`  | `str`        | Path to the language model.                                                                                 |
+| `language_model_path`  | `str`        | Path to the language model.                                                                                 |
 | `project_log`         | `str`        | Project log name for wandb.                                                                                 |
 | `model_run_id`        | `str`        | ID of the model run.                                                                                        |
 | `train_collection_id` | `str`        | ID of the training collection.                                                                              |
