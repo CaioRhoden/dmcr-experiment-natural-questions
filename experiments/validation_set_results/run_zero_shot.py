@@ -7,6 +7,8 @@ import os
 
 from utils.set_random_seed import set_random_seed
 from utils.pipelines.ZeroShotBaselinePipeline import ZeroShotBaselinePipeline
+from pathlib import Path
+root = Path(__file__).parent.parent.parent
 
 
 set_random_seed(42)
@@ -23,18 +25,22 @@ class ZeroShotConfig:
     # RAG Based configs Config Fields
     wiki_path: str = "data/wiki_dump2018_nq_open/processed/wiki.feather"
     '''Path to the wiki dataset file.'''
-    questions_path: str = "../../data/nq_open_gold/processed/dev.feather"
+    questions_path: str = "data/nq_open_gold/processed/dev.feather"
     '''Path to the questions dataset file.'''
     laguage_model_path: str = "models/llms/Llama-3.2-3B-Instruct"
     '''Path to the language model.'''
-    project_log: str = "nq_experiment_datamodels_training_window"
+    project_log: str = "run_validation_set_nq"
     '''Project log name fgor wandb'''
-    model_run_id: str = "test_experiment"
+    model_run_id: str = "zero_shot"
     '''ID of the model run.'''
     batch_size: int = 8
     '''Size of inferences to be done at the same time'''
     attn_implementation: str = "sdpa"
     '''Attn implementation for the desired gpu, recommended default "sdpa" and "flash_attention_2" when possible'''
+    start_idx: int = 0
+    '''Starting index for the questions to be processed.'''
+    end_idx: int|None = None
+    '''Ending index for the questions to be processed. None means process all questions.'''
 
     
     # Pre-collections Config Fields
@@ -69,7 +75,7 @@ def initiate_pipeline(args: ZeroShotConfig) -> ZeroShotBaselinePipeline:
         lm_configs=args.lm_configs,
         model_run_id=f"zero_shot_{args.model}",
         instruction=args.instruction,
-        root_path=f"{args.model}_zero_shot",
+        root_path=f"{args.model}",
         project_log=args.project_log,
         tags = args.tags,
         batch_size = args.batch_size,
@@ -80,5 +86,11 @@ def initiate_pipeline(args: ZeroShotConfig) -> ZeroShotBaselinePipeline:
 
 if __name__ == "__main__":
     args = tyro.cli(ZeroShotConfig)
+    args.tags.append("zero_shot")
+    args.questions_path = f"{root}/{args.questions_path}"
+    args.laguage_model_path = f"{root}/{args.laguage_model_path}"
+    args.wiki_path = f"{root}/{args.wiki_path}"
+
+
     pipeline = initiate_pipeline(args)
-    pipeline.generate_inferences()
+    pipeline.generate_inferences(args.start_idx, args.end_idx)
