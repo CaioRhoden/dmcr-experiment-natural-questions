@@ -25,11 +25,11 @@ class ZeroShotConfig:
     # RAG Based configs Config Fields
     wiki_path: str = "data/wiki_dump2018_nq_open/processed/wiki.feather"
     '''Path to the wiki dataset file.'''
-    questions_path: str = "data/nq_open_gold/processed/test.feather"
+    questions_path: str = "data/nq_open_gold/processed/dev.feather"
     '''Path to the questions dataset file.'''
     language_model_path: str = "models/llms/Llama-3.2-3B-Instruct"
     '''Path to the language model.'''
-    project_log: str = "run_test_set_nq"
+    project_log: str = "run_validation_set_nq"
     '''Project log name fgor wandb'''
     model_run_id: str = "zero_shot"
     '''ID of the model run.'''
