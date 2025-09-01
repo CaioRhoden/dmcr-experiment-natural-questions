@@ -39,7 +39,7 @@ class BaselinePipelineWithConfig:
         ## Setup variables
         questions = pl.read_ipc(self.config["questions_path"])
 
-        model = GenericInstructModelHF(self.config["laguage_model_path"])
+        model = GenericInstructModelHF(self.config["language_model_path"])
         model_configs = self.config["model_configs"]
         generations = {}
 
@@ -72,7 +72,7 @@ class BaselinePipelineWithConfig:
 
         expected_keys = [
             "questions_path",
-            "laguage_model_path",
+            "language_model_path",
             "model_configs",
             "generations_prefix",
             "seed"

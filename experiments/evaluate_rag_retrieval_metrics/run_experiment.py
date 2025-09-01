@@ -32,7 +32,7 @@ class RAGRetrievalsConfig:
     '''Path to the vector database.'''
     questions_path: str = "questions_250_42_dev.feather"
     '''Path to the questions dataset file.'''
-    laguage_model_path: str = "models/llms/Llama-3.2-3B-Instruct"
+    language_model_path: str = "models/llms/Llama-3.2-3B-Instruct"
     '''Path to the language model.'''
     project_log: str = "evaluate_rag_retrieval_metrics"
     '''Project log name for wandb'''
@@ -68,7 +68,7 @@ def initiate_rag_pipeline(args:RAGRetrievalsConfig, tag: str) -> RAGPipeline:
         embeder_path=args.embeder_path,
         vector_db_path=args.vector_db_path,
         questions_path=args.questions_path,
-        laguage_model_path=args.laguage_model_path,
+        language_model_path=args.language_model_path,
         project_log=args.project_log,
         model_run_id=args.tag,
         train_collection_id=args.tag,
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     args.wiki_path = f"{root}/data/wiki_dump2018_nq_open/processed/wiki.feather"
     args.embeder_path = f"{root}/{args.embeder_path}"
     args.questions_path = f"{args.questions_path}"
-    args.laguage_model_path = f"{root}/{args.laguage_model_path}"
+    args.language_model_path = f"{root}/{args.language_model_path}"
     args.vector_db_path = f"{root}/{args.vector_db_path}/wiki_{tag}.index"
 
 

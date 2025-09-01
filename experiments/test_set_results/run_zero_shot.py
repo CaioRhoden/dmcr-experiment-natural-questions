@@ -25,11 +25,11 @@ class ZeroShotConfig:
     # RAG Based configs Config Fields
     wiki_path: str = "data/wiki_dump2018_nq_open/processed/wiki.feather"
     '''Path to the wiki dataset file.'''
-    questions_path: str = "data/nq_open_gold/processed/dev.feather"
+    questions_path: str = "data/nq_open_gold/processed/test.feather"
     '''Path to the questions dataset file.'''
     language_model_path: str = "models/llms/Llama-3.2-3B-Instruct"
     '''Path to the language model.'''
-    project_log: str = "run_validation_set_nq"
+    project_log: str = "run_test_set_nq"
     '''Project log name fgor wandb'''
     model_run_id: str = "zero_shot"
     '''ID of the model run.'''
@@ -71,7 +71,7 @@ def initiate_pipeline(args: ZeroShotConfig) -> ZeroShotBaselinePipeline:
 
     return ZeroShotBaselinePipeline(
         questions_path=args.questions_path,
-        language_model_path=args.language_model_path,
+        language_model_path=args.laguage_model_path,
         lm_configs=args.lm_configs,
         model_run_id=f"zero_shot_{args.model}",
         instruction=args.instruction,
@@ -88,7 +88,7 @@ if __name__ == "__main__":
     args = tyro.cli(ZeroShotConfig)
     args.tags.append("zero_shot")
     args.questions_path = f"{root}/{args.questions_path}"
-    args.language_model_path = f"{root}/{args.language_model_path}"
+    args.laguage_model_path = f"{root}/{args.laguage_model_path}"
     args.wiki_path = f"{root}/{args.wiki_path}"
 
 
