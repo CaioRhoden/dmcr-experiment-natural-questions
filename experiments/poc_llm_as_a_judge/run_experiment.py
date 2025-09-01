@@ -6,7 +6,7 @@ import numpy as np
 import os
 
 
-from utils.pipelines.BaselinePipeline import BaselinePipeline
+from utils.pipelines.ZeroShotBaselinePipeline import ZeroShotBaselinePipeline
 from utils.pipelines.RAGBasedExperimentPipeline import RAGBasedExperimentPipeline
 from utils.pipelines.RAGPipeline import RAGPipeline
 from utils.set_random_seed import set_random_seed
