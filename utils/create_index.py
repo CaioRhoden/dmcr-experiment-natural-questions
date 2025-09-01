@@ -4,6 +4,7 @@ import os
 import random
 import numpy as np
 from FlagEmbedding import FlagModel
+from pathlib import Path
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from sentence_transformers import SentenceTransformer
 import torch.nn.functional as F
@@ -16,14 +17,14 @@ from utils.set_random_seed import set_random_seed
 
 def create_flag_embedder(
     saving_path = str,
-    metric: str = faiss.METRIC_INNER_PRODUCT
+    metric: str = faiss.METRIC_INNER_PRODUCT,
+    embedder_path: str = "../../models/llms/bge-base-en-v1.5",
+    wiki_path: str = "../../data/wiki_dump2018_nq_open/processed/wiki.feather",
 ):
-
     
 
     set_random_seed(42)
-    EMBERDDER_PATH = "../models/llms/bge-base-en-v1.5"
-    embedder = FlagModel(EMBERDDER_PATH, devices=["cuda:0"], use_fp16=True)
+    embedder = FlagModel(embedder_path, devices=["cuda:0"])
     nlist = 100  # Number of IVF clusters
     quantizer = faiss.IndexFlatIP(768)
     if metric == "cosine":
@@ -36,13 +37,11 @@ def create_flag_embedder(
         )
 
     # index = faiss.read_index("wiki.index")
-    WIKI_PATH = "../data/wiki_dump2018_nq_open/processed/wiki.feather"
-    wiki = pl.read_ipc(WIKI_PATH).with_row_index("idx")
+    wiki = pl.read_ipc(wiki_path).with_row_index("idx")
     wiki = wiki.sample(fraction=1.0, shuffle=True, seed=42)
     total_size = len(wiki)
     batch_size = 80000
     torch.backends.cuda.enable_cudnn_sdp(False)
-
 
     for start in range(0, total_size, batch_size):
         
@@ -57,8 +56,9 @@ def create_flag_embedder(
             batch_texts,
             convert_to_numpy=True,
         )
+        batch_embeddings = np.array(batch_embeddings, dtype=np.float32)
         if metric == "cosine":
-            faiss.normalize_L2(batch_embeddings.astype('float32'))
+            faiss.normalize_L2(batch_embeddings)
 
         if start == 0:
             index.train(batch_embeddings)
@@ -66,8 +66,7 @@ def create_flag_embedder(
 
         # Add to index
         index.add(batch_embeddings)
-
-        faiss.write_index(index, "wiki_cosine.index")
+        faiss.write_index(index, str(saving_path))
 
         print(f"Index size: {index.ntotal}")
         
