@@ -154,12 +154,12 @@ class ZeroShotBaselinePipeline:
                 generations[f"{idx}"] = [str(out["generated_text"]) for out in outputs]
 
                 if self.model_run_id is None:
-                    path = f"{self.root_path}/generations/baseline_zero_shot_generations_{start_index}_{end_index}.json"
+                    path = f"{self.root_path}/generations/{start_index}_{end_index}_baseline_zero_shot_generations.json"
                     with open(path, "w") as f:
                         json.dump(generations, f)
                 
                 else:
-                    path = f"{self.root_path}/generations/{self.model_run_id}_baseline_zero_shot_generations_{start_index}_{end_index}.json"
+                    path = f"{self.root_path}/generations/{self.model_run_id}_{start_index}_{end_index}_baseline_zero_shot_generations.json"
                     with open(path, "w") as f:
                         json.dump(generations, f)
             
