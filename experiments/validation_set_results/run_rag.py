@@ -1,20 +1,20 @@
 from dataclasses import dataclass, field
-import sys
 from pathlib import Path
+import random
 import tyro
-import numpy as np
-import os
+
 
 from utils.set_random_seed import set_random_seed
-from utils.pipelines.ZeroShotBaselinePipeline import ZeroShotBaselinePipeline
+from utils.pipelines.RAGPipeline import RAGPipeline
 from pathlib import Path
 root = Path(__file__).parent.parent.parent
 
 
 set_random_seed(42)
+seed = random.randint(0, 10000)
 root = Path(__file__).parent.parent.parent
 @dataclass
-class ZeroShotConfig:
+class RagConfig:
     '''
     Configuration class for the experiment.
     '''
@@ -29,10 +29,20 @@ class ZeroShotConfig:
     '''Path to the questions dataset file.'''
     language_model_path: str = "models/llms/Llama-3.2-3B-Instruct"
     '''Path to the language model.'''
+    retrieval_path: str = "retrieval/rag_retrieval_indexes.json"
+    '''Path to the retrieval indexes JSON file.'''
+    embeder_path: str = "models/llms/bge-base-en-v1.5"
+    '''Path to the embedder model.'''
+    vector_db_path: str = "data/wiki_dump2018_nq_open/wiki_ip.index"
+    '''Path to the vector database.'''
     project_log: str = "run_validation_set_nq"
     '''Project log name fgor wandb'''
     model_run_id: str = "zero_shot"
     '''ID of the model run.'''
+    k: int = 16
+    '''Number of top-k results to retrieve.'''
+    size_index: int = 100
+    '''Size of the index to be retrieved.'''
     batch_size: int = 8
     '''Size of inferences to be done at the same time'''
     attn_implementation: str = "sdpa"
@@ -57,7 +67,7 @@ class ZeroShotConfig:
 
 
 
-def initiate_pipeline(args: ZeroShotConfig) -> ZeroShotBaselinePipeline:
+def initiate_pipeline(args: RagConfig) -> RAGPipeline:
     """
     Initiates the baseline pipeline with the provided arguments.
     
@@ -69,28 +79,36 @@ def initiate_pipeline(args: ZeroShotConfig) -> ZeroShotBaselinePipeline:
         ZeroShotBaselinePipeline: An instance of the baseline pipeline.
     """
 
-    return ZeroShotBaselinePipeline(
+    return RAGPipeline(
+        retrieval_path=args.retrieval_path,
+        wiki_path=args.wiki_path,
+        embeder_path=args.embeder_path,
+        vector_db_path=args.vector_db_path,
         questions_path=args.questions_path,
         language_model_path=args.language_model_path,
+        project_log=args.project_log,
+        model_run_id=args.model_run_id,
+        k=args.k,
+        size_index=args.size_index,
         lm_configs=args.lm_configs,
-        model_run_id=f"zero_shot_{args.model}",
         instruction=args.instruction,
         root_path=f"{args.model}",
-        project_log=args.project_log,
+        seed=seed,
         tags = args.tags,
-        batch_size = args.batch_size,
         log=args.log,
-        attn_implementation=args.attn_implementation
     )
 
 
 if __name__ == "__main__":
-    args = tyro.cli(ZeroShotConfig)
-    args.tags.append("zero_shot")
+    args = tyro.cli(RagConfig)
+    args.tags.append("rag")
+    args.tags.append(args.model)
     args.questions_path = f"{root}/{args.questions_path}"
     args.language_model_path = f"{root}/{args.language_model_path}"
     args.wiki_path = f"{root}/{args.wiki_path}"
 
 
     pipeline = initiate_pipeline(args)
-    pipeline.generate_inferences(args.start_idx, args.end_idx)
+    pipeline.setup()
+    pipeline.get_rag_retrieval()
+    pipeline.get_rag_generations()

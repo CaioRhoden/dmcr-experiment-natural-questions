@@ -10,7 +10,7 @@ import json
 from FlagEmbedding import FlagModel
 import wandb
 
-from dmcr.models import GenericInstructModelHF
+from dmcr.models import GenericInstructModelHF, GenericInstructBatchHF
 
 
 from utils.set_random_seed import set_random_seed
@@ -34,6 +34,8 @@ class RAGPipeline:
         lm_configs: Optional[dict[str, float|int]] = None,
         root_path: str = ".",
         seed: Optional[int] = None,
+        attn_implementation: str = "sdpa",
+        batch_size: int = 1,
         log: bool = False,
         **kwargs, # Use kwargs to gracefully handle any extra fields
     ):
@@ -60,14 +62,14 @@ class RAGPipeline:
         self.lm_configs = lm_configs if lm_configs is not None else {
             "temperature": 0.7,
             "top_p": 0.9,
-            "max_length": 2048,
             "max_new_tokens": 10,
-            "num_return_sequences": 5
         }
         self.tags = tags
         self.log = True
         self.root_path = root_path
         self.seed = seed
+        self.batch_size = batch_size
+        self.attn_implementation: str = attn_implementation
 
         if self.seed is not None:
             set_random_seed(self.seed)
@@ -177,7 +179,36 @@ class RAGPipeline:
             })
             wandb.finish()
 
-    def get_rag_generations(self):
+    def get_rag_generations(self, start_index: int = 0, end_index: Optional[int] = None):
+        
+
+        wiki = pl.read_ipc(self.wiki_path).with_row_index("idx")
+        questions = pl.read_ipc(self.questions_path)
+        ## Load retrieval data
+        with open(f"{self.root_path}/retrieval/rag_retrieval_indexes.json", "r") as f:
+            retrieval_data = json.load(f)
+
+
+        # Set end_index to total questions if not specified
+        if end_index is None:
+            end_index = len(questions)
+        
+        # Validate indices
+        if start_index < 0:
+            raise ValueError("start_index cannot be negative")
+        if end_index > len(questions):
+            raise ValueError(f"end_index ({end_index}) cannot exceed total questions ({len(questions)})")
+        if start_index >= end_index:
+            raise ValueError("start_index must be less than end_index")
+        
+        batch_list = []
+        if self.batch_size == 1:
+            model = GenericInstructModelHF(self.language_model_path, attn_implementation=self.attn_implementation)
+        elif self.batch_size > 1:
+            model = GenericInstructBatchHF(self.language_model_path, attn_implementation=self.attn_implementation)
+            
+        else:
+            raise ValueError("Batch size must be at least 1")
 
         if self.log:
             start_time = datetime.datetime.now()
@@ -197,28 +228,13 @@ class RAGPipeline:
             )
             wandb.log({"start_time": start_time.strftime('%Y-%m-%d_%H-%M-%S')})
 
-
-        ## Setup variables
-        wiki = pl.read_ipc(self.wiki_path).with_row_index("idx")
-        questions = pl.read_ipc(self.questions_path)
-
-        model = GenericInstructModelHF(self.language_model_path)
-
-
         generations = {}
-
-
-
-        ## Load retrieval data
-        with open(f"{self.root_path}/retrieval/rag_retrieval_indexes.json", "r") as f:
-            retrieval_data = json.load(f)
-
             
 
         ## Iterate questions
-        for r_idx in range(len(retrieval_data)):
+        for idx in range(len(retrieval_data)):
 
-            top_k = retrieval_data[f"{r_idx}"][0:self.k]
+            top_k = retrieval_data[f"{idx}"][0:self.k]
             docs = wiki.filter(pl.col("idx").is_in(top_k))
 
 
@@ -226,23 +242,55 @@ class RAGPipeline:
             prompt = "Documents: \n"
             for doc_idx in range(len(top_k)-1, -1, -1):
                 prompt += f"Document[{self.k-doc_idx}](Title: {docs.filter(pl.col('idx')==top_k[doc_idx])['title'].to_numpy().flatten()[0]}){docs.filter(pl.col('idx')==top_k[doc_idx])['title'].to_numpy().flatten()[0]}\n\n"
-            prompt += f"Question: {questions[r_idx]['question'].to_numpy().flatten()[0]}\nAnswer: "
+            prompt += f"Question: {questions[idx]['question'].to_numpy().flatten()[0]}\nAnswer: "
+            
+            if self.batch_size > 1 and isinstance(model, GenericInstructBatchHF):
+                if len(batch_list) < self.batch_size:
+                    batch_list.append((idx, prompt))
+                
+                if len(batch_list) == self.batch_size or idx == end_index - 1:
+                    outputs = model.run(
+                    [str(_q[1]) for _q in batch_list], 
+                    instruction=self.instruction, 
+                    config_params=self.lm_configs
+                    )
+                    for i, _q in enumerate(batch_list):
+                        generations[f"{_q[0]}"] = [str(outputs[i][0]["generated_text"])]
+                    batch_list = []
+                
+                    if self.model_run_id is None:
+                        path = f"{self.root_path}/generations/{start_index}_{end_index}_rag_generations.json"
+                        with open(path, "w") as f:
+                            json.dump(generations, f)
+                    
+                    else:
+                        path = f"{self.root_path}/generations/{self.model_run_id}_{start_index}_{end_index}_rag_generations.json"
+                        with open(path, "w") as f:
+                            json.dump(generations, f)
 
-            ## Generate output
-            outputs = model.run(
-                prompt, 
-                instruction="You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens, you can use the available documents ", 
-                config_params=self.lm_configs
-            )
+            else:
+                assert isinstance(model, GenericInstructModelHF)
+                ## Generate output
+                outputs = model.run(
+                    prompt, 
+                    instruction=self.instruction, 
+                    config_params=self.lm_configs
+                )
 
-            generations[f"{r_idx}"] = [str(out["generated_text"]) for out in outputs]
+                generations[f"{idx}"] = [str(out["generated_text"]) for out in outputs]
 
-            path = f"{self.root_path}/generations/rag_generations.json"
-            with open(path, "w") as f:
-                json.dump(generations, f)
+                if self.model_run_id is None:
+                    path = f"{self.root_path}/generations/{start_index}_{end_index}_rag_generations.json"
+                    with open(path, "w") as f:
+                        json.dump(generations, f)
+                
+                else:
+                    path = f"{self.root_path}/generations/{self.model_run_id}_{start_index}_{end_index}_rag_generations.json"
+                    with open(path, "w") as f:
+                        json.dump(generations, f)
             
         if self.log:
-            artifact = wandb.Artifact(name="rag_generation", type="json", description="RAG generations")
+            artifact = wandb.Artifact(name="", type="json", description="RAG generations")
             artifact.add_file(path)
             wandb.log_artifact(artifact)
             wandb.log({

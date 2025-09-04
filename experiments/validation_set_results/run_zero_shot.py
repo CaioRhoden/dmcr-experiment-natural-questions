@@ -44,7 +44,7 @@ class ZeroShotConfig:
 
     
     # Pre-collections Config Fields
-    instruction: str = "You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens, you can use the available documents but if they are not helpful, try to answer without them"
+    instruction: str = "You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens"
     '''Instruction for the pre-collections step.'''
     lm_configs: dict[str, float|int] = field(default_factory=lambda: {
             "temperature": 0.7,
