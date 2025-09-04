@@ -1,6 +1,7 @@
 import datetime
 import os
-from git import Optional
+from typing import Optional
+
 import polars as pl
 from dmcr.models import GenericInstructModelHF, GenericInstructBatchHF
 import json
@@ -66,6 +67,8 @@ class ZeroShotBaselinePipeline:
             os.mkdir(f"{self.root_path}")
         if not os.path.exists(f"{self.root_path}/generations"):
             os.mkdir(f"{self.root_path}/generations")
+        if self.log and not os.path.exists(f"{self.root_path}/logs"):
+            os.mkdir(f"{self.root_path}/logs")
         
 
 
