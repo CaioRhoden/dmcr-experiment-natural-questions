@@ -1,10 +1,12 @@
 
 from curses import start_color
 from pyexpat import model
+import re
 from tracemalloc import start
 from typing import Optional
 import polars as pl
 import os
+from regex import B
 import torch
 import datetime
 import faiss
@@ -14,9 +16,10 @@ import wandb
 
 from dmcr.datamodels.setter.IndexBasedSetter import IndexBasedSetter
 from dmcr.datamodels.setter.SetterConfig import IndexBasedSetterConfig
-from dmcr.datamodels.pipeline import DatamodelsIndexBasedNQPipeline
+from dmcr.datamodels.pipeline.DatamodelsIndexBasedNQPipeline import DatamodelsIndexBasedNQPipeline
+from dmcr.datamodels.pipeline.PreCollectionsPipeline import DatamodelsPreCollectionsData, BaseLLMPreCollectionsPipeline, BatchLLMPreCollectionsPipeline
 from dmcr.datamodels.config import DatamodelIndexBasedConfig, LogConfig
-from dmcr.models import GenericInstructModelHF
+from dmcr.models import GenericInstructModelHF, GenericInstructBatchHF
 from dmcr.evaluators import Rouge_L_evaluator, SquadV2Evaluator, JudgeEvaluator
 from dmcr.datamodels.models import LinearRegressor
 from dmcr.datamodels.models import FactoryLinearRegressor
@@ -24,6 +27,7 @@ from dmcr.datamodels.models import FactoryLinearRegressor
 
 from utils.weights_to_json import load_weights_to_json
 from utils.set_random_seed import set_random_seed
+from utils.context_strategy import nq_context_strategy
 
 class RAGBasedExperimentPipeline:
     def __init__(
@@ -67,6 +71,8 @@ class RAGBasedExperimentPipeline:
         log: bool = False,
         root_path: str = ".",
         datamodels_generation_name: Optional[str] = "datamodels_generations",
+        batch_size: int = 1,
+        attn_implementation: str = "sdpa",
         **kwargs, # Use kwargs to gracefully handle any extra fields
     ):
         
@@ -124,6 +130,8 @@ class RAGBasedExperimentPipeline:
         self.datamodels_generation_name = datamodels_generation_name
         if seed:
             set_random_seed(seed)
+        self.batch_size = batch_size
+        self.attn_implementation = attn_implementation
 
 
 
@@ -159,173 +167,6 @@ class RAGBasedExperimentPipeline:
         if not os.path.exists(f"{self.root_path}/datamodels/models"):
             os.mkdir(f"{self.root_path}/datamodels/models")
 
-
-    def get_rag_retrieval(self):
-
-        ## Setup variables
-        """
-        Load the faiss indices and iterate questions to get the l2 and ip retrieval data for each question.
-        This function writes the retrieval data into retrieval_data.json in the retrieval folder.
-
-        Parameters:
-        None
-
-        Returns:
-        None
-        """
-        
-
-
-        retrieval_indexes = {}
-        retrieval_distances = {}
-
-        df = pl.read_ipc(self.questions_path)
-
-        ### Load faiss indices
-        index = faiss.read_index(self.vector_db_path)
-        # ip_index = faiss.read_index(IP_FAISS_INDEX_PATH)
-        embedder = FlagModel(self.embeder_path, devices=["cuda:0"], use_fp16=True)
-
-        if self.log:
-            start_time = datetime.datetime.now()
-            wandb.init(
-                project=self.project_log,
-                name=f"RAG_retrieval_{self.model_run_id}",
-                id = f"RAG_retrieval_{self.model_run_id}_{start_time.strftime('%Y-%m-%d_%H-%M-%S')}",
-                config={
-                    "gpu": f"{torch.cuda.get_device_name(0)}",
-                    "size_index": self.size_index,
-                    "index": self.vector_db_path,
-                    "questions_path": self.questions_path,
-                    "embeder_path": self.embeder_path,
-
-                },
-                tags = self.tags.extend(["RAG", "retrieval"]),
-            )
-
-            wandb.log({"start_time": start_time.strftime('%Y-%m-%d_%H-%M-%S')})
-
-        ### Iterate questions
-        for idx in range(len(df)):
-
-            question = df[idx]["question"].to_numpy().flatten()[0]
-            query_embedding = embedder.encode(
-                [question],
-                convert_to_numpy=True,
-            )
-            query_embedding = query_embedding.astype('float32').reshape(1, -1)
-
-            ### Get l2 and ip neighbors
-            scores, ids = index.search(query_embedding, self.size_index)
-            # ip_ids, ip_scores = ip_index.search(query_embedding, 100)
-
-            retrieval_indexes[idx] = ids.tolist()[0]
-            retrieval_distances[idx] = scores.tolist()[0]
-            # retrieval_data["ip"][idx] = (ip_ids.tolist()[0], ip_scores.tolist()[0])
-
-        ## Save into json
-
-
-        with open(f"{self.root_path}/retrieval/rag_retrieval_indexes.json", "w") as f:
-            json.dump(retrieval_indexes, f)
-
-        with open(f"{self.root_path}/retrieval/rag_retrieval_distances.json", "w") as f:
-            json.dump(retrieval_distances, f)
-
-        if self.log:
-            artifact = wandb.Artifact(
-                name="rag_retrieval_data",
-                type="json",
-                description="RAG retrieval daa"
-            )
-
-            artifact.add_file(f"{self.root_path}/retrieval/rag_retrieval_indexes.json")
-            artifact.add_file(f"{self.root_path}/retrieval/rag_retrieval_distances.json")
-            wandb.log_artifact(artifact)
-            end_time = datetime.datetime.now()
-            wandb.log({
-                "end_time": end_time.strftime('%Y-%m-%d_%H-%M-%S'),
-                "total_duration": (end_time - start_time).total_seconds()
-            })
-            wandb.finish()
-
-    def get_rag_generations(self):
-
-
-        ## Setup variables
-        wiki = pl.read_ipc(self.wiki_path).with_row_index("idx")
-        questions = pl.read_ipc(self.questions_path)
-
-        model = GenericInstructModelHF(self.language_model_path)
-
-
-        generations = {}
-
-        ## Load retrieval data
-        with open(self.retrieval_path, "r") as f:
-            retrieval_data = json.load(f)
-
-        if self.log:
-            start_time = datetime.datetime.now()
-            wandb.init(
-                project=self.project_log,
-                name=f"RAG_generations_{self.model_run_id}",
-                id = f"RAG_generations_{self.model_run_id}_{start_time.strftime('%Y-%m-%d_%H-%M-%S')}",
-                config={
-                    "gpu": f"{torch.cuda.get_device_name(0)}",
-                    "size_index": self.size_index,
-                    "index": self.vector_db_path,
-                    "questions_path": self.questions_path,
-                    "embeder_path": self.embeder_path,
-
-                },
-                tags = self.tags.extend(["RAG", "generations"]),
-            )
-
-            wandb.log({"start_time": start_time.strftime('%Y-%m-%d_%H-%M-%S')})
-        ## Iterate questions
-        for r_idx in range(len(retrieval_data)):
-
-            top_k = retrieval_data[f"{r_idx}"][0:self.k]
-            docs = wiki.filter(pl.col("idx").is_in(top_k))
-
-
-            ## Generate prompt
-            prompt = "Documents: \n"
-            for doc_idx in range(len(top_k)-1, -1, -1):
-                prompt += f"Document[{self.k-doc_idx}](Title: {docs.filter(pl.col('idx')==top_k[doc_idx])['title'].to_numpy().flatten()[0]}){docs.filter(pl.col('idx')==top_k[doc_idx])['title'].to_numpy().flatten()[0]}\n\n"
-            prompt += f"Question: {questions[r_idx]['question'].to_numpy().flatten()[0]}\nAnswer: "
-
-            ## Generate output
-            outputs = model.run(
-                prompt, 
-                instruction= self.instruction, 
-                config_params=self.lm_configs
-            )
-
-            generations[f"{r_idx}"] = [str(out["generated_text"]) for out in outputs]
-
-            with open(f"{self.root_path}/generations/rag_generations.json", "w") as f:
-                json.dump(generations, f)
-
-            if self.log:
-                artifact = wandb.Artifact(
-                    name="rag_retrieval_data",
-                    type="json",
-                    description="RAG generation daa"
-                )
-
-                artifact.add_file(f"{self.root_path}/generations/rag_generations.json")
-                wandb.log_artifact(artifact)
-                end_time = datetime.datetime.now()
-                wandb.log({
-                    "end_time": end_time.strftime('%Y-%m-%d_%H-%M-%S'),
-                    "total_duration": (end_time - start_time).total_seconds(),
-                })
-                wandb.finish()
-
-        ## Save into json
-        
             
     def create_datamodels_datasets(self):
         """
@@ -357,7 +198,15 @@ class RAGBasedExperimentPipeline:
         log_config, checkpoint, output_column, model_configs, and rag_indexes_path
         as parameters. It returns nothing.
         """
-        model = GenericInstructModelHF(self.language_model_path)
+
+        ### Initiate models
+        batch_list = []
+        if self.batch_size == 1:
+            model = GenericInstructModelHF(self.language_model_path, attn_implementation=self.attn_implementation)
+        elif self.batch_size > 1:
+            model = GenericInstructBatchHF(self.language_model_path, attn_implementation=self.attn_implementation)
+        else:
+            raise ValueError("Batch size must be at least 1")
 
         config = DatamodelIndexBasedConfig(
             k = self.k,
@@ -406,35 +255,94 @@ class RAGBasedExperimentPipeline:
         datamodel = DatamodelsIndexBasedNQPipeline(config=config)
 
         print("Start Creating Train Pre Collection")
-
-        datamodel.create_pre_collection(
-            instruction= self.instruction,
-            llm = model,
-            start_idx = self.train_start_idx, 
-            end_idx = self.train_end_idx, 
-            mode = "train", 
-            log = self.log, 
-            log_config = train_log_config, 
-            checkpoint = self.train_checkpoint, 
-            output_column = "answers",
-            model_configs = self.lm_configs,
-            rag_indexes_path=f"{self.root_path}/retrieval/rag_retrieval_indexes.json"
+        pre_collection_data = DatamodelsPreCollectionsData(
+            train_collections_idx= datamodel.train_collections_idx,
+            test_collections_idx= datamodel.test_collections_idx, 
+            train_set= datamodel.train_set,
+            test_set= datamodel.test_set,
+            datamodels_path= f"{self.root_path}/datamodels"
         )
 
-        print("Start Creating Test Pre Collection")
-        datamodel.create_pre_collection(
-            instruction= self.instruction,
-            llm = model,
-            start_idx = self.test_start_idx, 
-            end_idx = self.test_end_idx, 
-            mode = "test", 
-            log = self.log, 
-            log_config = test_log_config, 
-            checkpoint = self.test_checkpoint, 
-            output_column = "answers",
-            model_configs = self.lm_configs,
-            rag_indexes_path=f"{self.root_path}/retrieval/rag_retrieval_indexes.json"
-        )
+        ### Normal
+        if self.batch_size == 1 and isinstance(model, GenericInstructModelHF):
+
+            train_pre_collection_pipeline = BaseLLMPreCollectionsPipeline(
+                datamodels_data=pre_collection_data,
+                mode = "train",
+                instruction= self.instruction,
+                model = model,
+                context_strategy= nq_context_strategy,
+                rag_indexes_path=f"{self.root_path}/retrieval/rag_retrieval_indexes.json",
+                output_column = "answers",
+                start_idx = self.train_start_idx, 
+                end_idx = self.train_end_idx,  
+                checkpoint = self.train_checkpoint, 
+                log = self.log, 
+                log_config = train_log_config, 
+                model_configs = self.lm_configs,
+            )
+
+            test_pre_collection_pipeline = BaseLLMPreCollectionsPipeline(
+                datamodels_data=pre_collection_data,
+                instruction= self.instruction,
+                model = model,
+                context_strategy= nq_context_strategy,
+                start_idx = self.test_start_idx,
+                end_idx = self.test_end_idx,
+                mode = "test", 
+                log = self.log, 
+                log_config = test_log_config, 
+                checkpoint = self.test_checkpoint,
+                output_column = "answers",
+                model_configs = self.lm_configs,
+                rag_indexes_path=f"{self.root_path}/retrieval/rag_retrieval_indexes.json"
+            )
+
+            datamodel.create_pre_collection(train_pre_collection_pipeline)
+            datamodel.create_pre_collection(test_pre_collection_pipeline)
+
+        elif self.batch_size > 1 and isinstance(model, GenericInstructBatchHF):
+
+            train_pre_collection_pipeline = BatchLLMPreCollectionsPipeline(
+                datamodels_data=pre_collection_data,
+                instruction= self.instruction,
+                model = model,
+                context_strategy= nq_context_strategy,
+                start_idx = self.train_start_idx, 
+                end_idx = self.train_end_idx, 
+                mode = "train", 
+                log = self.log, 
+                log_config = train_log_config, 
+                checkpoint = self.train_checkpoint, 
+                output_column = "answers",
+                model_configs = self.lm_configs,
+                rag_indexes_path=f"{self.root_path}/retrieval/rag_retrieval_indexes.json",
+                batch_size=self.batch_size
+            )
+
+            test_pre_collection_pipeline = BatchLLMPreCollectionsPipeline(
+                datamodels_data=pre_collection_data,
+                instruction= self.instruction,
+                model = model,
+                context_strategy= nq_context_strategy,
+                start_idx = self.test_start_idx,
+                end_idx = self.test_end_idx,
+                mode = "test", 
+                log = self.log, 
+                log_config = test_log_config, 
+                checkpoint = self.test_checkpoint,
+                output_column = "answers",
+                model_configs = self.lm_configs,
+                rag_indexes_path=f"{self.root_path}/retrieval/rag_retrieval_indexes.json",
+                batch_size=self.batch_size
+            )
+
+            datamodel.create_pre_collection(train_pre_collection_pipeline)
+            datamodel.create_pre_collection(test_pre_collection_pipeline)
+
+        else:
+            raise ValueError("Batch size must be at least 1 and model must be of the correct type")
+
 
 
     def run_collections(self):
@@ -650,16 +558,20 @@ class RAGBasedExperimentPipeline:
         wiki = pl.read_ipc(self.wiki_path).with_row_index("idx")
         questions = pl.read_ipc(self.questions_path)
 
-        model = GenericInstructModelHF(self.language_model_path)
+        
         model_configs = {
                 "temperature": 0.7,
                 "top_p": 0.9,
-                "max_length": 2048,
                 "max_new_tokens": 10,
-                "num_return_sequences": 1
         }
 
         generations = {}
+
+        batch_list = []
+        if self.batch_size == 1:
+            model = GenericInstructModelHF(self.language_model_path, attn_implementation=self.attn_implementation)
+        elif self.batch_size > 1:
+            model = GenericInstructBatchHF(self.language_model_path, attn_implementation=self.attn_implementation)
 
         ## Load retrieval data
         with open(self.retrieval_path, "r") as f:
@@ -700,18 +612,38 @@ class RAGBasedExperimentPipeline:
             for doc_idx in range(len(top_k)-1, -1, -1):
                 prompt += f"Document[{self.k-doc_idx}](Title: {docs.filter(pl.col('idx')==top_k[doc_idx])['title'].to_numpy().flatten()[0]}){docs.filter(pl.col('idx')==top_k[doc_idx])['text'].to_numpy().flatten()[0]}\n\n"
             prompt += f"Question: {questions[r_idx]['question'].to_numpy().flatten()[0]}\nAnswer: "
+            
 
-            ## Generate output
-            outputs = model.run(
-                prompt, 
-                instruction=self.instruction, 
-                config_params=model_configs
-            )
+            if self.batch_size > 1 and isinstance(model, GenericInstructBatchHF):
+                if len(batch_list) < self.batch_size:
+                    batch_list.append((r_idx, prompt))
+                
+                if len(batch_list) == self.batch_size or r_idx == (len(retrieval_data) - 1):
+                    outputs = model.run(
+                    [str(_q[1]) for _q in batch_list], 
+                    instruction=self.instruction, 
+                    config_params=self.lm_configs
+                    )
+                    for i, _q in enumerate(batch_list):
+                        generations[f"{_q[0]}"] = [str(outputs[i][0]["generated_text"])]
+                    batch_list = []
+                
+                    with open(f"{self.root_path}/generations/{self.datamodels_generation_name}.json", "w") as f:
+                        json.dump(generations, f)
 
-            generations[str(r_idx)] = [str(out["generated_text"]) for out in outputs]
+            else:
+                assert isinstance(model, GenericInstructModelHF)
+                ## Generate output
+                outputs = model.run(
+                    prompt, 
+                    instruction=self.instruction, 
+                    config_params=self.lm_configs
+                )
 
-            with open(f"{self.root_path}/generations/{self.datamodels_generation_name}.json", "w") as f:
-                json.dump(generations, f)
+                generations[str(r_idx)] = [str(out["generated_text"]) for out in outputs]
+
+                with open(f"{self.root_path}/generations/{self.datamodels_generation_name}.json", "w") as f:
+                    json.dump(generations, f)
 
         if self.log:
             artifact = wandb.Artifact(
@@ -783,63 +715,4 @@ class RAGBasedExperimentPipeline:
             })
             wandb.finish()
 
-        
-
-
-
-
-    def invoke_pipeline_step(self, step: str):
-
-        """
-        This function is used to invoke the pipeline for a specific step.
-        
-        It uses a match-case statement to determine which step to run.
-        
-        The steps are:
-        - setup: Sets up the experiment.
-        - get_rag_retrieval: Get the retrieval data from the RAG model.
-        - get_rag_generations: Get the generations data from the RAG model.
-        - get_datamodels_generations: Get the generations data from the datamodels.
-        - create_datamodels_datasets: Create the datasets for the datamodels.
-        - run_pre_collections: Run the pre-collections for the datamodels.
-        - run_collections: Run the collections for the datamodels.
-        - train_datamodels: Train the datamodels.
-        - evaluate_datamodels: Evaluate the datamodels.
-        - get_datampodels_retrieval: Get the retrieval data from the datamodels.
-        
-        The function does not return anything.
-        """
-        match step:
-            case "setup":
-                self.setup()
-
-            case "get_rag_retrieval":
-                self.get_rag_retrieval()
-
-            case "get_rag_generations":
-                self.get_rag_generations()
-            
-            case "get_datamodels_generations":
-                self.get_datamodels_generations()
-
-            case "create_datamodels_datasets":
-                self.create_datamodels_datasets()
-
-            case "run_pre_collections":
-                self.run_pre_colections()
-            
-            case "run_collections":
-                self.run_collections()
-            
-            case "train_datamodels":
-                self.train_datamodels()
-            
-            case "evaluate_datamodels":
-                self.evaluate_datamodels()
-
-            case "get_datamodels_retrieval":
-                self.get_datamodels_retrieval()
-            
-            case _:
-                raise ValueError(f"Invalid step: {step}")
-        
+    
