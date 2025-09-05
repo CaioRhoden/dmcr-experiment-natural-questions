@@ -157,6 +157,7 @@ def initiate_pipeline(args: DatamodelsConfig) -> RAGBasedExperimentPipeline:
         batch_size=args.batch_size,
         attn_implementation=args.attn_implementation,
         tags=args.tags,
+        lm_configs=args.lm_configs,
     )
 
 

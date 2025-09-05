@@ -96,7 +96,8 @@ def initiate_pipeline(args: RagConfig) -> RAGPipeline:
         seed=seed,
         tags = args.tags,
         log=args.log,
-        attn_implementation=args.attn_implementation
+        attn_implementation=args.attn_implementation,
+        batch_size = args.batch_size
     )
 
 
@@ -114,5 +115,5 @@ if __name__ == "__main__":
 
     pipeline = initiate_pipeline(args)
     pipeline.setup()
-    pipeline.get_rag_retrieval()
+    # pipeline.get_rag_retrieval()
     pipeline.get_rag_generations()
