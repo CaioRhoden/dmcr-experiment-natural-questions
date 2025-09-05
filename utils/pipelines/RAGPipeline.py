@@ -169,14 +169,14 @@ class RAGPipeline:
             json.dump(retrieval_distances, f)
 
         if self.log:
-            artifact = wandb.Artifact(name="rag_retrieval", type="json", description="RAG retrieval data")
-            artifact.add_file(f"{self.root_path}/retrieval/rag_retrieval_indexes.json")
-            artifact.add_file(f"{self.root_path}/retrieval/rag_retrieval_distances.json")
-            wandb.log_artifact(artifact)
             wandb.log({
                 "end_time": datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
                 "duration": (datetime.datetime.now() - start_time).total_seconds()
             })
+            artifact = wandb.Artifact(name="rag_retrieval", type="json", description="RAG retrieval data")
+            artifact.add_file(f"{self.root_path}/retrieval/rag_retrieval_indexes.json")
+            artifact.add_file(f"{self.root_path}/retrieval/rag_retrieval_distances.json")
+            wandb.log_artifact(artifact)
             wandb.finish()
 
     def get_rag_generations(self, start_index: int = 0, end_index: Optional[int] = None):
@@ -290,13 +290,14 @@ class RAGPipeline:
                         json.dump(generations, f)
             
         if self.log:
-            artifact = wandb.Artifact(name=f"{self.model_run_id}_{start_index}_{end_index}", type="json", description="RAG generations")
-            artifact.add_file(path)
-            wandb.log_artifact(artifact)
             wandb.log({
                 "end_time": datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
                 "duration": (datetime.datetime.now() - start_time).total_seconds()
             })
+            artifact = wandb.Artifact(name=f"{self.model_run_id}_{start_index}_{end_index}", type="json", description="RAG generations")
+            artifact.add_file(path)
+            wandb.log_artifact(artifact)
+
             wandb.finish()
 
         ## Save into json
