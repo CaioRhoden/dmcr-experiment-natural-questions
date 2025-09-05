@@ -52,7 +52,7 @@ class DatamodelsConfig:
     '''Number of top-k results to retrieve.'''
     size_index: int = 100
     '''Size of the index.'''
-    num_models: int 8006
+    num_models: int = 8006
     '''Number of models to use.'''
     evaluation_metric: str = "mse"
     '''Evaluation metric to use.'''
@@ -101,7 +101,10 @@ class DatamodelsConfig:
     '''Patience for early stopping.'''
     log_epochs: int = 25
     '''Interval for logging.'''
-
+    batch_size: int = 8
+    '''Batch size for training.'''
+    attn_implementation: str = "sdpa"
+    '''Attention implementation to use. Options: "sdpa", "flash_attention_2",'''
 
 
 
@@ -151,6 +154,9 @@ def initiate_pipeline(args: DatamodelsConfig) -> RAGBasedExperimentPipeline:
         patience=args.patience,
         log_epochs=args.log_epochs,
         root_path=f"{args.model}",
+        batch_size=args.batch_size,
+        attn_implementation=args.attn_implementation,
+        tags=args.tags,
     )
 
 
