@@ -21,7 +21,6 @@ def nq_context_strategy(idx_row: int, idx_test: int, rag_indexes: dict, datamode
         context += f"Document[{count}](Title: {title}){text}\n\n"
         count += 1
 
-    print(f"test_set: {datamodels.test_set}")
     input = datamodels.test_set[idx_test]["question"].to_numpy().flatten()[0]
 
     prompt = PromptTemplate.from_template(template).format(context=context, input=input)
