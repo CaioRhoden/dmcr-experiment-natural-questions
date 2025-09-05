@@ -646,6 +646,10 @@ class RAGBasedExperimentPipeline:
                     json.dump(generations, f)
 
         if self.log:
+            wandb.log({
+                "end_time": datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
+                "total_duration": (datetime.datetime.now() - start_time).total_seconds(),
+            })
             artifact = wandb.Artifact(
                 name="datamodels_generation_data",
                 type="json",
@@ -654,10 +658,7 @@ class RAGBasedExperimentPipeline:
 
             artifact.add_file(f"{self.root_path}/generations/{self.datamodels_generation_name}.json")
             wandb.log_artifact(artifact)
-            wandb.log({
-                "end_time": datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
-                "total_duration": (datetime.datetime.now() - start_time).total_seconds(),
-            })
+
             wandb.finish()
 
 
@@ -700,6 +701,10 @@ class RAGBasedExperimentPipeline:
         )
 
         if self.log:
+            wandb.log({
+                    "end_time": datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
+                    "total_duration": (datetime.datetime.now() - start_time).total_seconds(),
+            })
             artifact = wandb.Artifact(
                 name="datamodels_retrieval_data",
                 type="json",
@@ -709,10 +714,7 @@ class RAGBasedExperimentPipeline:
             artifact.add_file(f"{self.root_path}/retrieval/{model_id}_indexes.json")
             artifact.add_file(f"{self.root_path}/retrieval/{model_id}_weights.json")
             wandb.log_artifact(artifact)
-            wandb.log({
-                    "end_time": datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
-                    "total_duration": (datetime.datetime.now() - start_time).total_seconds(),
-            })
+
             wandb.finish()
 
     
