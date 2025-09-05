@@ -290,7 +290,7 @@ class RAGPipeline:
                         json.dump(generations, f)
             
         if self.log:
-            artifact = wandb.Artifact(name="", type="json", description="RAG generations")
+            artifact = wandb.Artifact(name=f"{self.model_run_id}_{start_index}_{end_index}", type="json", description="RAG generations")
             artifact.add_file(path)
             wandb.log_artifact(artifact)
             wandb.log({
