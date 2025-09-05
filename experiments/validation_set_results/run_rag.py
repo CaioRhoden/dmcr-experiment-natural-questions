@@ -33,11 +33,11 @@ class RagConfig:
     '''Path to the retrieval indexes JSON file.'''
     embeder_path: str = "models/llms/bge-base-en-v1.5"
     '''Path to the embedder model.'''
-    vector_db_path: str = "data/wiki_dump2018_nq_open/wiki_ip.index"
+    vector_db_path: str = "data/wiki_dump2018_nq_open/processed/wiki_cosine.index"
     '''Path to the vector database.'''
     project_log: str = "run_validation_set_nq"
-    '''Project log name fgor wandb'''
-    model_run_id: str = "zero_shot"
+    '''Project log name for wandb'''
+    model_run_id: str = "rag"
     '''ID of the model run.'''
     k: int = 16
     '''Number of top-k results to retrieve.'''
@@ -106,6 +106,9 @@ if __name__ == "__main__":
     args.questions_path = f"{root}/{args.questions_path}"
     args.language_model_path = f"{root}/{args.language_model_path}"
     args.wiki_path = f"{root}/{args.wiki_path}"
+    args.retrieval_path = f"{root}/{args.retrieval_path}"
+    args.embeder_path = f"{root}/{args.embeder_path}"
+    args.vector_db_path = f"{root}/{args.vector_db_path}"
 
 
     pipeline = initiate_pipeline(args)
