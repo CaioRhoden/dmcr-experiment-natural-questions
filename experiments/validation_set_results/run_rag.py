@@ -96,6 +96,7 @@ def initiate_pipeline(args: RagConfig) -> RAGPipeline:
         seed=seed,
         tags = args.tags,
         log=args.log,
+        attn_implementation=args.attn_implementation
     )
 
 
