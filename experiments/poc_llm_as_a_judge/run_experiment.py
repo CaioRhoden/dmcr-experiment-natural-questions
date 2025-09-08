@@ -35,13 +35,13 @@ class ParametersConfig:
     '''Path to the retrieval indexes JSON file.'''
     wiki_path: str = "data/wiki_dump2018_nq_open/processed/wiki.feather"
     '''Path to the wiki dataset file.'''
-    embeder_path: str = "models/llms/bge-base-en-v1.5"
+    embeder_path: str = "models/bge-base-en-v1.5"
     '''Path to the embedder model.'''
     vector_db_path: str = "data/wiki_dump2018_nq_open/wiki_ip.index"
     '''Path to the vector database.'''
     questions_path: str = "test"
     '''Path to the questions dataset file.'''
-    language_model_path: str = "models/llms/Llama-3.2-3B-Instruct"
+    language_model_path: str = "models/Llama-3.2-3B-Instruct"
     '''Path to the language model.'''
     project_log: str = "llm_as_a_judge_poc"
     '''Project log name fgor wandb'''

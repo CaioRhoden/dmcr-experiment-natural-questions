@@ -32,11 +32,11 @@ class DatamodelsConfig:
     '''Path to the wiki dataset file.'''
     questions_path: str = "data/nq_open_gold/processed/dev.feather"
     '''Path to the questions dataset file.'''
-    language_model_path: str = "models/llms/Llama-3.2-3B-Instruct"
+    language_model_path: str = "models/Llama-3.2-3B-Instruct"
     '''Path to the language model.'''
     retrieval_path: str = "retrieval/rag_retrieval_indexes.json"
     '''Path to the retrieval indexes JSON file.'''
-    embeder_path: str = "models/llms/bge-base-en-v1.5"
+    embeder_path: str = "models/bge-base-en-v1.5"
     '''Path to the embedder model.'''
     vector_db_path: str = "data/wiki_dump2018_nq_open/processed/wiki_cosine.index"
     '''Path to the vector database.'''
@@ -44,10 +44,8 @@ class DatamodelsConfig:
     '''Project log name fgor wandb'''
     model_run_id: str = "datamodels"
     '''ID of the model run.'''
-    train_collection_id: str = "datamodels_training_window"
+    collection_id: str = "validation"
     '''ID of the training collection.'''
-    test_collection_id: str = "datamodels_training_window"
-    '''ID of the testing collection.'''
     k: int = 16
     '''Number of top-k results to retrieve.'''
     size_index: int = 100
@@ -73,18 +71,6 @@ class DatamodelsConfig:
     '''Number of testing samples.'''
     tags: list[str] = field(default_factory=list)
     '''List of tags for the experiment.'''
-    train_start_idx: int = 0
-    '''Starting index for the training set.'''
-    train_end_idx: int = -1
-    '''Ending index for the training set.'''
-    test_start_idx: int = 0
-    '''Starting index for the testing set.'''
-    test_end_idx: int = -1
-    '''Ending index for the testing set.'''
-    train_checkpoint: int = 10
-    '''Checkpoint interval for training.'''
-    test_checkpoint: int = 10
-    '''Checkpoint interval for testing.'''
     
     # Datamodels Training Config Fields
     epochs: int = 1000
@@ -105,6 +91,14 @@ class DatamodelsConfig:
     '''Batch size for training.'''
     attn_implementation: str = "sdpa"
     '''Attention implementation to use. Options: "sdpa", "flash_attention_2",'''
+
+    ## Parameters pre_collections and collections
+    start_idx: int = 0
+    '''Starting index for processing.'''
+    end_idx: int = 2000
+    '''Ending index for processing.'''
+    checkpoint: int = 50
+    '''Checkpoint interval for saving progress.'''
 
 
 
@@ -130,8 +124,7 @@ def initiate_pipeline(args: DatamodelsConfig) -> RAGBasedExperimentPipeline:
         language_model_path=args.language_model_path,
         project_log=args.project_log,
         model_run_id=args.model_run_id,
-        train_collection_id=args.train_collection_id,
-        test_collection_id=args.test_collection_id,
+        collection_id=args.collection_id,
         k=args.k,
         size_index=args.size_index,
         num_models=args.num_models,
@@ -140,12 +133,6 @@ def initiate_pipeline(args: DatamodelsConfig) -> RAGBasedExperimentPipeline:
         instruction=args.instruction,
         train_samples=args.train_samples,
         test_samples=args.test_samples,
-        train_start_idx=args.train_start_idx,
-        train_end_idx=args.train_end_idx,
-        test_start_idx=args.test_start_idx,
-        test_end_idx=args.test_end_idx,
-        train_checkpoint=args.train_checkpoint,
-        test_checkpoint=args.test_checkpoint,
         epochs=args.epochs,
         lr=args.lr,
         train_batches=args.train_batches,
@@ -158,6 +145,7 @@ def initiate_pipeline(args: DatamodelsConfig) -> RAGBasedExperimentPipeline:
         attn_implementation=args.attn_implementation,
         tags=args.tags,
         lm_configs=args.lm_configs,
+        log=args.log,
     )
 
 
@@ -168,7 +156,7 @@ if __name__ == "__main__":
     args.questions_path = f"{root}/{args.questions_path}"
     args.language_model_path = f"{root}/{args.language_model_path}"
     args.wiki_path = f"{root}/{args.wiki_path}"
-    args.retrieval_path = f"{root}/{args.retrieval_path}"
+    args.retrieval_path = f"{args.retrieval_path}"
     args.embeder_path = f"{root}/{args.embeder_path}"
     args.vector_db_path = f"{root}/{args.vector_db_path}"
 

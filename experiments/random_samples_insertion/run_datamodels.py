@@ -30,29 +30,29 @@ class DatamodelsConfig:
     # RAG Based configs Config Fields
     wiki_path: str = "data/wiki_dump2018_nq_open/processed/wiki.feather"
     '''Path to the wiki dataset file.'''
-    questions_path: str = "data/nq_open_gold/processed/dev.feather"
+    questions_path: str = "experiments/random_samples_insertion/questions_500_655_dev.feather"    
     '''Path to the questions dataset file.'''
-    language_model_path: str = "models/llms/Llama-3.2-3B-Instruct"
+    language_model_path: str = "models/Llama-3.2-3B-Instruct"
     '''Path to the language model.'''
-    retrieval_path: str = "retrieval/rag_retrieval_indexes.json"
+    retrieval_path: str = "experiments/random_samples_insertion/retrieval/random_indeces_insertion.json"
     '''Path to the retrieval indexes JSON file.'''
-    embeder_path: str = "models/llms/bge-base-en-v1.5"
+    embeder_path: str = "models/bge-base-en-v1.5"
     '''Path to the embedder model.'''
     vector_db_path: str = "data/wiki_dump2018_nq_open/processed/wiki_cosine.index"
     '''Path to the vector database.'''
     project_log: str = "random_sample_insertion"
     '''Project log name fgor wandb'''
-    model_run_id: str = "datamodels"
+    model_run_id: str = "datamodels_random_20"
     '''ID of the model run.'''
-    train_collection_id: str = "datamodels_training_window"
+    train_collection_id: str = "random_sample_insertion_20"
     '''ID of the training collection.'''
-    test_collection_id: str = "datamodels_training_window"
+    test_collection_id: str = "random_sample_insertion_20"
     '''ID of the testing collection.'''
     k: int = 16
     '''Number of top-k results to retrieve.'''
-    size_index: int = 100
+    size_index: int = 120
     '''Size of the index.'''
-    num_models: int = 8006
+    num_models: int = 500
     '''Number of models to use.'''
     evaluation_metric: str = "mse"
     '''Evaluation metric to use.'''
@@ -81,9 +81,9 @@ class DatamodelsConfig:
     '''Starting index for the testing set.'''
     test_end_idx: int = -1
     '''Ending index for the testing set.'''
-    train_checkpoint: int = 10
+    train_checkpoint: int = 100
     '''Checkpoint interval for training.'''
-    test_checkpoint: int = 10
+    test_checkpoint: int = 100
     '''Checkpoint interval for testing.'''
     
     # Datamodels Training Config Fields
@@ -122,6 +122,8 @@ def initiate_pipeline(args: DatamodelsConfig) -> RAGBasedExperimentPipeline:
 
     return RAGBasedExperimentPipeline(
         seed=seed,
+        log=args.log,
+        tags=args.tags,
         retrieval_path=args.retrieval_path,
         wiki_path=args.wiki_path,
         embeder_path=args.embeder_path,
@@ -153,18 +155,17 @@ def initiate_pipeline(args: DatamodelsConfig) -> RAGBasedExperimentPipeline:
         val_size=args.val_size,
         patience=args.patience,
         log_epochs=args.log_epochs,
-        root_path=f"{args.model}",
         batch_size=args.batch_size,
         attn_implementation=args.attn_implementation,
         tags=args.tags,
         lm_configs=args.lm_configs,
+        datamodels_generation_name=args.model_run_id
     )
 
 
 if __name__ == "__main__":
     args = tyro.cli(DatamodelsConfig)
     args.tags.append("datamodels")
-    args.tags.append(args.model)
     args.questions_path = f"{root}/{args.questions_path}"
     args.language_model_path = f"{root}/{args.language_model_path}"
     args.wiki_path = f"{root}/{args.wiki_path}"
