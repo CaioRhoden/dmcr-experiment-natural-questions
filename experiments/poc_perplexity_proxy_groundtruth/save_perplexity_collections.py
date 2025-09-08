@@ -77,7 +77,7 @@ class PerplexityCollections:
 
         ### Setup model and tokenizer
         accelerator = Accelerator()
-        model_path = f"{root}/models/llms/Llama-3.2-3B-Instruct"
+        model_path = f"{root}/models/Llama-3.2-3B-Instruct"
         tokenizer = AutoTokenizer.from_pretrained(model_path)
         tokenizer.pad_token = tokenizer.eos_token  # Set pad token to eos token for Llama models
         model = AutoModelForCausalLM.from_pretrained(model_path,  device_map={"": accelerator.process_index})

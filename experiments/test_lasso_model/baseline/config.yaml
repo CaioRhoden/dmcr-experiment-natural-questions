@@ -1,7 +1,7 @@
 
 baseline_config:
   questions_path : "../50_test.feather"
-  language_model_path : "../../../../models/llms/Llama-3.2-3B-Instruct"
+  language_model_path : "../../../../models/Llama-3.2-3B-Instruct"
   generations_prefix: "llama3-2-8b-instruct"
   seed: 42
   instruction: "You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens"

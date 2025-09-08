@@ -18,7 +18,7 @@ from utils.set_random_seed import set_random_seed
 def create_flag_embedder(
     saving_path = str,
     metric: str = faiss.METRIC_INNER_PRODUCT,
-    embedder_path: str = "../../models/llms/bge-base-en-v1.5",
+    embedder_path: str = "../../models/bge-base-en-v1.5",
     wiki_path: str = "../../data/wiki_dump2018_nq_open/processed/wiki.feather",
 ):
     

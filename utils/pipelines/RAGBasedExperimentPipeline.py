@@ -41,8 +41,7 @@ class RAGBasedExperimentPipeline:
         language_model_path: str,
         project_log: str,
         model_run_id: str,
-        train_collection_id: str,
-        test_collection_id: str,
+        collection_id: str,
         k: int,
         size_index: int,
         num_models: int,
@@ -52,12 +51,6 @@ class RAGBasedExperimentPipeline:
         
         train_samples: int,
         test_samples: int,
-        train_start_idx: int,
-        train_end_idx: int,
-        test_start_idx: int,
-        test_end_idx: int,
-        train_checkpoint: int,
-        test_checkpoint: int,
         epochs: int,
         lr: float,
         train_batches: int,
@@ -70,7 +63,7 @@ class RAGBasedExperimentPipeline:
         lm_configs: Optional[dict[str, int|float]] = None,
         log: bool = False,
         root_path: str = ".",
-        datamodels_generation_name: Optional[str] = "datamodels_generations",
+        datamodels_generation_name: Optional[str] = None,
         batch_size: int = 1,
         attn_implementation: str = "sdpa",
         **kwargs, # Use kwargs to gracefully handle any extra fields
@@ -90,7 +83,7 @@ class RAGBasedExperimentPipeline:
         self.language_model_path = language_model_path
         self.project_log = project_log
         self.model_run_id = model_run_id
-        self.train_collection_id = train_collection_id
+        self.collection_id = train_collection_id
         self.test_collection_id = test_collection_id
         self.k = k
         self.size_index = size_index
@@ -162,8 +155,18 @@ class RAGBasedExperimentPipeline:
             os.mkdir(f"{self.root_path}/datamodels/datasets")
         if not os.path.exists(f"{self.root_path}/datamodels/pre_collections"):
             os.mkdir(f"{self.root_path}/datamodels/pre_collections")
+        if not os.path.exists(f"{self.root_path}/datamodels/train"):
+            os.mkdir(f"{self.root_path}/datamodels/train")
+        if not os.path.exists(f"{self.root_path}/datamodels/test"):
+            os.mkdir(f"{self.root_path}/datamodels/test")
         if not os.path.exists(f"{self.root_path}/datamodels/collections"):
             os.mkdir(f"{self.root_path}/datamodels/collections")
+        if not os.path.exists(f"{self.root_path}/datamodels/evaluations"):
+            os.mkdir(f"{self.root_path}/datamodels/evaluations")
+        if not os.path.exists(f"{self.root_path}/datamodels/collections/train"):
+            os.mkdir(f"{self.root_path}/datamodels/collections/train")
+        if not os.path.exists(f"{self.root_path}/datamodels/collections/test"):
+            os.mkdir(f"{self.root_path}/datamodels/collections/test")
         if not os.path.exists(f"{self.root_path}/datamodels/models"):
             os.mkdir(f"{self.root_path}/datamodels/models")
 
@@ -188,7 +191,12 @@ class RAGBasedExperimentPipeline:
         setter = IndexBasedSetter(config=setter_config)
         setter.set()
         
-    def run_pre_colections(self):
+    def run_pre_colections(self, 
+                           mode: str ="train",
+                           start_idx: int = 0,
+                           end_idx: int -1,
+                           checkpoint: int = 50
+                        ):
 
 
         """
@@ -216,14 +224,13 @@ class RAGBasedExperimentPipeline:
             test_set_path=self.questions_path
         )
 
-        train_log_config = None
-        test_log_config = None
+        log_config = None
         if self.log:
-            train_log_config = LogConfig(
+            log_config = LogConfig(
                 project=self.project_log,
                 dir="logs",
-                id=f"pre_collection_{self.train_collection_id}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
-                name=f"pre_collection_{self.train_collection_id}",
+                id=f"pre_collection_{self.collection_id}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
+                name=f"pre_collection_{self.collection_id}",
                 config={
                     "llm": f"{self.language_model_path}",
                     "gpu": f"{torch.cuda.get_device_name(0)}",
@@ -231,25 +238,8 @@ class RAGBasedExperimentPipeline:
                     "model_configs": self.lm_configs,
                     "datamodel_configs": repr(config)
                 },
-                tags=self.tags.extend(["train", "pre_collection"])
+                tags=self.tags.extend([mode, "pre_collection"])
             )
-
-            test_log_config = LogConfig(
-                project=self.project_log,
-                dir="logs",
-                id=f"pre_collection_{self.test_collection_id}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
-                name=f"pre_collection_{self.test_collection_id}",
-                config={
-                    "llm": f"{self.language_model_path}",
-                    "gpu": f"{torch.cuda.get_device_name(0)}",
-                    "size_index": self.size_index,
-                    "model_configs": self.lm_configs,
-                    "datamodel_configs": repr(config)
-                },
-                tags=self.tags.extend(["test", "pre_collection"])
-                
-            )
-
 
 
         datamodel = DatamodelsIndexBasedNQPipeline(config=config)
@@ -266,86 +256,56 @@ class RAGBasedExperimentPipeline:
         ### Normal
         if self.batch_size == 1 and isinstance(model, GenericInstructModelHF):
 
-            train_pre_collection_pipeline = BaseLLMPreCollectionsPipeline(
+            pre_collection_pipeline = BaseLLMPreCollectionsPipeline(
                 datamodels_data=pre_collection_data,
-                mode = "train",
+                mode = mode,
                 instruction= self.instruction,
                 model = model,
                 context_strategy= nq_context_strategy,
-                rag_indexes_path=f"{self.root_path}/retrieval/rag_retrieval_indexes.json",
+                rag_indexes_path=self.retrieval_path,
                 output_column = "answers",
-                start_idx = self.train_start_idx, 
-                end_idx = self.train_end_idx,  
-                checkpoint = self.train_checkpoint, 
+                start_idx = start_idx, 
+                end_idx = end_idx,  
+                checkpoint = checkpoint, 
                 log = self.log, 
-                log_config = train_log_config, 
+                log_config = log_config, 
                 model_configs = self.lm_configs,
             )
 
-            test_pre_collection_pipeline = BaseLLMPreCollectionsPipeline(
-                datamodels_data=pre_collection_data,
-                instruction= self.instruction,
-                model = model,
-                context_strategy= nq_context_strategy,
-                start_idx = self.test_start_idx,
-                end_idx = self.test_end_idx,
-                mode = "test", 
-                log = self.log, 
-                log_config = test_log_config, 
-                checkpoint = self.test_checkpoint,
-                output_column = "answers",
-                model_configs = self.lm_configs,
-                rag_indexes_path=f"{self.root_path}/retrieval/rag_retrieval_indexes.json"
-            )
-
-            datamodel.create_pre_collection(train_pre_collection_pipeline)
-            datamodel.create_pre_collection(test_pre_collection_pipeline)
+            datamodel.create_pre_collection(pre_collection_pipeline)
 
         elif self.batch_size > 1 and isinstance(model, GenericInstructBatchHF):
 
-            train_pre_collection_pipeline = BatchLLMPreCollectionsPipeline(
+            pre_collection_pipeline = BatchLLMPreCollectionsPipeline(
                 datamodels_data=pre_collection_data,
                 instruction= self.instruction,
                 model = model,
                 context_strategy= nq_context_strategy,
-                start_idx = self.train_start_idx, 
-                end_idx = self.train_end_idx, 
-                mode = "train", 
+                start_idx = start_idx, 
+                end_idx = end_idx, 
+                mode = mode, 
                 log = self.log, 
                 log_config = train_log_config, 
-                checkpoint = self.train_checkpoint, 
+                checkpoint = checkpoint, 
                 output_column = "answers",
                 model_configs = self.lm_configs,
-                rag_indexes_path=f"{self.root_path}/retrieval/rag_retrieval_indexes.json",
+                rag_indexes_path=self.retrieval_path,
                 batch_size=self.batch_size
             )
 
-            test_pre_collection_pipeline = BatchLLMPreCollectionsPipeline(
-                datamodels_data=pre_collection_data,
-                instruction= self.instruction,
-                model = model,
-                context_strategy= nq_context_strategy,
-                start_idx = self.test_start_idx,
-                end_idx = self.test_end_idx,
-                mode = "test", 
-                log = self.log, 
-                log_config = test_log_config, 
-                checkpoint = self.test_checkpoint,
-                output_column = "answers",
-                model_configs = self.lm_configs,
-                rag_indexes_path=f"{self.root_path}/retrieval/rag_retrieval_indexes.json",
-                batch_size=self.batch_size
-            )
-
-            datamodel.create_pre_collection(train_pre_collection_pipeline)
-            datamodel.create_pre_collection(test_pre_collection_pipeline)
+            datamodel.create_pre_collection(pre_collection_pipeline)
 
         else:
             raise ValueError("Batch size must be at least 1 and model must be of the correct type")
 
 
 
-    def run_collections(self):
+    def run_collections(self, 
+                        mode="train",
+                        start_idx: int = 0,
+                        end_idx: int -1,
+                        checkpoint: int = 50
+        ):
 
 
 
@@ -389,29 +349,14 @@ class RAGBasedExperimentPipeline:
 
 
         datamodel = DatamodelsIndexBasedNQPipeline(config)
-        train_log_config = None
-        test_log_config = None
+        log_config = None
         if self.log:
-            test_log_config = LogConfig(
-                project=self.project_log,
-                dir="logs",
-                id=f"test_collections_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
-                name=self.test_collection_id,
-                config={
-                    "evaluator": "Rouge-L",
-                    "gpu": f"{torch.cuda.get_device_name(0)}",
-                    "index": "FAISS_L2",
-                    "size_index": self.size_index,
-                    "datamodel_configs": repr(config)
-                },
-                tags=self.tags.extend(["test", "collections"])
-            )
 
-            train_log_config = LogConfig(
+            log_config = LogConfig(
                 project=self.project_log,
                 dir="logs",
                 id=f"train_collections_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
-                name=self.train_collection_id,
+                name=self.collection_id,
                 config={
                     "evaluator": self.evaluator,
                     "gpu": f"{torch.cuda.get_device_name(0)}",
@@ -419,32 +364,22 @@ class RAGBasedExperimentPipeline:
                     "size_index": self.size_index,
                     "datamodel_configs": repr(config)
                 },
-                tags=self.tags.extend(["train", "collections"])
+                tags=self.tags.extend([mode, "collections"])
             )
 
         print("Start Creating Train Collection")
         datamodel.create_collection(
             evaluator = evaluator,
-            mode = "train",
-            collection_name = self.train_collection_id,
+            mode = mode,
+            collection_name = self.collection_id,
             log = self.log,
-            log_config = train_log_config,
-            checkpoint = self.train_checkpoint,
-            start_idx = self.train_start_idx,
-            end_idx = self.train_end_idx,
+            log_config = log_config,
+            checkpoint = checkpoint,
+            start_idx = start_idx,
+            end_idx = end_idx
         )
 
 
-        print("Start Creating Test Collection")
-        datamodel.create_collection(
-            evaluator = evaluator,
-            mode = "test",
-            collection_name = self.test_collection_id,	
-            log = self.log,
-            log_config = test_log_config,
-            checkpoint = self.test_checkpoint
-
-        )
 
 
     def train_datamodels(self):
@@ -496,7 +431,7 @@ class RAGBasedExperimentPipeline:
 
         datamodel.train_datamodels(
             model_factory=model_factory,
-            collection_name=self.train_collection_id,	
+            collection_name=self.collection_id,	
             epochs=epochs,
             train_batches=train_batches,
             val_batches=val_batches,
@@ -579,6 +514,12 @@ class RAGBasedExperimentPipeline:
 
         ## Load weights
         weights = torch.load(f"{self.root_path}/datamodels/models/{self.model_run_id}/weights.pt")
+        if self.datamodels_generation_name is None:
+            self.datamodels_generation_name = self.model_run_id
+
+        if not os.path.exists(f"{self.root_path}/generations/{self.datamodels_generation_name}"):
+            os.mkdir(f"{self.root_path}/generations/{self.datamodels_generation_name}")
+
 
         ## Get self.k highest weights
         k_values, k_indices = weights.topk(self.k, dim=1)
@@ -695,7 +636,7 @@ class RAGBasedExperimentPipeline:
         model_id = self.model_run_id
         load_weights_to_json(
             f"{self.root_path}/datamodels/models/{model_id}/weights.pt",
-            f"{self.root_path}/retrieval/rag_retrieval_indexes.json",
+            self.retrieval_path,
             f"{self.root_path}/retrieval",
             model_id
         )

@@ -27,7 +27,7 @@ class ZeroShotConfig:
     '''Path to the wiki dataset file.'''
     questions_path: str = "data/nq_open_gold/processed/test.feather"
     '''Path to the questions dataset file.'''
-    language_model_path: str = "models/llms/Llama-3.2-3B-Instruct"
+    language_model_path: str = "models/Llama-3.2-3B-Instruct"
     '''Path to the language model.'''
     project_log: str = "run_test_set_nq"
     '''Project log name fgor wandb'''

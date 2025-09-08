@@ -25,11 +25,11 @@ class RagConfig:
     '''Path to the wiki dataset file.'''
     questions_path: str = "experiments/random_samples_insertion/questions_500_655_dev.feather"
     '''Path to the questions dataset file.'''
-    language_model_path: str = "models/llms/Llama-3.2-3B-Instruct"
+    language_model_path: str = "models/Llama-3.2-3B-Instruct"
     '''Path to the language model.'''
     retrieval_path: str = "retrieval/rag_retrieval_indexes.json"
     '''Path to the retrieval indexes JSON file.'''
-    embeder_path: str = "models/llms/bge-base-en-v1.5"
+    embeder_path: str = "models/bge-base-en-v1.5"
     '''Path to the embedder model.'''
     vector_db_path: str = "data/wiki_dump2018_nq_open/processed/wiki_cosine.index"
     '''Path to the vector database.'''
