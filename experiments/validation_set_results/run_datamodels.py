@@ -23,6 +23,8 @@ class DatamodelsConfig:
     
     model: str = "None"
     '''Tag for the experiment section.'''
+    mode: str = "None"
+    '''Mode for the experiment section. Options: "train" or "test".'''
     log: bool = True
     '''Flag to enable logging. Options: "setup", "baseline", "rag", "datamodels".'''
 
@@ -156,7 +158,7 @@ if __name__ == "__main__":
     args.questions_path = f"{root}/{args.questions_path}"
     args.language_model_path = f"{root}/{args.language_model_path}"
     args.wiki_path = f"{root}/{args.wiki_path}"
-    args.retrieval_path = f"{args.retrieval_path}"
+    args.retrieval_path = f"{args.model}/{args.retrieval_path}"
     args.embeder_path = f"{root}/{args.embeder_path}"
     args.vector_db_path = f"{root}/{args.vector_db_path}"
 
@@ -168,18 +170,29 @@ if __name__ == "__main__":
         
     elif args.run_type == "pre_collections":
 
-        pipeline.run_pre_colections()
+        pipeline.run_pre_colections(
+            start_idx=args.start_idx,
+            end_idx=args.end_idx,
+            checkpoint=args.checkpoint,
+            mode=args.mode,
+        )
         sys.exit(0)
     
     elif args.run_type == "collections":
 
-        pipeline.run_collections()
+        pipeline.run_collections(
+            start_idx=args.start_idx,
+            end_idx=args.end_idx,
+            checkpoint=args.checkpoint,
+            mode=args.mode,
+            collection_id=args.collection_id
+        )
         sys.exit(0)
     
     elif args.run_type == "training":
 
-        pipeline.train_datamodels()
-        pipeline.evaluate_datamodels()
+        pipeline.train_datamodels(collection_id=args.collection_id)
+        pipeline.evaluate_datamodels(collection_id=args.collection_id)
         sys.exit(0)
 
     elif args.run_type == "generation":
