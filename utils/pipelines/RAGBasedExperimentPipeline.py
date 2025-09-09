@@ -82,9 +82,7 @@ class RAGBasedExperimentPipeline:
         self.questions_path = questions_path
         self.language_model_path = language_model_path
         self.project_log = project_log
-        self.model_run_id = model_run_id
-        self.collection_id = train_collection_id
-        self.test_collection_id = test_collection_id
+        self.model_run_id: str = model_run_id
         self.k = k
         self.size_index = size_index
         self.num_models = num_models
@@ -101,12 +99,6 @@ class RAGBasedExperimentPipeline:
         }
         self.train_samples = train_samples
         self.test_samples = test_samples
-        self.train_start_idx = train_start_idx
-        self.train_end_idx = train_end_idx
-        self.test_start_idx = test_start_idx
-        self.test_end_idx = test_end_idx
-        self.train_checkpoint = train_checkpoint
-        self.test_checkpoint = test_checkpoint
 
         ## Training parameters
         self.epochs = epochs
@@ -194,8 +186,9 @@ class RAGBasedExperimentPipeline:
     def run_pre_colections(self, 
                            mode: str ="train",
                            start_idx: int = 0,
-                           end_idx: int -1,
-                           checkpoint: int = 50
+                           end_idx: int =  -1,
+                           checkpoint: int = 50,
+                           collection_id: str = "default_collection"
                         ):
 
 
@@ -229,8 +222,8 @@ class RAGBasedExperimentPipeline:
             log_config = LogConfig(
                 project=self.project_log,
                 dir="logs",
-                id=f"pre_collection_{self.collection_id}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
-                name=f"pre_collection_{self.collection_id}",
+                id=f"pre_collection_{collection_id}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
+                name=f"pre_collection_{collection_id}",
                 config={
                     "llm": f"{self.language_model_path}",
                     "gpu": f"{torch.cuda.get_device_name(0)}",
@@ -285,7 +278,7 @@ class RAGBasedExperimentPipeline:
                 end_idx = end_idx, 
                 mode = mode, 
                 log = self.log, 
-                log_config = train_log_config, 
+                log_config = log_config, 
                 checkpoint = checkpoint, 
                 output_column = "answers",
                 model_configs = self.lm_configs,
@@ -303,9 +296,9 @@ class RAGBasedExperimentPipeline:
     def run_collections(self, 
                         mode="train",
                         start_idx: int = 0,
-                        end_idx: int -1,
-                        checkpoint: int = 50
-        ):
+                        end_idx: int = -1,
+                        checkpoint: int = 50,
+      ):
 
 
 
@@ -356,7 +349,7 @@ class RAGBasedExperimentPipeline:
                 project=self.project_log,
                 dir="logs",
                 id=f"train_collections_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
-                name=self.collection_id,
+                name=collection_id,
                 config={
                     "evaluator": self.evaluator,
                     "gpu": f"{torch.cuda.get_device_name(0)}",
@@ -371,7 +364,7 @@ class RAGBasedExperimentPipeline:
         datamodel.create_collection(
             evaluator = evaluator,
             mode = mode,
-            collection_name = self.collection_id,
+            collection_name = collection_id,
             log = self.log,
             log_config = log_config,
             checkpoint = checkpoint,
@@ -382,8 +375,8 @@ class RAGBasedExperimentPipeline:
 
 
 
-    def train_datamodels(self):
-
+    def train_datamodels(self) -> None:
+        collection_id = "default_collection"
         epochs = self.epochs
         lr = self.lr
         train_batches = self.train_batches
@@ -418,7 +411,7 @@ class RAGBasedExperimentPipeline:
                     "datamodel_configs": repr(config),
 
                 },
-                tags=self.tags.extend(["training"])
+                tags=self.tags.extend(["training", collection_id, self.model_run_id]) # type: ignore
             )
 
 
@@ -431,7 +424,7 @@ class RAGBasedExperimentPipeline:
 
         datamodel.train_datamodels(
             model_factory=model_factory,
-            collection_name=self.collection_id,	
+            collection_name=collection_id,	
             epochs=epochs,
             train_batches=train_batches,
             val_batches=val_batches,
@@ -446,7 +439,7 @@ class RAGBasedExperimentPipeline:
 
         
 
-    def evaluate_datamodels(self):
+    def evaluate_datamodels(self, collection_id: str):
 
         config = DatamodelIndexBasedConfig(
             k = self.k,
@@ -471,14 +464,14 @@ class RAGBasedExperimentPipeline:
                     "metrics": "mse"
 
                 },
-                tags=self.tags.extend(["evaluation"])
+                tags=self.tags.extend(["evaluation", collection_id, self.model_run_id])
             )
 
         datamodel = DatamodelsIndexBasedNQPipeline(config)
             
         datamodel.evaluate_test_collections(
                 evaluation_id=f"evaluation_{self.model_run_id}_{self.evaluation_metric}",
-                collection_name=self.test_collection_id,
+                collection_name=collection_id,
                 model_id=self.model_run_id,
                 log = self.log,
                 log_config=log_config,
