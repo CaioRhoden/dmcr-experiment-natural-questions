@@ -115,5 +115,5 @@ if __name__ == "__main__":
 
     pipeline = initiate_pipeline(args)
     pipeline.setup()
-    # pipeline.get_rag_retrieval()
-    pipeline.get_rag_generations()
+    pipeline.get_rag_retrieval()
+    # pipeline.get_rag_generations()
