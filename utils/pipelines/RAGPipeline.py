@@ -118,7 +118,7 @@ class RAGPipeline:
         ### Load faiss indices
         index = faiss.read_index(self.vector_db_path)
         # ip_index = faiss.read_index(IP_FAISS_INDEX_PATH)
-        embedder = FlagModel(self.embeder_path, devices=["cuda:0"], use_fp16=True)
+        embedder = FlagModel(self.embeder_path, devices=["cuda:0"], use_fp16=True, batch_size=1)
         
         if self.log:
             start_time = datetime.datetime.now()
@@ -147,8 +147,9 @@ class RAGPipeline:
         for idx in range(len(df)):
 
             question = df[idx]["question"].to_numpy().flatten()[0]
+            print(f"Question {idx}: {question}")
             query_embedding = embedder.encode(
-                [question],
+                question,
                 convert_to_numpy=True,
             )
             query_embedding = query_embedding.astype('float32').reshape(1, -1)

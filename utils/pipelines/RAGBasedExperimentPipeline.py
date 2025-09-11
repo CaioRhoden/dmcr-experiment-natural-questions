@@ -298,6 +298,7 @@ class RAGBasedExperimentPipeline:
                         start_idx: int = 0,
                         end_idx: int = -1,
                         checkpoint: int = 50,
+                        collection_id: str = "default_collection"
       ):
 
 
@@ -348,16 +349,15 @@ class RAGBasedExperimentPipeline:
             log_config = LogConfig(
                 project=self.project_log,
                 dir="logs",
-                id=f"train_collections_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
+                id=f"{mode}_collections_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
                 name=collection_id,
                 config={
                     "evaluator": self.evaluator,
                     "gpu": f"{torch.cuda.get_device_name(0)}",
-                    "index": "FAISS_L2",
                     "size_index": self.size_index,
                     "datamodel_configs": repr(config)
                 },
-                tags=self.tags.extend([mode, "collections"])
+                tags=self.tags.extend([mode, "collections", collection_id])
             )
 
         print("Start Creating Train Collection")
