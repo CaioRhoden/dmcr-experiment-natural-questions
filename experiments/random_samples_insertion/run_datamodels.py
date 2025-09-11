@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 import random
+from turtle import st
+from polars import col
 import tyro
 import sys
 
@@ -44,10 +46,8 @@ class DatamodelsConfig:
     '''Project log name fgor wandb'''
     model_run_id: str = "datamodels_random_20"
     '''ID of the model run.'''
-    train_collection_id: str = "random_sample_insertion_20"
+    collection_id: str = "random_sample_insertion_20"
     '''ID of the training collection.'''
-    test_collection_id: str = "random_sample_insertion_20"
-    '''ID of the testing collection.'''
     k: int = 16
     '''Number of top-k results to retrieve.'''
     size_index: int = 120
@@ -73,18 +73,11 @@ class DatamodelsConfig:
     '''Number of testing samples.'''
     tags: list[str] = field(default_factory=list)
     '''List of tags for the experiment.'''
-    train_start_idx: int = 0
-    '''Starting index for the training set.'''
-    train_end_idx: int = -1
-    '''Ending index for the training set.'''
-    test_start_idx: int = 0
-    '''Starting index for the testing set.'''
-    test_end_idx: int = -1
-    '''Ending index for the testing set.'''
-    train_checkpoint: int = 100
-    '''Checkpoint interval for training.'''
-    test_checkpoint: int = 100
-    '''Checkpoint interval for testing.'''
+    start_idx: int = 0
+    end_idx: int|None = -1
+    '''Start and end indices for the dataset.'''
+    checkpoint: int = 100
+    mode: str = "train"
     
     # Datamodels Training Config Fields
     epochs: int = 1000
@@ -132,8 +125,6 @@ def initiate_pipeline(args: DatamodelsConfig) -> RAGBasedExperimentPipeline:
         language_model_path=args.language_model_path,
         project_log=args.project_log,
         model_run_id=args.model_run_id,
-        train_collection_id=args.train_collection_id,
-        test_collection_id=args.test_collection_id,
         k=args.k,
         size_index=args.size_index,
         num_models=args.num_models,
@@ -142,12 +133,6 @@ def initiate_pipeline(args: DatamodelsConfig) -> RAGBasedExperimentPipeline:
         instruction=args.instruction,
         train_samples=args.train_samples,
         test_samples=args.test_samples,
-        train_start_idx=args.train_start_idx,
-        train_end_idx=args.train_end_idx,
-        test_start_idx=args.test_start_idx,
-        test_end_idx=args.test_end_idx,
-        train_checkpoint=args.train_checkpoint,
-        test_checkpoint=args.test_checkpoint,
         epochs=args.epochs,
         lr=args.lr,
         train_batches=args.train_batches,
@@ -157,7 +142,6 @@ def initiate_pipeline(args: DatamodelsConfig) -> RAGBasedExperimentPipeline:
         log_epochs=args.log_epochs,
         batch_size=args.batch_size,
         attn_implementation=args.attn_implementation,
-        tags=args.tags,
         lm_configs=args.lm_configs,
         datamodels_generation_name=args.model_run_id
     )
@@ -181,18 +165,32 @@ if __name__ == "__main__":
         
     elif args.run_type == "pre_collections":
 
-        pipeline.run_pre_colections()
+        pipeline.run_pre_colections(
+            args.mode,
+            args.start_idx,
+            args.end_idx,
+            args.checkpoint,
+        )
         sys.exit(0)
     
     elif args.run_type == "collections":
 
-        pipeline.run_collections()
+        pipeline.run_collections(
+            args.mode,
+            args.start_idx,
+            args.end_idx,
+            args.checkpoint,
+            args.collection_id
+            
+        )
         sys.exit(0)
     
     elif args.run_type == "training":
 
-        pipeline.train_datamodels()
-        pipeline.evaluate_datamodels()
+        pipeline.train_datamodels(
+            collection_id=args.collection_id,
+        )
+        pipeline.evaluate_datamodels(collection_id=args.collection_id)
         sys.exit(0)
 
     elif args.run_type == "generation":
