@@ -41,7 +41,6 @@ class RAGBasedExperimentPipeline:
         language_model_path: str,
         project_log: str,
         model_run_id: str,
-        collection_id: str,
         k: int,
         size_index: int,
         num_models: int,
@@ -375,8 +374,7 @@ class RAGBasedExperimentPipeline:
 
 
 
-    def train_datamodels(self) -> None:
-        collection_id = "default_collection"
+    def train_datamodels(self,collection_id: str = "default_collection")-> None:
         epochs = self.epochs
         lr = self.lr
         train_batches = self.train_batches
