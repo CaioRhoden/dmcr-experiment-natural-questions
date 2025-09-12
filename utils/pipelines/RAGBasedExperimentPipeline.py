@@ -146,10 +146,10 @@ class RAGBasedExperimentPipeline:
             os.mkdir(f"{self.root_path}/datamodels/datasets")
         if not os.path.exists(f"{self.root_path}/datamodels/pre_collections"):
             os.mkdir(f"{self.root_path}/datamodels/pre_collections")
-        if not os.path.exists(f"{self.root_path}/datamodels/train"):
-            os.mkdir(f"{self.root_path}/datamodels/train")
-        if not os.path.exists(f"{self.root_path}/datamodels/test"):
-            os.mkdir(f"{self.root_path}/datamodels/test")
+        if not os.path.exists(f"{self.root_path}/datamodels/pre_collections/train"):
+            os.mkdir(f"{self.root_path}/datamodels/pre_collections/train")
+        if not os.path.exists(f"{self.root_path}/datamodels/pre_collections/test"):
+            os.mkdir(f"{self.root_path}/datamodels/pre_collections/test")
         if not os.path.exists(f"{self.root_path}/datamodels/collections"):
             os.mkdir(f"{self.root_path}/datamodels/collections")
         if not os.path.exists(f"{self.root_path}/datamodels/evaluations"):
