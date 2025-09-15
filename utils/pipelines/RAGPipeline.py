@@ -35,6 +35,7 @@ class RAGPipeline:
         root_path: str = ".",
         seed: Optional[int] = None,
         attn_implementation: str = "sdpa",
+        thinking: bool = False,
         batch_size: int = 1,
         log: bool = False,
         **kwargs, # Use kwargs to gracefully handle any extra fields
@@ -70,6 +71,7 @@ class RAGPipeline:
         self.seed = seed
         self.batch_size = batch_size
         self.attn_implementation: str = attn_implementation
+        self.thinking = thinking
 
         if self.seed is not None:
             set_random_seed(self.seed)
@@ -93,6 +95,26 @@ class RAGPipeline:
         if not os.path.exists(f"{self.root_path}/logs"):
             os.mkdir(f"{self.root_path}/logs")
 
+    def _parse_generation_output(self, output: dict) -> str:
+        """
+        Parse the output of the generation model, analyze if is it "enable_thinking"
+
+        Parameters:
+        - output (str): The raw output from the generation model.
+
+        Returns:
+        - str: The parsed output.
+        """
+        # Implement your parsing logic here
+        
+        if self.thinking:
+            # Example parsing logic for "enable_thinking"
+            # This is a placeholder; replace with actual logic as needed
+            parsed_output = str(output["generated_text"].split("</think>")[-1].strip())
+        else:
+            parsed_output = str(output["generated_text"])
+        
+        return parsed_output
 
     def get_rag_retrieval(self):
 
@@ -204,9 +226,9 @@ class RAGPipeline:
         
         batch_list = []
         if self.batch_size == 1:
-            model = GenericInstructModelHF(self.language_model_path, attn_implementation=self.attn_implementation)
+            model = GenericInstructModelHF(self.language_model_path, attn_implementation=self.attn_implementation, thinking=self.thinking)
         elif self.batch_size > 1:
-            model = GenericInstructBatchHF(self.language_model_path, attn_implementation=self.attn_implementation)
+            model = GenericInstructBatchHF(self.language_model_path, attn_implementation=self.attn_implementation, thinking=self.thinking)
             
         else:
             raise ValueError("Batch size must be at least 1")
@@ -256,7 +278,7 @@ class RAGPipeline:
                     config_params=self.lm_configs
                     )
                     for i, _q in enumerate(batch_list):
-                        generations[f"{_q[0]}"] = [str(outputs[i][0]["generated_text"])]
+                        generations[f"{_q[0]}"] = [self._parse_generation_output(outputs[i][0])]
                     batch_list = []
                 
                     if self.model_run_id is None:
@@ -278,7 +300,7 @@ class RAGPipeline:
                     config_params=self.lm_configs
                 )
 
-                generations[f"{idx}"] = [str(out["generated_text"]) for out in outputs]
+                generations[f"{idx}"] = [self._parse_generation_output(out) for out in outputs]
 
                 if self.model_run_id is None:
                     path = f"{self.root_path}/generations/{start_index}_{end_index}_rag_generations.json"
@@ -304,37 +326,4 @@ class RAGPipeline:
         ## Save into json
         
         
-    def invoke_pipeline_step(self, step: str):
 
-        """
-        This function is used to invoke the pipeline for a specific step.
-        
-        It uses a match-case statement to determine which step to run.
-        
-        The steps are:
-        - setup: Sets up the experiment.
-        - get_rag_retrieval: Get the retrieval data from the RAG model.
-        - get_rag_generations: Get the generations data from the RAG model.
-        - get_datamodels_generations: Get the generations data from the datamodels.
-        - create_datamodels_datasets: Create the datasets for the datamodels.
-        - run_pre_collections: Run the pre-collections for the datamodels.
-        - run_collections: Run the collections for the datamodels.
-        - train_datamodels: Train the datamodels.
-        - evaluate_datamodels: Evaluate the datamodels.
-        - get_datampodels_retrieval: Get the retrieval data from the datamodels.
-        
-        The function does not return anything.
-        """
-        match step:
-            case "setup":
-                self.setup()
-
-            case "get_rag_retrieval":
-                self.get_rag_retrieval()
-
-            case "get_rag_generations":
-                self.get_rag_generations()
-            
-            case _:
-                raise ValueError(f"Invalid step: {step}")
-        

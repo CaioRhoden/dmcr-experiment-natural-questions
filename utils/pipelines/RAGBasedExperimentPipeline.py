@@ -46,8 +46,7 @@ class RAGBasedExperimentPipeline:
         num_models: int,
         evaluation_metric: str,
         evaluator: str,
-        instruction: str,
-        
+        instruction: str, 
         train_samples: int,
         test_samples: int,
         epochs: int,
@@ -65,6 +64,7 @@ class RAGBasedExperimentPipeline:
         datamodels_generation_name: Optional[str] = None,
         batch_size: int = 1,
         attn_implementation: str = "sdpa",
+        thinking: bool = False,
         **kwargs, # Use kwargs to gracefully handle any extra fields
     ):
         
@@ -116,6 +116,7 @@ class RAGBasedExperimentPipeline:
             set_random_seed(seed)
         self.batch_size = batch_size
         self.attn_implementation = attn_implementation
+        self.thinking = thinking
 
 
 
@@ -181,7 +182,7 @@ class RAGBasedExperimentPipeline:
 
         setter = IndexBasedSetter(config=setter_config)
         setter.set()
-        
+    
     def run_pre_colections(self, 
                            mode: str ="train",
                            start_idx: int = 0,
@@ -202,9 +203,9 @@ class RAGBasedExperimentPipeline:
         ### Initiate models
         batch_list = []
         if self.batch_size == 1:
-            model = GenericInstructModelHF(self.language_model_path, attn_implementation=self.attn_implementation)
+            model = GenericInstructModelHF(self.language_model_path, attn_implementation=self.attn_implementation, thinking=self.thinking)
         elif self.batch_size > 1:
-            model = GenericInstructBatchHF(self.language_model_path, attn_implementation=self.attn_implementation)
+            model = GenericInstructBatchHF(self.language_model_path, attn_implementation=self.attn_implementation, thinking=self.thinking)
         else:
             raise ValueError("Batch size must be at least 1")
 

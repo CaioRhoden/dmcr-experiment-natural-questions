@@ -32,6 +32,7 @@ class ZeroShotBaselinePipeline:
                 batch_size: int = 1,
                 instruction: str = "You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens",
                 attn_implementation: str = "sdpa",
+                thinking: bool = False, 
                 seed: Optional[int] = None):
     
 
@@ -47,10 +48,32 @@ class ZeroShotBaselinePipeline:
         self.project_log = project_log
         self.batch_size = batch_size
         self.attn_implementation: str = attn_implementation
+        self.thinking = thinking
         
         if seed:
             set_random_seed(seed)
 
+    def _parse_generation_output(self, output: dict) -> str:
+        """
+        Parse the output of the generation model, analyze if is it "enable_thinking"
+
+        Parameters:
+        - output (str): The raw output from the generation model.
+
+        Returns:
+        - str: The parsed output.
+        """
+        # Implement your parsing logic here
+        
+        if self.thinking:
+            # Example parsing logic for "enable_thinking"
+            # This is a placeholder; replace with actual logic as needed
+            parsed_output = str(output["generated_text"].split("</think>")[-1].strip())
+        else:
+            parsed_output = str(output["generated_text"])
+
+        return parsed_output
+    
     def generate_inferences(self, start_index: int = 0, end_index: Optional[int] = None):
         """
         Make baseline generations for a specific set and save them to the "generations" folder with "baseline_generations.json"
@@ -88,9 +111,9 @@ class ZeroShotBaselinePipeline:
             raise ValueError("start_index must be less than end_index")
 
         if self.batch_size == 1:
-            model = GenericInstructModelHF(self.language_model_path, attn_implementation=self.attn_implementation)
+            model = GenericInstructModelHF(self.language_model_path, attn_implementation=self.attn_implementation, thinking=self.thinking)
         elif self.batch_size > 1:
-            model = GenericInstructBatchHF(self.language_model_path, attn_implementation=self.attn_implementation)
+            model = GenericInstructBatchHF(self.language_model_path, attn_implementation=self.attn_implementation, thinking=self.thinking)
             batch_list = []
         else:
             raise ValueError("Batch size must be at least 1")
@@ -132,7 +155,7 @@ class ZeroShotBaselinePipeline:
                     config_params=model_configs
                     )
                     for i, _q in enumerate(batch_list):
-                        generations[f"{_q[0]}"] = [str(outputs[i][0]["generated_text"])]
+                        generations[f"{_q[0]}"] = [self._parse_generation_output(outputs[i][0])]
                     batch_list = []
                 
                     if self.model_run_id is None:
@@ -154,7 +177,7 @@ class ZeroShotBaselinePipeline:
                     config_params=model_configs
                 )
 
-                generations[f"{idx}"] = [str(out["generated_text"]) for out in outputs]
+                generations[f"{idx}"] = [self._parse_generation_output(out) for out in outputs]
 
                 if self.model_run_id is None:
                     path = f"{self.root_path}/generations/{start_index}_{end_index}_baseline_zero_shot_generations.json"
