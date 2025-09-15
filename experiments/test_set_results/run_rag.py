@@ -47,6 +47,8 @@ class RagConfig:
     '''Size of inferences to be done at the same time'''
     attn_implementation: str = "sdpa"
     '''Attn implementation for the desired gpu, recommended default "sdpa" and "flash_attention_2" when possible'''
+    thinking: bool = False
+    '''Whether to enable the thinking mode in the model.'''
     start_idx: int = 0
     '''Starting index for the questions to be processed.'''
     end_idx: int|None = None
@@ -96,6 +98,9 @@ def initiate_pipeline(args: RagConfig) -> RAGPipeline:
         seed=seed,
         tags = args.tags,
         log=args.log,
+        attn_implementation=args.attn_implementation,
+        thinking=args.thinking,
+        batch_size=args.batch_size,
     )
 
 
@@ -113,5 +118,5 @@ if __name__ == "__main__":
 
     pipeline = initiate_pipeline(args)
     pipeline.setup()
-    pipeline.get_rag_retrieval()
+    # pipeline.get_rag_retrieval()
     pipeline.get_rag_generations()
