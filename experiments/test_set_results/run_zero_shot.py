@@ -37,6 +37,8 @@ class ZeroShotConfig:
     '''Size of inferences to be done at the same time'''
     attn_implementation: str = "sdpa"
     '''Attn implementation for the desired gpu, recommended default "sdpa" and "flash_attention_2" when possible'''
+    thinking: bool = False
+    '''Whether to enable the thinking mode in the model.'''
     start_idx: int = 0
     '''Starting index for the questions to be processed.'''
     end_idx: int|None = None
@@ -80,7 +82,8 @@ def initiate_pipeline(args: ZeroShotConfig) -> ZeroShotBaselinePipeline:
         tags = args.tags,
         batch_size = args.batch_size,
         log=args.log,
-        attn_implementation=args.attn_implementation
+        attn_implementation=args.attn_implementation,
+        thinking=args.thinking
     )
 
 
