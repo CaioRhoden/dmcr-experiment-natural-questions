@@ -93,6 +93,8 @@ class DatamodelsConfig:
     '''Batch size for training.'''
     attn_implementation: str = "sdpa"
     '''Attention implementation to use. Options: "sdpa", "flash_attention_2",'''
+    thinking: bool = False
+    '''Whether to enable the thinking mode in the model.'''
 
     ## Parameters pre_collections and collections
     start_idx: int = 0
@@ -145,6 +147,7 @@ def initiate_pipeline(args: DatamodelsConfig) -> RAGBasedExperimentPipeline:
         root_path=f"{args.model}",
         batch_size=args.batch_size,
         attn_implementation=args.attn_implementation,
+        thinking=args.thinking,
         tags=args.tags,
         lm_configs=args.lm_configs,
         log=args.log,
