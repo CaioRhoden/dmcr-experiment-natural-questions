@@ -335,7 +335,10 @@ class RAGBasedExperimentPipeline:
                     "num_return_sequences": 1,
                 },
                 instruction="",
-                format_template=format_input
+                format_template=format_input,
+                attn_implementation=self.attn_implementation,
+                thinking=self.thinking
+
             )
 
         else:
