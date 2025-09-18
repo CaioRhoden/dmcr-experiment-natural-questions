@@ -7,7 +7,7 @@ import tyro
 import sys
 
 from utils.set_random_seed import set_random_seed
-from utils.pipelines.RAGBasedExperimentPipeline import RAGBasedExperimentPipeline
+from utils.pipelines.ParallelRAGBasedPipeline import ParallelRAGBasedPipeline
 from pathlib import Path
 root = Path(__file__).parent.parent.parent
 
@@ -77,6 +77,9 @@ class DatamodelsConfig:
     end_idx: int|None = -1
     '''Start and end indices for the dataset.'''
     checkpoint: int = 100
+    '''Checkpoint interval for saving models.'''
+    num_processes: int = 1
+    '''Number of processes for parallel execution.'''
     mode: str = "train"
     
     # Datamodels Training Config Fields
@@ -90,7 +93,7 @@ class DatamodelsConfig:
     '''Number of batches for validation.'''
     val_size: float = 0.15
     '''Proportion of data for validation.'''
-    patience: int = 30
+    patience: int = 25
     '''Patience for early stopping.'''
     log_epochs: int = 25
     '''Interval for logging.'''
@@ -101,7 +104,7 @@ class DatamodelsConfig:
 
 
 
-def initiate_pipeline(args: DatamodelsConfig) -> RAGBasedExperimentPipeline:
+def initiate_pipeline(args: DatamodelsConfig) -> ParallelRAGBasedPipeline:
     """
     Initiates the baseline pipeline with the provided arguments.
     
@@ -113,7 +116,7 @@ def initiate_pipeline(args: DatamodelsConfig) -> RAGBasedExperimentPipeline:
         ZeroShotBaselinePipeline: An instance of the baseline pipeline.
     """
 
-    return RAGBasedExperimentPipeline(
+    return ParallelRAGBasedPipeline(
         seed=seed,
         log=args.log,
         tags=args.tags,
@@ -157,7 +160,7 @@ if __name__ == "__main__":
     args.embeder_path = f"{root}/{args.embeder_path}"
     args.vector_db_path = f"{root}/{args.vector_db_path}"
 
-    pipeline = initiate_pipeline(args)
+    pipeline: ParallelRAGBasedPipeline = initiate_pipeline(args)
     if args.run_type == "setup":
         pipeline.setup()
         pipeline.create_datamodels_datasets()
@@ -170,6 +173,7 @@ if __name__ == "__main__":
             args.start_idx,
             args.end_idx,
             args.checkpoint,
+            num_subprocesses=args.num_processes
         )
         sys.exit(0)
     
@@ -180,7 +184,8 @@ if __name__ == "__main__":
             args.start_idx,
             args.end_idx,
             args.checkpoint,
-            args.collection_id
+            args.collection_id,
+            args.num_processes
             
         )
         sys.exit(0)
@@ -190,7 +195,7 @@ if __name__ == "__main__":
         pipeline.train_datamodels(
             collection_id=args.collection_id,
         )
-        pipeline.evaluate_datamodels(collection_id=args.collection_id)
+        # pipeline.evaluate_datamodels(collection_id=args.collection_id)
         sys.exit(0)
 
     elif args.run_type == "generation":
