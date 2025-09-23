@@ -199,7 +199,6 @@ class RAGBasedExperimentPipeline:
         log_config, checkpoint, output_column, model_configs, and rag_indexes_path
         as parameters. It returns nothing.
         """
-
         ### Initiate models
         batch_list = []
         if self.batch_size == 1:
@@ -208,6 +207,8 @@ class RAGBasedExperimentPipeline:
             model = GenericInstructBatchHF(self.language_model_path, attn_implementation=self.attn_implementation, thinking=self.thinking)
         else:
             raise ValueError("Batch size must be at least 1")
+
+
 
         config = DatamodelIndexBasedConfig(
             k = self.k,
@@ -268,7 +269,7 @@ class RAGBasedExperimentPipeline:
             datamodel.create_pre_collection(pre_collection_pipeline)
 
         elif self.batch_size > 1 and isinstance(model, GenericInstructBatchHF):
-
+            print("Using batch pre collection pipeline")
             pre_collection_pipeline = BatchLLMPreCollectionsPipeline(
                 datamodels_data=pre_collection_data,
                 instruction= self.instruction,
@@ -378,7 +379,15 @@ class RAGBasedExperimentPipeline:
 
 
 
-    def train_datamodels(self,collection_id: str = "default_collection")-> None:
+    def train_datamodels(
+            self,
+            collection_id: str = "default_collection",
+            start_idx: int = 0,
+            end_idx: int | None = None,
+            checkpoint: int | None = None,
+        )-> None:
+
+
         epochs = self.epochs
         lr = self.lr
         train_batches = self.train_batches
@@ -437,6 +446,9 @@ class RAGBasedExperimentPipeline:
             log_config=log_config,
             log_epochs=log_epochs,
             run_id=self.model_run_id,
+            checkpoint=checkpoint,
+            start_idx=start_idx,
+            end_idx=end_idx
         )
 
         
