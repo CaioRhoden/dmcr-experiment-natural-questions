@@ -68,6 +68,18 @@ def _run_collections_worker(init_kwargs: dict, run_kwargs: dict):
     print(f"Process {os.getpid()} finished task for collection '{run_kwargs.get('collection_id')}'.")
 
 
+def _run_training_worker(init_kwargs: dict, run_kwargs: dict):
+    """
+    Worker function for parallel training of datamodels. Instantiates a 
+    RAGBasedExperimentPipeline and runs training for a specific collection.
+    """
+    pipeline = RAGBasedExperimentPipeline(**init_kwargs)
+    print(
+        f"Process {os.getpid()} starting training model: "
+    )
+    pipeline.train_datamodels(**run_kwargs)
+    print(f"Process {os.getpid()} finished training for collection '{run_kwargs.get('collection_id')}'.")
+
 class ParallelRAGBasedPipeline(RAGBasedExperimentPipeline):
     """
     Extends `RAGBasedExperimentPipeline` to enable parallel processing for the
@@ -250,6 +262,82 @@ class ParallelRAGBasedPipeline(RAGBasedExperimentPipeline):
             # Create the process targeting the top-level worker function.
             process = mp.Process(
                 target=_run_collections_worker, 
+                args=(self._init_kwargs, run_kwargs)
+            )
+            processes.append(process)
+            process.start()
+        
+        # Wait for all created processes to complete their execution.
+        for process in processes:
+            process.join()
+            
+        print("\nAll parallel collection creation processes have completed.")
+        print(f"Partial collections were saved with base name: '{collection_id}_part_*'")
+
+    def train_datamodels(self, collection_id: str, num_subprocesses: int = 1, start_idx: int = 0, end_idx: int = -1, checkpoint: int = 50) -> None:
+        
+        if num_subprocesses <= 1:
+            print("Number of subprocesses is 1 or less. Running in standard serial mode.")
+            super().train_datamodels(collection_id=collection_id)
+            return
+
+        # Set the multiprocessing start method to 'spawn'. This is critical for
+        # CUDA compatibility, as it creates a fresh process without inheriting
+        # potentially conflicting parent process state.
+        try:
+            mp.set_start_method('spawn', force=True)
+        except RuntimeError:
+            # This exception is raised if the start method has already been set, which is acceptable.
+            pass
+
+        # Determine the total number of samples to calculate the processing range.
+        # This mirrors the logic in the parent method to ensure consistency.
+        config = DatamodelIndexBasedConfig(
+            k=self.k,
+            num_models=self.num_models,
+            datamodels_path=f"{self.root_path}/datamodels",
+            train_set_path=self.wiki_path,
+            test_set_path=self.questions_path
+        )
+        datamodel = DatamodelsIndexBasedNQPipeline(config)
+
+        total_samples = self.num_models
+
+        effective_end_idx = end_idx if end_idx != -1 and end_idx <= total_samples and end_idx is not None else total_samples
+        total_range = effective_end_idx - start_idx
+        
+        if total_range <= 0:
+            print("The specified index range is empty or invalid. No collections will be created.")
+            return
+
+        # Calculate the size of the data chunk for each subprocess. Using math.ceil ensures
+        # that the entire range is covered, even if it's not perfectly divisible.
+        chunk_size = math.ceil(total_range / num_subprocesses)
+        processes = []
+
+        print(f"Splitting collection creation for '{collection_id}' across {num_subprocesses} processes.")
+
+        for i in range(num_subprocesses):
+            p_start_idx = start_idx + i * chunk_size
+            p_end_idx = min(start_idx + (i + 1) * chunk_size, effective_end_idx)
+
+            # Do not create a process for an empty range.
+            if p_start_idx >= p_end_idx:
+                continue
+
+            # Define arguments for the worker's call to run_collections.
+            # A unique collection_id is created for each part to prevent file I/O conflicts.
+            run_kwargs = {
+                "start_idx": p_start_idx,
+                "end_idx": p_end_idx,
+                "checkpoint": checkpoint,
+                "collection_id": f"{collection_id}",
+                "model_run_id": self.model_run_id
+            }
+            
+            # Create the process targeting the top-level worker function.
+            process = mp.Process(
+                target=_run_training_worker, 
                 args=(self._init_kwargs, run_kwargs)
             )
             processes.append(process)
