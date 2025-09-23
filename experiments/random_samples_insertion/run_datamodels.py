@@ -78,7 +78,7 @@ class DatamodelsConfig:
     '''Start and end indices for the dataset.'''
     checkpoint: int = 100
     '''Checkpoint interval for saving models.'''
-    num_processes: int = 1
+    num_subprocesses: int = 1
     '''Number of processes for parallel execution.'''
     mode: str = "train"
     
@@ -173,7 +173,7 @@ if __name__ == "__main__":
             args.start_idx,
             args.end_idx,
             args.checkpoint,
-            num_subprocesses=args.num_processes
+            num_subprocesses=args.num_subprocesses
         )
         sys.exit(0)
     
@@ -185,7 +185,7 @@ if __name__ == "__main__":
             args.end_idx,
             args.checkpoint,
             args.collection_id,
-            args.num_processes
+            args.num_subprocesses
             
         )
         sys.exit(0)
