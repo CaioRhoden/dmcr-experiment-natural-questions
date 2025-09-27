@@ -1,3 +1,4 @@
+from typing import Optional
 import torch.multiprocessing as mp
 import math
 import os
@@ -158,7 +159,7 @@ class ParallelRAGBasedPipeline(RAGBasedExperimentPipeline):
                 "start_idx": p_start_idx,
                 "end_idx": p_end_idx,
                 "checkpoint": checkpoint,
-                "collection_id": f"{collection_id}_part_{i}"
+                "collection_id": f"{collection_id}_{p_start_idx}_{p_end_idx}"
             }
             
             process = mp.Process(target=_run_pre_collections_worker, args=(self._init_kwargs, run_kwargs))
@@ -256,7 +257,7 @@ class ParallelRAGBasedPipeline(RAGBasedExperimentPipeline):
                 "start_idx": p_start_idx,
                 "end_idx": p_end_idx,
                 "checkpoint": checkpoint,
-                "collection_id": f"{collection_id}_part_{i}"
+                "collection_id": f"{collection_id}_{p_start_idx}_{p_end_idx}",
             }
             
             # Create the process targeting the top-level worker function.
@@ -274,7 +275,7 @@ class ParallelRAGBasedPipeline(RAGBasedExperimentPipeline):
         print("\nAll parallel collection creation processes have completed.")
         print(f"Partial collections were saved with base name: '{collection_id}_part_*'")
 
-    def train_datamodels(self, collection_id: str, num_subprocesses: int = 1, start_idx: int = 0, end_idx: int = -1, checkpoint: int = 50) -> None:
+    def train_datamodels(self, collection_id: str, num_subprocesses: int = 1, start_idx: int = 0, end_idx: Optional[int] = None, checkpoint: Optional[int] = None) -> None:
         
         if num_subprocesses <= 1:
             print("Number of subprocesses is 1 or less. Running in standard serial mode.")
@@ -346,6 +347,3 @@ class ParallelRAGBasedPipeline(RAGBasedExperimentPipeline):
         # Wait for all created processes to complete their execution.
         for process in processes:
             process.join()
-            
-        print("\nAll parallel collection creation processes have completed.")
-        print(f"Partial collections were saved with base name: '{collection_id}_part_*'")

@@ -89,7 +89,7 @@ class DatamodelsConfig:
     '''Patience for early stopping.'''
     log_epochs: int = 25
     '''Interval for logging.'''
-    batch_size: int = 8
+    batch_size: int = 1
     '''Batch size for training.'''
     attn_implementation: str = "sdpa"
     '''Attention implementation to use. Options: "sdpa", "flash_attention_2",'''
