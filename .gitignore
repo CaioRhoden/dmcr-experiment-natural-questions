@@ -1,6 +1,6 @@
 # Custom
 data
-models
+/models
 logs
 batch_scripts/
 *.sh

@@ -201,8 +201,8 @@ if __name__ == "__main__":
 
     elif args.run_type == "generation":
 
-        pipeline.get_datamodels_generations()
-        pipeline.get_datamodels_retrieval()
+        pipeline.get_datamodels_generations(args.model_run_id, args.model_run_id)
+        pipeline.get_datamodels_retrieval(args.model_run_id)
         sys.exit(0)
 
     else:
