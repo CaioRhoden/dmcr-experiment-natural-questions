@@ -500,13 +500,6 @@ class RAGBasedExperimentPipeline:
         wiki = pl.read_ipc(self.wiki_path).with_row_index("idx")
         questions = pl.read_ipc(self.questions_path)
 
-        
-        model_configs = {
-                "temperature": 0.7,
-                "top_p": 0.9,
-                "max_new_tokens": 10,
-        }
-
         generations = {}
 
         batch_list = []
