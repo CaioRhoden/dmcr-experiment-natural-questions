@@ -493,7 +493,11 @@ class RAGBasedExperimentPipeline:
             )
 
 
-    def get_datamodels_generations(self):
+    def get_datamodels_generations(
+            self,
+            datamodels_generation_name,
+            model_run_id
+        ):
 
 
         ## Setup variables
@@ -513,14 +517,7 @@ class RAGBasedExperimentPipeline:
             retrieval_data = json.load(f)
 
         ## Load weights
-        weights = torch.load(f"{self.root_path}/datamodels/models/{self.model_run_id}/weights.pt")
-        if self.datamodels_generation_name is None:
-            self.datamodels_generation_name = self.model_run_id
-
-        if not os.path.exists(f"{self.root_path}/generations/{self.datamodels_generation_name}"):
-            os.mkdir(f"{self.root_path}/generations/{self.datamodels_generation_name}")
-
-
+        weights = torch.load(f"{self.root_path}/datamodels/models/{model_run_id}/weights.pt")
         ## Get self.k highest weights
         k_values, k_indices = weights.topk(self.k, dim=1)
 
@@ -528,8 +525,8 @@ class RAGBasedExperimentPipeline:
             start_time = datetime.datetime.now()
             wandb.init(
                 project=self.project_log,
-                name=f"datamodels_generations_{self.model_run_id}",
-                id = f"datamodels_generations_{self.model_run_id}_{start_time.strftime('%Y-%m-%d_%H-%M-%S')}",
+                name=f"datamodels_generations_{model_run_id}",
+                id = f"datamodels_generations_{model_run_id}_{start_time.strftime('%Y-%m-%d_%H-%M-%S')}",
                 config={
                     "gpu": f"{torch.cuda.get_device_name(0)}",
                     "size_index": self.size_index,
@@ -569,7 +566,7 @@ class RAGBasedExperimentPipeline:
                         generations[f"{_q[0]}"] = [str(outputs[i][0]["generated_text"])]
                     batch_list = []
                 
-                    with open(f"{self.root_path}/generations/{self.datamodels_generation_name}.json", "w") as f:
+                    with open(f"{self.root_path}/generations/{datamodels_generation_name}.json", "w") as f:
                         json.dump(generations, f)
 
             else:
@@ -583,7 +580,7 @@ class RAGBasedExperimentPipeline:
 
                 generations[str(r_idx)] = [str(out["generated_text"]) for out in outputs]
 
-                with open(f"{self.root_path}/generations/{self.datamodels_generation_name}.json", "w") as f:
+                with open(f"{self.root_path}/generations/{datamodels_generation_name}.json", "w") as f:
                     json.dump(generations, f)
 
         if self.log:
@@ -603,7 +600,7 @@ class RAGBasedExperimentPipeline:
             wandb.finish()
 
 
-    def get_datamodels_retrieval(self):
+    def get_datamodels_retrieval(self, model_run_id: str):
 
         """
         This function is used to get the retrieval data from the datamodels.
@@ -620,8 +617,8 @@ class RAGBasedExperimentPipeline:
             start_time = datetime.datetime.now()
             wandb.init(
                 project=self.project_log,
-                name=f"datamodels_retrieval_{self.model_run_id}",
-                id = f"datmaodels_retieval_{self.model_run_id}_{start_time.strftime('%Y-%m-%d_%H-%M-%S')}",
+                name=f"datamodels_retrieval_{model_run_id}",
+                id = f"datmaodels_retieval_{model_run_id}_{start_time.strftime('%Y-%m-%d_%H-%M-%S')}",
                 config={
                     "gpu": f"{torch.cuda.get_device_name(0)}",
                     "size_index": self.size_index,
@@ -633,12 +630,11 @@ class RAGBasedExperimentPipeline:
             wandb.log({"start_time": start_time.strftime('%Y-%m-%d_%H-%M-%S')})
 
 
-        model_id = self.model_run_id
         load_weights_to_json(
-            f"{self.root_path}/datamodels/models/{model_id}/weights.pt",
+            f"{self.root_path}/datamodels/models/{model_run_id}/weights.pt",
             self.retrieval_path,
             f"{self.root_path}/retrieval",
-            model_id
+            model_run_id
         )
 
         if self.log:
@@ -652,8 +648,8 @@ class RAGBasedExperimentPipeline:
                 description="Datamodels retrieval daa"
             )
 
-            artifact.add_file(f"{self.root_path}/retrieval/{model_id}_indexes.json")
-            artifact.add_file(f"{self.root_path}/retrieval/{model_id}_weights.json")
+            artifact.add_file(f"{self.root_path}/retrieval/{model_run_id}_indexes.json")
+            artifact.add_file(f"{self.root_path}/retrieval/{model_run_id}_weights.json")
             wandb.log_artifact(artifact)
 
             wandb.finish()
