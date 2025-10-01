@@ -19,7 +19,7 @@ from dmcr.datamodels.setter.SetterConfig import IndexBasedSetterConfig
 from dmcr.datamodels.pipeline.DatamodelsIndexBasedNQPipeline import DatamodelsIndexBasedNQPipeline
 from dmcr.datamodels.pipeline.PreCollectionsPipeline import DatamodelsPreCollectionsData, BaseLLMPreCollectionsPipeline, BatchLLMPreCollectionsPipeline
 from dmcr.datamodels.config import DatamodelIndexBasedConfig, LogConfig
-from dmcr.models import GenericInstructModelHF, GenericInstructBatchHF
+from dmcr.models import GenericInstructModelHF, GenericInstructBatchHF, GenericVLLMBatch
 from dmcr.evaluators import Rouge_L_evaluator, SquadV2Evaluator, JudgeEvaluator
 from dmcr.datamodels.models import LinearRegressor
 from dmcr.datamodels.models import FactoryLinearRegressor
@@ -315,9 +315,18 @@ class RAGBasedExperimentPipeline:
         ## Config evaluator based on yaml parameter
         if self.evaluator == "Rouge-L":
             evaluator = Rouge_L_evaluator()
+
         elif self.evaluator == "SquadV2":
             evaluator = SquadV2Evaluator("best_f1")
+
+
         elif self.evaluator == "Judge":
+            judge_model = GenericVLLMBatch(
+                path=self.language_model_path,
+                thinking=self.thinking,
+                max_model_len=32768,
+            )
+
             def format_input(question, response):
                 return f""""
                 [System] 
@@ -333,12 +342,14 @@ class RAGBasedExperimentPipeline:
                 model_configs = {
                     "temperature": 0.5,
                     "top_p": 0.9,
-                    "num_return_sequences": 1,
+                    "max_new_tokens": 1024,
                 },
                 instruction="",
                 format_template=format_input,
-                attn_implementation=self.attn_implementation,
-                thinking=self.thinking
+                thinking=self.thinking,
+                judge=judge_model,
+                batch_size=self.batch_size
+
 
             )
 
