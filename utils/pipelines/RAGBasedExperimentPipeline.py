@@ -19,7 +19,7 @@ from dmcr.datamodels.setter.SetterConfig import IndexBasedSetterConfig
 from dmcr.datamodels.pipeline.DatamodelsIndexBasedNQPipeline import DatamodelsIndexBasedNQPipeline
 from dmcr.datamodels.pipeline.PreCollectionsPipeline import DatamodelsPreCollectionsData, BaseLLMPreCollectionsPipeline, BatchLLMPreCollectionsPipeline
 from dmcr.datamodels.config import DatamodelIndexBasedConfig, LogConfig
-from dmcr.models import GenericInstructModelHF, GenericInstructBatchHF, GenericVLLMBatch
+from dmcr.models import GenericInstructModelHF, GenericInstructBatchHF, GenericVLLMBatch, BaseLLM
 from dmcr.evaluators import Rouge_L_evaluator, SquadV2Evaluator, JudgeEvaluator
 from dmcr.datamodels.models import LinearRegressor
 from dmcr.datamodels.models import FactoryLinearRegressor
@@ -28,6 +28,7 @@ from dmcr.datamodels.models import FactoryLinearRegressor
 from utils.weights_to_json import load_weights_to_json
 from utils.set_random_seed import set_random_seed
 from utils.context_strategy import nq_context_strategy
+from utils.weights_to_json import concat_sorted_tensors
 
 class RAGBasedExperimentPipeline:
     def __init__(
@@ -204,7 +205,11 @@ class RAGBasedExperimentPipeline:
         if self.batch_size == 1:
             model = GenericInstructModelHF(self.language_model_path, attn_implementation=self.attn_implementation, thinking=self.thinking)
         elif self.batch_size > 1:
-            model = GenericInstructBatchHF(self.language_model_path, attn_implementation=self.attn_implementation, thinking=self.thinking)
+            model = GenericVLLMBatch(
+                path=self.language_model_path,
+                thinking=self.thinking,
+                max_model_len=32768,
+            )
         else:
             raise ValueError("Batch size must be at least 1")
 
@@ -268,7 +273,7 @@ class RAGBasedExperimentPipeline:
 
             datamodel.create_pre_collection(pre_collection_pipeline)
 
-        elif self.batch_size > 1 and isinstance(model, GenericInstructBatchHF):
+        elif self.batch_size > 1:
             print("Using batch pre collection pipeline")
             pre_collection_pipeline = BatchLLMPreCollectionsPipeline(
                 datamodels_data=pre_collection_data,
@@ -343,6 +348,7 @@ class RAGBasedExperimentPipeline:
                     "temperature": 0.5,
                     "top_p": 0.9,
                     "max_new_tokens": 1024,
+                    "n": 5
                 },
                 instruction="",
                 format_template=format_input,
@@ -528,7 +534,17 @@ class RAGBasedExperimentPipeline:
             retrieval_data = json.load(f)
 
         ## Load weights
-        weights = torch.load(f"{self.root_path}/datamodels/models/{model_run_id}/weights.pt")
+        ### Flag exists "weights.pt"
+        weights_dir = f"{self.root_path}/datamodels/models/{model_run_id}"
+        exists_weights = os.path.exists(f"{weights_dir}/weights.pt")
+        # Flag exists more than on file ending with "_weights.pt"
+        exists_more_weights = len([f for f in os.listdir(weights_dir) if f.endswith("_weights.pt")]) >= 1
+        if exists_weights:
+            weights = torch.load(f"{weights_dir}/weights.pt", weights_only=True)
+        elif not exists_weights and exists_more_weights:
+            weights = concat_sorted_tensors(weights_dir)
+            assert weights.shape[0] == self.num_models, f"Number of models in the weights tensor ({weights.shape[0]}) does not match the expected number of models ({num_models})."
+
         ## Get self.k highest weights
         k_values, k_indices = weights.topk(self.k, dim=1)
 
@@ -642,10 +658,11 @@ class RAGBasedExperimentPipeline:
 
 
         load_weights_to_json(
-            f"{self.root_path}/datamodels/models/{model_run_id}/weights.pt",
+            f"{self.root_path}/datamodels/models/{model_run_id}",
             self.retrieval_path,
             f"{self.root_path}/retrieval",
-            model_run_id
+            model_run_id,
+            num_models=self.num_models
         )
 
         if self.log:
