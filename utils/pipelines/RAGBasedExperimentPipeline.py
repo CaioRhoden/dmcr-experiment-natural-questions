@@ -330,6 +330,8 @@ class RAGBasedExperimentPipeline:
                 path=self.language_model_path,
                 thinking=self.thinking,
                 max_model_len=32768,
+                tensor_parallel_size=1,
+                gpu_memory_utilization=0.8
             )
 
             def format_input(question, response):
@@ -348,7 +350,7 @@ class RAGBasedExperimentPipeline:
                     "temperature": 0.5,
                     "top_p": 0.9,
                     "max_new_tokens": 1024,
-                    "n": 5
+                    "n": 3
                 },
                 instruction="",
                 format_template=format_input,

@@ -5,7 +5,7 @@ logs
 batch_scripts/
 *.sh
 !run.sh
-pre_collection_*
+
 wandb
 
 # Byte-compiled / optimized / DLL files
