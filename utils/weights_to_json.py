@@ -1,6 +1,59 @@
+import os
+import re
 import torch
 import json
 import numpy as np
+from pathlib import Path
+
+
+def get_sort_key(file_path: Path) -> int:
+    """Extracts the 'CORRECT_NUMBER' from a filename for sorting."""
+    # This regex finds a pattern like '{ANY_NUMBER}_{KEY_NUMBER}_weights.pt'
+    # and captures the KEY_NUMBER.
+    match = re.search(r'\d+_(\d+)_weights\.pt$', file_path.name)
+    if match:
+        # Return the captured number as an integer for correct numerical sorting.
+        return int(match.group(1))
+    # Return a large number for files that don't match, placing them last.
+    return float('inf')
+
+def concat_sorted_tensors(directory_path: str, concat_dim: int = 0) -> torch.Tensor:
+    """
+    Finds, sorts, and concatenates tensors from a directory.
+
+    Args:
+        directory_path (str): The path to the directory containing the .pt files.
+        concat_dim (int): The dimension along which to concatenate the tensors.
+
+    Returns:
+        torch.Tensor: A single tensor containing all concatenated data.
+    """
+    # 1. Define the directory and find all relevant files
+    p = Path(directory_path)
+    if not p.is_dir():
+        raise FileNotFoundError(f"Directory not found: {directory_path}")
+
+    file_list = list(p.glob('*_weights.pt'))
+
+    # 2. Sort the files based on the extracted 'CORRECT_NUMBER'
+    sorted_files = sorted(file_list, key=get_sort_key)
+    
+    if not sorted_files:
+        print("Warning: No files matching the pattern were found.")
+        return torch.empty(0)
+
+    print("Files will be loaded and concatenated in this order:")
+    for f in sorted_files:
+        print(f"  - {f.name}")
+
+    # 3. Load tensors from the sorted file list
+    tensors_to_concat = [torch.load(f) for f in sorted_files]
+
+    # 4. Concatenate all tensors into a single tensor
+    final_tensor = torch.cat(tensors_to_concat, dim=concat_dim)
+
+    return final_tensor
+
 
 def weights_to_dict(weights: torch.Tensor, subset_documents: dict[str, list[int]], num_models=50) -> list[dict[str, list[int]]]:
 
@@ -44,7 +97,7 @@ def weights_to_dict(weights: torch.Tensor, subset_documents: dict[str, list[int]
 
 
 def load_weights_to_json(
-        weights_path: str,
+        weights_dir: str,
         subset_documents_path: str,
         saving_path: str,
         saving_id: str,
@@ -59,8 +112,7 @@ def load_weights_to_json(
     
     Parameters
     ----------
-    weights_path : str
-        The path to the saved torch tensor
+
     subset_documents_path : str
         The path to the json file containing the subset documents
     k : int
@@ -68,8 +120,21 @@ def load_weights_to_json(
     saving_path : str
         The path to save the result
     """
+
+    ### Flag exists "weights.pt"
+    exists_weights = os.path.exists(f"{weights_dir}/weights.pt")
+    # Flag exists more than on file ending with "_weights.pt"
+    existes_more_weights = len([f for f in os.listdir(weights_dir) if f.endswith("_weights.pt")]) >= 1
     
-    weights = torch.load(weights_path, weights_only=True)
+    ##Loading weights
+    if exists_weights:
+        weights = torch.load(f"{weights_dir}/weights.pt", weights_only=True)
+    elif not exists_weights and existes_more_weights:
+        weights = concat_sorted_tensors(weights_dir)
+        assert weights.shape[0] == num_models, f"Number of models in the weights tensor ({weights.shape[0]}) does not match the expected number of models ({num_models})."
+    else:
+        raise FileNotFoundError(f"No weights file found in {weights_dir}. Please ensure that 'weights.pt' or files ending with '_weights.pt' exist.")
+    
     subset_documents = json.load(open(subset_documents_path, "r"))
     result = weights_to_dict(weights, subset_documents, num_models=num_models)
 
