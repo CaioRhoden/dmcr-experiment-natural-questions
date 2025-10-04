@@ -332,9 +332,7 @@ class ParallelRAGBasedPipeline(RAGBasedExperimentPipeline):
                 "start_idx": p_start_idx,
                 "end_idx": p_end_idx,
                 "checkpoint": checkpoint,
-                "collection_id": f"{collection_id}",
-                "model_run_id": self.model_run_id
-            }
+                "collection_id": f"{collection_id}"            }
             
             # Create the process targeting the top-level worker function.
             process = mp.Process(
