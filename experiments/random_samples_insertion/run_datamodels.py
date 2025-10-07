@@ -194,7 +194,10 @@ if __name__ == "__main__":
 
         pipeline.train_datamodels(
             collection_id=args.collection_id,
-            checkpoint=args.checkpoint
+            checkpoint=args.checkpoint,
+            start_idx=args.start_idx,
+            end_idx=args.end_idx,
+            num_subprocesses=args.num_subprocesses
         )
         # pipeline.evaluate_datamodels(collection_id=args.collection_id)
         sys.exit(0)
