@@ -67,7 +67,7 @@ class DatamodelsConfig:
             "top_p": 0.9,
             "max_new_tokens": 10,
         })
-    train_samples: int = 1200
+    train_samples: int = 2000
     '''Number of training samples.'''
     test_samples: int = 200
     '''Number of testing samples.'''
