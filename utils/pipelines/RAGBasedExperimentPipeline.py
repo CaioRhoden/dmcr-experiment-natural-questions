@@ -545,7 +545,7 @@ class RAGBasedExperimentPipeline:
             weights = torch.load(f"{weights_dir}/weights.pt", weights_only=True)
         elif not exists_weights and exists_more_weights:
             weights = concat_sorted_tensors(weights_dir)
-            assert weights.shape[0] == self.num_models, f"Number of models in the weights tensor ({weights.shape[0]}) does not match the expected number of models ({num_models})."
+            assert weights.shape[0] == self.num_models, f"Number of models in the weights tensor ({weights.shape[0]}) does not match the expected number of models ({self.num_models})."
 
         ## Get self.k highest weights
         k_values, k_indices = weights.topk(self.k, dim=1)
