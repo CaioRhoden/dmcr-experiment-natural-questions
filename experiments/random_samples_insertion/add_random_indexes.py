@@ -1,10 +1,12 @@
+import argparse
 import json
 import polars as pl
 from utils.set_random_seed import set_random_seed
+import argparse
 set_random_seed(42)
 
 
-def add_random_indexes():
+def add_random_indexes(experiment="original", n=120):
     """Add random wiki indexes to existing retrieval index lists.
 
     Reads an indices JSON file and a wiki Feather file, samples random wiki row
@@ -20,7 +22,7 @@ def add_random_indexes():
       - No return value; updates are written to disk.
     """
 
-    indices_path = "retrieval/rag_retrieval_indexes.json"
+    indices_path = f"{experiment}/retrieval/rag_retrieval_indexes.json"
     wiki_path = "../../data/wiki_dump2018_nq_open/processed/wiki.feather"
 
     indices = json.load(open(indices_path, "r"))
@@ -29,22 +31,26 @@ def add_random_indexes():
 
     for key in indices.keys():
         random_indexes = (
-            wiki.sample(n=30, with_replacement=False, seed=42)
+            wiki.sample(n=(n - len(indices[key])+10), with_replacement=False, seed=42)
             .select(pl.col("index"))
             .to_series()
             .to_list()
         )
         current_values = indices[key]
         n_i = 0
-        while len(current_values) < 120:
+        while len(current_values) < n:
             if random_indexes[n_i] not in current_values:
                 current_values.append(random_indexes[n_i])
             n_i += 1
         new_indices[key] = current_values
 
-    json.dump(new_indices, open("retrieval/random_indeces_insertion.json", "w"), indent=4)
+    json.dump(new_indices, open(f"{experiment}/retrieval/random_indeces_insertion.json", "w"), indent=4)
 
 
 
 if __name__ == "__main__":
-    add_random_indexes()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--experiment", default="original")
+    parser.add_argument("--n", type=int, default=120)
+    args = parser.parse_args()
+    add_random_indexes(args.experiment, args.n)

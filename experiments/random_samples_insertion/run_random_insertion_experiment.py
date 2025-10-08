@@ -21,6 +21,7 @@ class DatamodelsConfig:
     '''
     Configuration class for the experiment.
     '''
+    experiment: str = "original"
     run_type: str = "None"
     
     model: str = "None"
@@ -36,7 +37,7 @@ class DatamodelsConfig:
     '''Path to the questions dataset file.'''
     language_model_path: str = "models/Llama-3.2-3B-Instruct"
     '''Path to the language model.'''
-    retrieval_path: str = "experiments/random_samples_insertion/retrieval/random_indeces_insertion.json"
+    retrieval_path: str = "retrieval/random_indeces_insertion.json"
     '''Path to the retrieval indexes JSON file.'''
     embeder_path: str = "models/bge-base-en-v1.5"
     '''Path to the embedder model.'''
@@ -146,7 +147,8 @@ def initiate_pipeline(args: DatamodelsConfig) -> ParallelRAGBasedPipeline:
         batch_size=args.batch_size,
         attn_implementation=args.attn_implementation,
         lm_configs=args.lm_configs,
-        datamodels_generation_name=args.model_run_id
+        datamodels_generation_name=args.model_run_id,
+        root_path=args.experiment
     )
 
 
@@ -156,7 +158,7 @@ if __name__ == "__main__":
     args.questions_path = f"{root}/{args.questions_path}"
     args.language_model_path = f"{root}/{args.language_model_path}"
     args.wiki_path = f"{root}/{args.wiki_path}"
-    args.retrieval_path = f"{root}/{args.retrieval_path}"
+    args.retrieval_path = f"{root}/experiments/random_samples_insertion/{args.experiment}/{args.retrieval_path}"
     args.embeder_path = f"{root}/{args.embeder_path}"
     args.vector_db_path = f"{root}/{args.vector_db_path}"
 
