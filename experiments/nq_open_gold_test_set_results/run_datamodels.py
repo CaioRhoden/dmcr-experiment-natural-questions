@@ -67,7 +67,7 @@ class DatamodelsConfig:
             "top_p": 0.9,
             "max_new_tokens": 10,
         })
-    train_samples: int = 1200
+    train_samples: int = 2000
     '''Number of training samples.'''
     test_samples: int = 200
     '''Number of testing samples.'''
@@ -105,6 +105,8 @@ class DatamodelsConfig:
     '''Checkpoint interval for saving progress.'''
     num_subprocesses: int = 1
     '''Number of subprocesses for parallel execution.'''
+    datamodels_generation_name: str = "datamodels_generation"
+    '''Name for the datamodels generation output.'''
 
 
 
@@ -153,7 +155,8 @@ def initiate_pipeline(args: DatamodelsConfig) -> RAGBasedExperimentPipeline:
         tags=args.tags,
         lm_configs=args.lm_configs,
         log=args.log,
-        num_subprocesses=args.num_subprocesses
+        num_subprocesses=args.num_subprocesses,
+        datamodels_generation_name=args.datamodels_generation_name,
     )
 
 
@@ -203,7 +206,7 @@ if __name__ == "__main__":
 
     elif args.run_type == "generation":
 
-        pipeline.get_datamodels_generations(args.model_run_id, args.model_run_id)
+        # pipeline.get_datamodels_generations(args.model_run_id, args.model_run_id)
         pipeline.get_datamodels_retrieval(args.model_run_id)
         sys.exit(0)
 
