@@ -10,7 +10,7 @@ import json
 from FlagEmbedding import FlagModel
 import wandb
 
-from dmcr.models import GenericInstructModelHF, GenericInstructBatchHF
+from dmcr.models import GenericInstructModelHF, GenericInstructBatchHF, GenericVLLMBatch
 
 
 from utils.set_random_seed import set_random_seed
@@ -26,11 +26,11 @@ class RAGPipeline:
         questions_path: str,
         language_model_path: str,
         project_log: str,
-        model_run_id: str,
         k: int,
         size_index: int,
         instruction: str,
         tags: list[str] = [],
+        model_run_id: str = "rag_generations",
         lm_configs: Optional[dict[str, float|int]] = None,
         root_path: str = ".",
         seed: Optional[int] = None,
@@ -202,7 +202,7 @@ class RAGPipeline:
             wandb.log_artifact(artifact)
             wandb.finish()
 
-    def get_rag_generations(self, start_index: int = 0, end_index: Optional[int] = None):
+    def get_rag_generations(self):
         
 
         wiki = pl.read_ipc(self.wiki_path).with_row_index("idx")
@@ -211,24 +211,11 @@ class RAGPipeline:
         with open(f"{self.root_path}/retrieval/rag_retrieval_indexes.json", "r") as f:
             retrieval_data = json.load(f)
 
-
-        # Set end_index to total questions if not specified
-        if end_index is None:
-            end_index = len(questions)
-        
-        # Validate indices
-        if start_index < 0:
-            raise ValueError("start_index cannot be negative")
-        if end_index > len(questions):
-            raise ValueError(f"end_index ({end_index}) cannot exceed total questions ({len(questions)})")
-        if start_index >= end_index:
-            raise ValueError("start_index must be less than end_index")
-        
         batch_list = []
         if self.batch_size == 1:
             model = GenericInstructModelHF(self.language_model_path, attn_implementation=self.attn_implementation, thinking=self.thinking)
         elif self.batch_size > 1:
-            model = GenericInstructBatchHF(self.language_model_path, attn_implementation=self.attn_implementation, thinking=self.thinking)
+            model = GenericVLLMBatch(self.language_model_path, max_model_len=32768, seed=self.seed)
             
         else:
             raise ValueError("Batch size must be at least 1")
@@ -267,11 +254,11 @@ class RAGPipeline:
                 prompt += f"Document[{self.k-doc_idx}](Title: {docs.filter(pl.col('idx')==top_k[doc_idx])['title'].to_numpy().flatten()[0]}){docs.filter(pl.col('idx')==top_k[doc_idx])['title'].to_numpy().flatten()[0]}\n\n"
             prompt += f"Question: {questions[idx]['question'].to_numpy().flatten()[0]}\nAnswer: "
             
-            if self.batch_size > 1 and isinstance(model, GenericInstructBatchHF):
+            if self.batch_size > 1 and isinstance(model, GenericVLLMBatch):
                 if len(batch_list) < self.batch_size:
                     batch_list.append((idx, prompt))
                 
-                if len(batch_list) == self.batch_size or idx == end_index - 1:
+                if len(batch_list) == self.batch_size or idx == (len(questions) - 1):
                     outputs = model.run(
                     [str(_q[1]) for _q in batch_list], 
                     instruction=self.instruction, 
@@ -282,12 +269,12 @@ class RAGPipeline:
                     batch_list = []
                 
                     if self.model_run_id is None:
-                        path = f"{self.root_path}/generations/{start_index}_{end_index}_rag_generations.json"
+                        path = f"{self.root_path}/generations/rag_generations.json"
                         with open(path, "w") as f:
                             json.dump(generations, f)
                     
                     else:
-                        path = f"{self.root_path}/generations/{self.model_run_id}_{start_index}_{end_index}_rag_generations.json"
+                        path = f"{self.root_path}/generations/{self.model_run_id}.json"
                         with open(path, "w") as f:
                             json.dump(generations, f)
 
@@ -303,12 +290,12 @@ class RAGPipeline:
                 generations[f"{idx}"] = [self._parse_generation_output(out) for out in outputs]
 
                 if self.model_run_id is None:
-                    path = f"{self.root_path}/generations/{start_index}_{end_index}_rag_generations.json"
+                    path = f"{self.root_path}/generations/rag_generations.json"
                     with open(path, "w") as f:
                         json.dump(generations, f)
                 
                 else:
-                    path = f"{self.root_path}/generations/{self.model_run_id}_{start_index}_{end_index}_rag_generations.json"
+                    path = f"{self.root_path}/generations/{self.model_run_id}.json"
                     with open(path, "w") as f:
                         json.dump(generations, f)
             
@@ -317,7 +304,7 @@ class RAGPipeline:
                 "end_time": datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
                 "duration": (datetime.datetime.now() - start_time).total_seconds()
             })
-            artifact = wandb.Artifact(name=f"{self.model_run_id}_{start_index}_{end_index}", type="json", description="RAG generations")
+            artifact = wandb.Artifact(name=f"{self.model_run_id}", type="json", description="RAG generations")
             artifact.add_file(path)
             wandb.log_artifact(artifact)
 
