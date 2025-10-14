@@ -1,6 +1,6 @@
 
 from tracemalloc import start
-from typing import Optional
+from typing import Optional, Literal
 import polars as pl
 import os
 import torch
@@ -11,10 +11,9 @@ from FlagEmbedding import FlagModel
 import wandb
 
 from dmcr.models import GenericInstructModelHF, GenericInstructBatchHF, GenericVLLMBatch
-
+BATCH_MODEL_LM = Literal["hf", "vllm"]
 
 from utils.set_random_seed import set_random_seed
-
 class RAGPipeline:
     def __init__(
         self,
@@ -202,8 +201,16 @@ class RAGPipeline:
             wandb.log_artifact(artifact)
             wandb.finish()
 
-    def get_rag_generations(self):
-        
+    def get_rag_generations(self, batch_model_lm: BATCH_MODEL_LM = "vllm"):
+        """
+        Get RAG generations for the given batch model language model.
+
+        Args:
+            batch_model_lm (BATCH_MODEL_LM): The batch model language model to use.
+
+        Returns:
+            None
+        """
 
         wiki = pl.read_ipc(self.wiki_path).with_row_index("idx")
         questions = pl.read_ipc(self.questions_path)
@@ -212,13 +219,15 @@ class RAGPipeline:
             retrieval_data = json.load(f)
 
         batch_list = []
+        assert(self.batch_size >= 1, "Batch size must be at least 1")
         if self.batch_size == 1:
-            model = GenericInstructModelHF(self.language_model_path, attn_implementation=self.attn_implementation, thinking=self.thinking)
-        elif self.batch_size > 1:
+            model = GenericInstructModelHF(self.language_model_path, attn_implementation=self.attn_implementation, thinking=self.thinking)]
+        elif self.batch_size > 1 and batch_model_lm == "vllm":
             model = GenericVLLMBatch(self.language_model_path, max_model_len=32768, seed=self.seed)
-            
+        elif self.batch_size > 1 and batch_model_lm == "hf":
+            model = GenericInstructBatchHF(self.language_model_path, batch_size=self.batch_size, attn_implementation=self.attn_implementation, thinking=self.thinking)
         else:
-            raise ValueError("Batch size must be at least 1")
+            raise ValueError("Choose either 'hf' or 'vllm' or set batch_size to at least 1.")
 
         if self.log:
             start_time = datetime.datetime.now()
