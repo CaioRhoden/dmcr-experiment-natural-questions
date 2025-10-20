@@ -131,7 +131,7 @@ class ZeroShotBaselinePipeline:
             ## Generate prompt
             prompt = f"Question: {questions[idx]['question'].to_numpy().flatten()[0]}\nAnswer: "
 
-            if self.batch_size > 1 and isinstance(model, GenericVLLMBatch):
+            if self.batch_size > 1:
                 if len(batch_list) < self.batch_size:
                     batch_list.append((idx, prompt))
                 

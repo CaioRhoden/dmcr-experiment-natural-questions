@@ -189,7 +189,8 @@ class RAGBasedExperimentPipeline:
                            start_idx: int = 0,
                            end_idx: int =  -1,
                            checkpoint: int = 50,
-                           collection_id: str = "default_collection"
+                           collection_id: str = "default_collection",
+                           model: GenericInstructModelHF | GenericVLLMBatch | GenericInstructBatchHF | None = None
                         ):
 
 
@@ -202,9 +203,9 @@ class RAGBasedExperimentPipeline:
         """
         ### Initiate models
         batch_list = []
-        if self.batch_size == 1:
+        if model is None and self.batch_size == 1:
             model = GenericInstructModelHF(self.language_model_path, attn_implementation=self.attn_implementation, thinking=self.thinking)
-        elif self.batch_size > 1:
+        elif model is None and self.batch_size > 1:
             model = GenericVLLMBatch(
                 path=self.language_model_path,
                 thinking=self.thinking,
