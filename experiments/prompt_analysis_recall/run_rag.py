@@ -11,13 +11,15 @@ from pathlib import Path
 root = Path(__file__).parent.parent.parent
 SubsizeLiteral = Literal[32, 64, 128]
 KLiteral = Literal[4,8,16]
-InstructionIndexLiteral = Literal[0,1,2,3]
+InstructionIndexLiteral = Literal[0,1,2,3,4,5]
 
 INSTRUCTIONS = [
     "You are given a question and you MUST give a SHORT ANSWER in 5 tokens, you can use the available documents but if they are not helpful, try to answer without them",
     "Answer the following question in 5 tokens",
     "Given the following context, answer the question directly in 5 tokens",
     "You are an expert at answering questions. Use the context to answer the question in 5 tokens. If the context is not helpful, answer without it",
+    "You are given a question and you MUST give a SHORT ANSWER in 5 tokens, you can use the available documents but if they are not helpful try to answer anyway, YOU CAN'T SAY IT'S NOT POSSIBLE TO ANSWER THE QUESTION",
+    "You are given a question and you MUST give a SHORT ANSWER in 5 tokens, you can use the available documents but if they are not helpful try to answer anyway, YOU ALWAYS KNOW THE ANSWER",
 ]
 
 
