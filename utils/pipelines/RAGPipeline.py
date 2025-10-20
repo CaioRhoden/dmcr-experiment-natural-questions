@@ -31,6 +31,7 @@ class RAGPipeline:
         tags: list[str] = [],
         model_run_id: str = "rag_generations",
         lm_configs: Optional[dict[str, float|int]] = None,
+        lm_instance_kwargs: dict = {},
         root_path: str = ".",
         seed: Optional[int] = None,
         attn_implementation: str = "sdpa",
@@ -64,6 +65,7 @@ class RAGPipeline:
             "top_p": 0.9,
             "max_new_tokens": 10,
         }
+        self.lm_instance_kwargs = lm_instance_kwargs
         self.tags = tags
         self.log = True
         self.root_path = root_path
@@ -221,11 +223,11 @@ class RAGPipeline:
         batch_list = []
         assert(self.batch_size >= 1, "Batch size must be at least 1")
         if self.batch_size == 1:
-            model = GenericInstructModelHF(self.language_model_path, attn_implementation=self.attn_implementation, thinking=self.thinking)]
+            model = GenericInstructModelHF(self.language_model_path, attn_implementation=self.attn_implementation, thinking=self.thinking)
         elif self.batch_size > 1 and batch_model_lm == "vllm":
-            model = GenericVLLMBatch(self.language_model_path, max_model_len=32768, seed=self.seed)
+            model = GenericVLLMBatch(self.language_model_path, max_model_len=32768, seed=self.seed, **self.lm_instance_kwargs)
         elif self.batch_size > 1 and batch_model_lm == "hf":
-            model = GenericInstructBatchHF(self.language_model_path, batch_size=self.batch_size, attn_implementation=self.attn_implementation, thinking=self.thinking)
+            model = GenericInstructBatchHF(self.language_model_path, attn_implementation=self.attn_implementation, thinking=self.thinking)
         else:
             raise ValueError("Choose either 'hf' or 'vllm' or set batch_size to at least 1.")
 
@@ -260,14 +262,15 @@ class RAGPipeline:
             ## Generate prompt
             prompt = "Documents: \n"
             for doc_idx in range(len(top_k)-1, -1, -1):
-                prompt += f"Document[{self.k-doc_idx}](Title: {docs.filter(pl.col('idx')==top_k[doc_idx])['title'].to_numpy().flatten()[0]}){docs.filter(pl.col('idx')==top_k[doc_idx])['title'].to_numpy().flatten()[0]}\n\n"
+                prompt += f"Document[{self.k-doc_idx}](Title: {docs.filter(pl.col('idx')==top_k[doc_idx])['title'].to_numpy().flatten()[0]}){docs.filter(pl.col('idx')==top_k[doc_idx])['text'].to_numpy().flatten()[0]}\n\n"
             prompt += f"Question: {questions[idx]['question'].to_numpy().flatten()[0]}\nAnswer: "
             
-            if self.batch_size > 1 and isinstance(model, GenericVLLMBatch):
+            if self.batch_size > 1:
                 if len(batch_list) < self.batch_size:
                     batch_list.append((idx, prompt))
                 
                 if len(batch_list) == self.batch_size or idx == (len(questions) - 1):
+
                     outputs = model.run(
                     [str(_q[1]) for _q in batch_list], 
                     instruction=self.instruction, 
