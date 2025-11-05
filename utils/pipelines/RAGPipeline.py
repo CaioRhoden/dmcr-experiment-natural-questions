@@ -96,7 +96,7 @@ class RAGPipeline:
         if not os.path.exists(f"{self.root_path}/logs"):
             os.mkdir(f"{self.root_path}/logs")
 
-    def _parse_generation_output(self, output: dict) -> str:
+    def _parse_generation_output(self, output: list) -> str:
         """
         Parse the output of the generation model, analyze if is it "enable_thinking"
 
@@ -107,15 +107,17 @@ class RAGPipeline:
         - str: The parsed output.
         """
         # Implement your parsing logic here
-        
-        if self.thinking:
-            # Example parsing logic for "enable_thinking"
-            # This is a placeholder; replace with actual logic as needed
-            parsed_output = str(output["generated_text"].split("</think>")[-1].strip())
-        else:
-            parsed_output = str(output["generated_text"])
-        
-        return parsed_output
+        results = []
+        for out in output:
+            if self.thinking:
+                # Example parsing logic for "enable_thinking"
+                # This is a placeholder; replace with actual logic as needed
+                parsed_output = str(out["generated_text"].split("</think>")[-1].strip())
+            else:
+                parsed_output = str(out["generated_text"])
+            results.append(parsed_output)
+
+        return results
 
     def get_rag_retrieval(self):
 
@@ -147,6 +149,7 @@ class RAGPipeline:
             start_time = datetime.datetime.now()
             wandb.init(
                 project=self.project_log,
+                dir=f"{self.root_path}/logs",
                 name=f"RAG_retrieval_{self.model_run_id}",
                 id = f"RAG_retrieval_{self.model_run_id}_{start_time.strftime('%Y-%m-%d_%H-%M-%S')}",
                 config={
@@ -220,12 +223,15 @@ class RAGPipeline:
         with open(f"{self.root_path}/retrieval/rag_retrieval_indexes.json", "r") as f:
             retrieval_data = json.load(f)
 
+        self.lm_instance_kwargs["seed"] = self.seed
+        self.lm_instance_kwargs["max_model_len"] = 32768
+
         batch_list = []
         assert(self.batch_size >= 1, "Batch size must be at least 1")
         if self.batch_size == 1:
             model = GenericInstructModelHF(self.language_model_path, attn_implementation=self.attn_implementation, thinking=self.thinking)
         elif self.batch_size > 1 and batch_model_lm == "vllm":
-            model = GenericVLLMBatch(self.language_model_path, max_model_len=32768, seed=self.seed, **self.lm_instance_kwargs)
+            model = GenericVLLMBatch(self.language_model_path, vllm_kwargs=self.lm_instance_kwargs)
         elif self.batch_size > 1 and batch_model_lm == "hf":
             model = GenericInstructBatchHF(self.language_model_path, attn_implementation=self.attn_implementation, thinking=self.thinking)
         else:
@@ -235,6 +241,7 @@ class RAGPipeline:
             start_time = datetime.datetime.now()
             wandb.init(
                 project=self.project_log,
+                dir=f"{self.root_path}/logs",
                 name=f"RAG_generations_{self.model_run_id}",
                 id = f"RAG_generations_{self.model_run_id}_{start_time.strftime('%Y-%m-%d_%H-%M-%S')}",
                 config={
@@ -277,7 +284,7 @@ class RAGPipeline:
                     config_params=self.lm_configs
                     )
                     for i, _q in enumerate(batch_list):
-                        generations[f"{_q[0]}"] = [self._parse_generation_output(outputs[i][0])]
+                        generations[f"{_q[0]}"] = self._parse_generation_output(outputs[i])
                     batch_list = []
                 
                     if self.model_run_id is None:
