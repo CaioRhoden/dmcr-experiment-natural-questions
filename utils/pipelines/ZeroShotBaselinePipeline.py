@@ -64,15 +64,17 @@ class ZeroShotBaselinePipeline:
         Returns:
         - str: The parsed output.
         """
-        # Implement your parsing logic here
         
-        if self.thinking:
-            # Example parsing logic for "enable_thinking"
-            # This is a placeholder; replace with actual logic as needed
-            parsed_output = str(output["generated_text"].split("</think>")[-1].strip())
-        else:
-            parsed_output = str(output["generated_text"])
+        parsed_output = []
+        for out in output:
 
+            if self.thinking:
+                # Example parsing logic for "enable_thinking"
+                # This is a placeholder; replace with actual logic as needed
+                parsed_output.append(str(out["generated_text"].split("</think>")[-1].strip()))
+            else:
+                parsed_output.append(str(out["generated_text"]))
+        
         return parsed_output
     
     def generate_inferences(self, batch_model_lm: BATCH_MODEL_LM = "vllm"):
