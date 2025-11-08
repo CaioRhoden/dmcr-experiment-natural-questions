@@ -1,6 +1,9 @@
 
+from ast import parse
+from html import parser
 from tracemalloc import start
 from typing import Optional, Literal
+from unittest.mock import Base
 import polars as pl
 import os
 import torch
@@ -10,7 +13,7 @@ import json
 from FlagEmbedding import FlagModel
 import wandb
 
-from dmcr.models import GenericInstructModelHF, GenericInstructBatchHF, GenericVLLMBatch
+from dmcr.models import  BaseLLM, BatchModel, GenericVLLMBatch
 BATCH_MODEL_LM = Literal["hf", "vllm"]
 
 from utils.set_random_seed import set_random_seed
@@ -23,7 +26,6 @@ class RAGPipeline:
         embeder_path: str,
         vector_db_path: str,
         questions_path: str,
-        language_model_path: str,
         project_log: str,
         k: int,
         size_index: int,
@@ -38,6 +40,7 @@ class RAGPipeline:
         thinking: bool = False,
         batch_size: int = 1,
         log: bool = False,
+        language_model_path: str = "",
         **kwargs, # Use kwargs to gracefully handle any extra fields
     ):
         
@@ -51,7 +54,6 @@ class RAGPipeline:
         self.embeder_path = embeder_path
         self.vector_db_path = vector_db_path
         self.questions_path = questions_path
-        self.language_model_path = language_model_path
         self.project_log = project_log
         self.model_run_id = model_run_id
         self.k = k
@@ -73,6 +75,7 @@ class RAGPipeline:
         self.batch_size = batch_size
         self.attn_implementation: str = attn_implementation
         self.thinking = thinking
+        self.language_model_path = language_model_path
 
         if self.seed is not None:
             set_random_seed(self.seed)
@@ -106,14 +109,16 @@ class RAGPipeline:
         Returns:
         - str: The parsed output.
         """
-        # Implement your parsing logic here
         
-        if self.thinking:
-            # Example parsing logic for "enable_thinking"
-            # This is a placeholder; replace with actual logic as needed
-            parsed_output = str(output["generated_text"].split("</think>")[-1].strip())
-        else:
-            parsed_output = str(output["generated_text"])
+        parsed_output = []
+        for out in output:
+
+            if self.thinking:
+                # Example parsing logic for "enable_thinking"
+                # This is a placeholder; replace with actual logic as needed
+                parsed_output.append(str(out["generated_text"].split("</think>")[-1].strip()))
+            else:
+                parsed_output.append(str(out["generated_text"]))
         
         return parsed_output
 
@@ -203,7 +208,7 @@ class RAGPipeline:
             wandb.log_artifact(artifact)
             wandb.finish()
 
-    def get_rag_generations(self, batch_model_lm: BATCH_MODEL_LM = "vllm"):
+    def get_rag_generations(self, model: None | BatchModel | BaseLLM = None):
         """
         Get RAG generations for the given batch model language model.
 
@@ -221,15 +226,14 @@ class RAGPipeline:
             retrieval_data = json.load(f)
 
         batch_list = []
-        assert(self.batch_size >= 1, "Batch size must be at least 1")
-        if self.batch_size == 1:
-            model = GenericInstructModelHF(self.language_model_path, attn_implementation=self.attn_implementation, thinking=self.thinking)
-        elif self.batch_size > 1 and batch_model_lm == "vllm":
-            model = GenericVLLMBatch(self.language_model_path, max_model_len=32768, seed=self.seed, **self.lm_instance_kwargs)
-        elif self.batch_size > 1 and batch_model_lm == "hf":
-            model = GenericInstructBatchHF(self.language_model_path, attn_implementation=self.attn_implementation, thinking=self.thinking)
-        else:
-            raise ValueError("Choose either 'hf' or 'vllm' or set batch_size to at least 1.")
+
+        if model is None:
+            print("Loading default model...")
+            model = GenericVLLMBatch(
+                path=self.language_model_path,
+                thinking=False,
+                vllm_kwargs={"max_model_len": 32768}
+            )
 
         if self.log:
             start_time = datetime.datetime.now()
@@ -272,12 +276,12 @@ class RAGPipeline:
                 if len(batch_list) == self.batch_size or idx == (len(questions) - 1):
 
                     outputs = model.run(
-                    [str(_q[1]) for _q in batch_list], 
-                    instruction=self.instruction, 
-                    config_params=self.lm_configs
+                        [str(_q[1]) for _q in batch_list], 
+                        instruction=self.instruction, 
+                        config_params=self.lm_configs
                     )
                     for i, _q in enumerate(batch_list):
-                        generations[f"{_q[0]}"] = [self._parse_generation_output(outputs[i][0])]
+                        generations[f"{_q[0]}"] = self._parse_generation_output(outputs[i])
                     batch_list = []
                 
                     if self.model_run_id is None:
@@ -291,7 +295,6 @@ class RAGPipeline:
                             json.dump(generations, f)
 
             else:
-                assert isinstance(model, GenericInstructModelHF)
                 ## Generate output
                 outputs = model.run(
                     prompt, 
@@ -299,7 +302,7 @@ class RAGPipeline:
                     config_params=self.lm_configs
                 )
 
-                generations[f"{idx}"] = [self._parse_generation_output(out) for out in outputs]
+                generations[f"{idx}"] = self._parse_generation_output(outputs)
 
                 if self.model_run_id is None:
                     path = f"{self.root_path}/generations/rag_generations.json"
