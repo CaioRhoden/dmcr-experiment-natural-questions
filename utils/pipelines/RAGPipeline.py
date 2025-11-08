@@ -99,7 +99,7 @@ class RAGPipeline:
         if not os.path.exists(f"{self.root_path}/logs"):
             os.mkdir(f"{self.root_path}/logs")
 
-    def _parse_generation_output(self, output: dict) -> str:
+    def _parse_generation_output(self, output: list) -> str:
         """
         Parse the output of the generation model, analyze if is it "enable_thinking"
 
@@ -109,18 +109,18 @@ class RAGPipeline:
         Returns:
         - str: The parsed output.
         """
-        
-        parsed_output = []
+        # Implement your parsing logic here
+        results = []
         for out in output:
-
             if self.thinking:
                 # Example parsing logic for "enable_thinking"
                 # This is a placeholder; replace with actual logic as needed
-                parsed_output.append(str(out["generated_text"].split("</think>")[-1].strip()))
+                parsed_output = str(out["generated_text"].split("</think>")[-1].strip())
             else:
-                parsed_output.append(str(out["generated_text"]))
-        
-        return parsed_output
+                parsed_output = str(out["generated_text"])
+            results.append(parsed_output)
+
+        return results
 
     def get_rag_retrieval(self):
 
@@ -152,6 +152,7 @@ class RAGPipeline:
             start_time = datetime.datetime.now()
             wandb.init(
                 project=self.project_log,
+                dir=f"{self.root_path}/logs",
                 name=f"RAG_retrieval_{self.model_run_id}",
                 id = f"RAG_retrieval_{self.model_run_id}_{start_time.strftime('%Y-%m-%d_%H-%M-%S')}",
                 config={
@@ -225,6 +226,9 @@ class RAGPipeline:
         with open(f"{self.root_path}/retrieval/rag_retrieval_indexes.json", "r") as f:
             retrieval_data = json.load(f)
 
+        self.lm_instance_kwargs["seed"] = self.seed
+        self.lm_instance_kwargs["max_model_len"] = 32768
+
         batch_list = []
 
         if model is None:
@@ -239,6 +243,7 @@ class RAGPipeline:
             start_time = datetime.datetime.now()
             wandb.init(
                 project=self.project_log,
+                dir=f"{self.root_path}/logs",
                 name=f"RAG_generations_{self.model_run_id}",
                 id = f"RAG_generations_{self.model_run_id}_{start_time.strftime('%Y-%m-%d_%H-%M-%S')}",
                 config={
