@@ -3,8 +3,7 @@ data
 /models
 logs
 batch_scripts/
-*.sh
-!run.sh
+
 
 wandb
 

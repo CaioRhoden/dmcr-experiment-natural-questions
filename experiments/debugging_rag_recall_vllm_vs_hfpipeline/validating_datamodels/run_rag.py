@@ -95,7 +95,7 @@ def initiate_pipeline(args: RagConfig) -> RAGPipeline:
         k=args.k,
         size_index=args.size_index,
         instruction=instructions[args.instruction_idx],
-        root_path=f"experiment_{args.seed}",
+        root_path=f"experiment_{args.seed}/instruction_{args.instruction_idx}",
         seed=args.seed,
         tags = args.tags,
         log=args.log,

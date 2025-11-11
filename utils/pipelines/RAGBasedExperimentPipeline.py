@@ -209,7 +209,9 @@ class RAGBasedExperimentPipeline:
             model = GenericVLLMBatch(
                 path=self.language_model_path,
                 thinking=self.thinking,
-                max_model_len=32768,
+                vllm_kwargs={
+                    "max_model_len": 32768,
+                }
             )
         else:
             raise ValueError("Batch size must be at least 1")
@@ -228,7 +230,7 @@ class RAGBasedExperimentPipeline:
         if self.log:
             log_config = LogConfig(
                 project=self.project_log,
-                dir="logs",
+                dir=f"{self.root_path}/logs",
                 id=f"pre_collection_{collection_id}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
                 name=f"pre_collection_{collection_id}",
                 config={
@@ -372,7 +374,7 @@ class RAGBasedExperimentPipeline:
 
             log_config = LogConfig(
                 project=self.project_log,
-                dir="logs",
+                dir=f"{self.root_path}/logs",
                 id=f"{mode}_collections_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
                 name=collection_id,
                 config={
@@ -432,7 +434,7 @@ class RAGBasedExperimentPipeline:
         if self.log:
             log_config = LogConfig(
                 project=self.project_log,
-                dir="logs",
+                dir=f"{self.root_path}/logs",
                 id=f"test_train_datamoles_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
                 name=self.model_run_id,
                 config={
@@ -487,7 +489,7 @@ class RAGBasedExperimentPipeline:
         if self.log:
             log_config = LogConfig(
                 project=self.project_log,
-                dir="logs",
+                dir=f"{self.root_path}/logs",
                 id=f"{self.model_run_id}_evaluate_datamodels_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
                 name=f"{self.model_run_id}_evaluate_datamodels",
                 config={
@@ -555,6 +557,7 @@ class RAGBasedExperimentPipeline:
             start_time = datetime.datetime.now()
             wandb.init(
                 project=self.project_log,
+                dir=f"{self.root_path}/logs",
                 name=f"datamodels_generations_{model_run_id}",
                 id = f"datamodels_generations_{model_run_id}_{start_time.strftime('%Y-%m-%d_%H-%M-%S')}",
                 config={
@@ -647,6 +650,7 @@ class RAGBasedExperimentPipeline:
             start_time = datetime.datetime.now()
             wandb.init(
                 project=self.project_log,
+                dir=f"{self.root_path}/logs",
                 name=f"datamodels_retrieval_{model_run_id}",
                 id = f"datmaodels_retieval_{model_run_id}_{start_time.strftime('%Y-%m-%d_%H-%M-%S')}",
                 config={

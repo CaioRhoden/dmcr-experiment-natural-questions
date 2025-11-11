@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=rag_debbuging_validation
-#SBATCH --output=/home/caio.rhoden/slurm/%A_%a_rag_debbuging_validation.out
-#SBATCH --error=/home/caio.rhoden/slurm/%A_%a_rag_debbuging_validation.err
+#SBATCH --output=/home/users/caio.rhoden/slurm/%A_%a_rag_debbuging_validation.out
+#SBATCH --error=/home/users/caio.rhoden/slurm/%A_%a_rag_debbuging_validation.err
 #SBATCH --gres=gpu:1
 #SBATCH --mem-per-gpu=43G
 #SBATCH --time=1:00:00

@@ -176,7 +176,6 @@ class RAGPipeline:
         for idx in range(len(df)):
 
             question = df[idx]["question"].to_numpy().flatten()[0]
-            print(f"Question {idx}: {question}")
             query_embedding = embedder.encode(
                 question,
                 convert_to_numpy=True,

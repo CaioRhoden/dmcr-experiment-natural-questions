@@ -32,8 +32,8 @@ def calculate_agg_metric(
         metrics: list[str],
         generation_path: str,
         reference_path: str,
-        saving_path: str
-) -> None:
+        saving_path: str | None
+) -> pl.DataFrame | None:
 
     """
     Calculate mean and max of Rouge-L and/or SQuAD V2 metrics for generations.
@@ -87,7 +87,10 @@ def calculate_agg_metric(
             results["mean"].append(np.mean(results_i))
             results["max"].append(np.max(results_i))
             results["metric"].append(metric)
-            df_results = pl.DataFrame(results)
+
+        df_results = pl.DataFrame(results)
+        if saving_path is not None:
             df_results.write_ipc(saving_path, compression="zstd")
 
-    df_results = pl.DataFrame(results)
+        else:
+            return df_results
