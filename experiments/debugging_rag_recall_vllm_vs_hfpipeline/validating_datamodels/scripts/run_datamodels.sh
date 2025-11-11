@@ -28,11 +28,11 @@ for INSTRUCTION_IDX in "${INSTUCTIONS[@]}"; do
      
     echo "Running setup for seed $S and instruction index $INSTRUCTION_IDX"
     echo "-----------------------------------------------"
-    echo "RUNNING SETUP"
-    python run_datamodels.py \
-        --seed $S \
-        --instruction_idx $INSTRUCTION_IDX \
-        --run_type setup
+    # echo "RUNNING SETUP"
+    # python run_datamodels.py \
+    #     --seed $S \
+    #     --instruction_idx $INSTRUCTION_IDX \
+    #     --run_type setup
 
     # echo "-----------------------------------------------"
     echo "RUNNING PRE_COLLECTIONS TRAIN "
@@ -40,20 +40,20 @@ for INSTRUCTION_IDX in "${INSTUCTIONS[@]}"; do
         --seed $S \
         --instruction_idx $INSTRUCTION_IDX \
         --run_type pre_collections \
-        --start_idx 0 \
-        --end_idx 1000 \
+        --start_idx 1000 \
+        --end_idx 2000 \
         --checkpoint 200 \
         --mode train
 
-    # echo "RUNNING PRE_COLLECTIONS TEST"
-    # python run_datamodels.py \
-    #     --seed $S \
-    #     --instruction_idx $INSTRUCTION_IDX \
-    #     --run_type pre_collections \
-    #     --start_idx 0 \
-    #     --end_idx 400 \
-    #     --checkpoint 200 \
-    #     --mode test
+    echo "RUNNING PRE_COLLECTIONS TEST"
+    python run_datamodels.py \
+        --seed $S \
+        --instruction_idx $INSTRUCTION_IDX \
+        --run_type pre_collections \
+        --start_idx 0 \
+        --end_idx 400 \
+        --checkpoint 200 \
+        --mode test
 
     # echo "-----------------------------------------------"
     # echo "RUNNING COLLECTIONS TRAIN"
