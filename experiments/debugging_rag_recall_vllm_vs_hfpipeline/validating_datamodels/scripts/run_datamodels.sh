@@ -1,55 +1,58 @@
-# !/bin/bash
-# SBATCH --job-name=rag_debbuging_validation
-# SBATCH --output=/home/caio.rhoden/slurm/%A_%a_rag_debbuging_validation.out
-# SBATCH --error=/home/caio.rhoden/slurm/%A_%a_rag_debbuging_validation.err
-# SBATCH --gres=gpu:1
-# SBATCH --cpus-per-task=6
-# SBATCH --mem-per-gpu=43G
-# SBATCH --time=1:00:00
-# SBATCH --mail-user="c214129@dac.unicamp.br"
-# SBATCH --array=0-4
-# SBATCH --mail-type=BEGIN,END,FAIL
+#!/bin/bash
+#SBATCH --job-name=rag_debbuging_validation
+#SBATCH --output=/home/users/caio.rhoden/slurm/%A_%a_rag_debbuging_validation.out
+#SBATCH --error=/home/users/caio.rhoden/slurm/%A_%a_rag_debbuging_validation.err
+#SBATCH --gres=gpu:1
+#SBATCH --cpus-per-task=6
+#SBATCH --mem-per-gpu=43G
+#SBATCH --time=48:00:00
+#SBATCH --mail-user="c214129@dac.unicamp.br"
+#SBATCH --mail-type=BEGIN,END,FAIL
+#SBATCH --array=0-4
+
 
 source ~/miniconda3/bin/activate
 conda activate nq
-export WANDB_MODE="offline"
+# export WANDB_MODE="offline"
 export VLLM_WORKER_MULTIPROC_METHOD=spawn
+export C_INCLUDE_PATH=$CONDA_PREFIX/include
+export CPLUS_INCLUDE_PATH=$CONDA_PREFIX/include
 
-# SEEDS=(1 4 54 61 73)
-# INSTUCTIONS=(0 1 2)
+SEEDS=(1 4 54 61 73)
+INSTUCTIONS=(2)
 
 
-# S=${SEEDS[$SLURM_ARRAY_TASK_ID]}
+S=${SEEDS[$SLURM_ARRAY_TASK_ID]}
 
-# for INSTRUCTION_IDX in "${INSTUCTIONS[@]}"; do
+for INSTRUCTION_IDX in "${INSTUCTIONS[@]}"; do
      
-#     echo "Running setup for seed $S and instruction index $INSTRUCTION_IDX"
-#     echo "-----------------------------------------------"
-echo "RUNNING SETUP"
-python run_datamodels.py \
-    --seed $S \
-    --instruction_idx $INSTRUCTION_IDX \
-    --run_type setup
+    echo "Running setup for seed $S and instruction index $INSTRUCTION_IDX"
+    echo "-----------------------------------------------"
+    echo "RUNNING SETUP"
+    python run_datamodels.py \
+        --seed $S \
+        --instruction_idx $INSTRUCTION_IDX \
+        --run_type setup
 
     # echo "-----------------------------------------------"
-    # echo "RUNNING PRE_COLLECTIONS TRAIN "
-    # python run_datamodels.py \
-    #     --seed $S \
-    #     --instruction_idx $INSTRUCTION_IDX \
-    #     --run_type pre_collections \
-    #     --start_idx 0 \
-    #     --end_idx 2000 \
-    #     --checkpoint 100 \
-    #     --mode train
+    echo "RUNNING PRE_COLLECTIONS TRAIN "
+    python run_datamodels.py \
+        --seed $S \
+        --instruction_idx $INSTRUCTION_IDX \
+        --run_type pre_collections \
+        --start_idx 0 \
+        --end_idx 1000 \
+        --checkpoint 200 \
+        --mode train
 
-    #  echo "RUNNING PRE_COLLECTIONS TEST"
+    # echo "RUNNING PRE_COLLECTIONS TEST"
     # python run_datamodels.py \
     #     --seed $S \
     #     --instruction_idx $INSTRUCTION_IDX \
     #     --run_type pre_collections \
     #     --start_idx 0 \
     #     --end_idx 400 \
-    #     --checkpoint 100 \
+    #     --checkpoint 200 \
     #     --mode test
 
     # echo "-----------------------------------------------"
