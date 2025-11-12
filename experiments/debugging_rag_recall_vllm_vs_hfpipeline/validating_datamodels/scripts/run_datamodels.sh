@@ -1,14 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=rag_debbuging_validation
-#SBATCH --output=/home/users/caio.rhoden/slurm/%A_%a_rag_debbuging_validation.out
-#SBATCH --error=/home/users/caio.rhoden/slurm/%A_%a_rag_debbuging_validation.err
+#SBATCH --output=/home/users/caio.rhoden/slurm/%j_rag_debbuging_validation.out
+#SBATCH --error=/home/users/caio.rhoden/slurm/%j_rag_debbuging_validation.err
 #SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=6
-#SBATCH --mem-per-gpu=43G
+#SBATCH --cpus-per-task=2
+#SBATCH --mem-per-gpu=138G
 #SBATCH --time=48:00:00
 #SBATCH --mail-user="c214129@dac.unicamp.br"
 #SBATCH --mail-type=BEGIN,END,FAIL
-#SBATCH --array=0-4
 
 
 source ~/miniconda3/bin/activate
@@ -18,8 +17,8 @@ export VLLM_WORKER_MULTIPROC_METHOD=spawn
 export C_INCLUDE_PATH=$CONDA_PREFIX/include
 export CPLUS_INCLUDE_PATH=$CONDA_PREFIX/include
 
-SEEDS=(1 4 54 61 73)
-INSTUCTIONS=(2)
+SEEDS=(61)
+INSTUCTIONS=(0 1)
 
 
 S=${SEEDS[$SLURM_ARRAY_TASK_ID]}
@@ -45,15 +44,15 @@ for INSTRUCTION_IDX in "${INSTUCTIONS[@]}"; do
         --checkpoint 200 \
         --mode train
 
-    echo "RUNNING PRE_COLLECTIONS TEST"
-    python run_datamodels.py \
-        --seed $S \
-        --instruction_idx $INSTRUCTION_IDX \
-        --run_type pre_collections \
-        --start_idx 0 \
-        --end_idx 400 \
-        --checkpoint 200 \
-        --mode test
+    # echo "RUNNING PRE_COLLECTIONS TEST"
+    # python run_datamodels.py \
+    #     --seed $S \
+    #     --instruction_idx $INSTRUCTION_IDX \
+    #     --run_type pre_collections \
+    #     --start_idx 0 \
+    #     --end_idx 400 \
+    #     --checkpoint 200 \
+    #     --mode test
 
     # echo "-----------------------------------------------"
     # echo "RUNNING COLLECTIONS TRAIN"
