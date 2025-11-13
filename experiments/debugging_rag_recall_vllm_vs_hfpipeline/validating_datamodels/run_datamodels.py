@@ -171,7 +171,7 @@ if __name__ == "__main__":
     args.retrieval_path = f"experiment_{args.seed}/instruction_{args.instruction_idx}/{args.retrieval_path}"
     args.embeder_path = f"{root}/{args.embeder_path}"
     args.vector_db_path = f"{root}/{args.vector_db_path}"
-    args.collection_id = f"instruction-{args.instruction_idx}-{args.seed}"
+    args.collection_id = f"instruction-{args.instruction_idx}_experiment-{args.seed}_evaluator-{args.evaluator}"
 
     pipeline = initiate_pipeline(args)
 
