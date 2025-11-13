@@ -113,7 +113,7 @@ def initiate_pipeline(args: DatamodelsConfig) -> ParallelRAGBasedPipeline:
     Returns:
         ZeroShotBaselinePipeline: An instance of the baseline pipeline.
     """
-    model_run_id = f"instruction-{args.instruction_idx}-{args.seed}"
+    model_run_id = f"instruction-{args.instruction_idx}_experiment-{args.seed}_evaluator-{args.evaluator}"
 
 
     lm_configs = {
