@@ -533,7 +533,13 @@ class RAGBasedExperimentPipeline:
         if self.batch_size == 1:
             model = GenericInstructModelHF(self.language_model_path, attn_implementation=self.attn_implementation)
         elif self.batch_size > 1:
-            model = GenericInstructBatchHF(self.language_model_path, attn_implementation=self.attn_implementation)
+            model = GenericVLLMBatch(
+                path=self.language_model_path,
+                thinking=self.thinking,
+                vllm_kwargs={
+                    "max_model_len": 32768,
+                }
+            )
 
         ## Load retrieval data
         with open(self.retrieval_path, "r") as f:
@@ -584,20 +590,21 @@ class RAGBasedExperimentPipeline:
             for doc_idx in range(len(top_k)-1, -1, -1):
                 prompt += f"Document[{self.k-doc_idx}](Title: {docs.filter(pl.col('idx')==top_k[doc_idx])['title'].to_numpy().flatten()[0]}){docs.filter(pl.col('idx')==top_k[doc_idx])['text'].to_numpy().flatten()[0]}\n\n"
             prompt += f"Question: {questions[r_idx]['question'].to_numpy().flatten()[0]}\nAnswer: "
-            
 
-            if self.batch_size > 1 and isinstance(model, GenericInstructBatchHF):
+            if self.batch_size > 1 and isinstance(model, GenericInstructBatchHF| GenericVLLMBatch):
                 if len(batch_list) < self.batch_size:
                     batch_list.append((r_idx, prompt))
                 
                 if len(batch_list) == self.batch_size or r_idx == (len(retrieval_data) - 1):
                     outputs = model.run(
-                    [str(_q[1]) for _q in batch_list], 
-                    instruction=self.instruction, 
-                    config_params=self.lm_configs
+                        [str(_q[1]) for _q in batch_list],
+                        instruction=self.instruction,
+                        config_params=self.lm_configs
                     )
                     for i, _q in enumerate(batch_list):
-                        generations[f"{_q[0]}"] = [str(outputs[i][0]["generated_text"])]
+                        generations[f"{_q[0]}"] = []
+                        for gen in range(outputs[i].__len__()):
+                            generations[f"{_q[0]}"].append(str(outputs[i][gen]["generated_text"]))
                     batch_list = []
                 
                     with open(f"{self.root_path}/generations/{datamodels_generation_name}.json", "w") as f:
