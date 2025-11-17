@@ -14,8 +14,7 @@ def get_sort_key(file_path: Path) -> int:
     if match:
         # Return the captured number as an integer for correct numerical sorting.
         return int(match.group(1))
-    # Return a large number for files that don't match, placing them last.
-    return float('inf')
+    raise(ValueError(f"Filename does not match expected pattern: {file_path.name}"))
 
 def concat_sorted_tensors(directory_path: str, concat_dim: int = 0) -> torch.Tensor:
     """
@@ -39,12 +38,7 @@ def concat_sorted_tensors(directory_path: str, concat_dim: int = 0) -> torch.Ten
     sorted_files = sorted(file_list, key=get_sort_key)
     
     if not sorted_files:
-        print("Warning: No files matching the pattern were found.")
-        return torch.empty(0)
-
-    print("Files will be loaded and concatenated in this order:")
-    for f in sorted_files:
-        print(f"  - {f.name}")
+        raise FileNotFoundError(f"No files ending with '_weights.pt' found in directory: {directory_path}")
 
     # 3. Load tensors from the sorted file list
     tensors_to_concat = [torch.load(f) for f in sorted_files]
