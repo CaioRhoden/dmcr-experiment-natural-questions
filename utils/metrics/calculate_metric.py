@@ -77,9 +77,9 @@ def calculate_agg_metric(
                     
 
                 max_metric = 0.0
-                res =  questions[i]["answers"].to_numpy().flatten()
+                res =  questions[i]["answers"].to_numpy()[0].tolist()
             
-                metric_value = evaluator.evaluate(np.array([res]), np.array([str(generations[str(i)][j])]))
+                metric_value = evaluator.evaluate(np.array([res]), np.array([[str(generations[str(i)][j])]]))
                 max_metric = max(max_metric, metric_value[0])
 
                 results_i.append(max_metric)
