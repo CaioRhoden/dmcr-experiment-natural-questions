@@ -1,98 +1,118 @@
-#!/bin/bash
-#SBATCH --job-name=rag_debbuging_validation
-#SBATCH --output=/home/users/caio.rhoden/slurm/%j_rag_debbuging_validation.out
-#SBATCH --error=/home/users/caio.rhoden/slurm/%j_rag_debbuging_validation.err
-#SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=2
-#SBATCH --mem-per-gpu=138G
-#SBATCH --time=48:00:00
-#SBATCH --mail-user="c214129@dac.unicamp.br"
-#SBATCH --mail-type=BEGIN,END,FAIL
 
 
 source ~/miniconda3/bin/activate
 conda activate nq
-# export WANDB_MODE="offline"
+export WANDB_MODE="offline"
 export VLLM_WORKER_MULTIPROC_METHOD=spawn
 export C_INCLUDE_PATH=$CONDA_PREFIX/include
 export CPLUS_INCLUDE_PATH=$CONDA_PREFIX/include
 
-SEEDS=(61)
-INSTUCTIONS=(0 1)
+SEEDS=(1 4 54 61 73)
+INSTUCTIONS=(0 1 2)
+
+for S in "${SEEDS[@]}"; do
+    for INSTRUCTION_IDX in "${INSTUCTIONS[@]}"; do
+        
+        echo "Running setup for seed $S and instruction index $INSTRUCTION_IDX"
+        echo "-----------------------------------------------"
+        echo "RUNNING SETUP"
+        python run_datamodels.py \
+            --seed $S \
+            --instruction_idx $INSTRUCTION_IDX \
+            --run_type setup
+
+        echo "-----------------------------------------------"
+        echo "RUNNING PRE_COLLECTIONS TRAIN "
+        python run_datamodels.py \
+            --seed $S \
+            --instruction_idx $INSTRUCTION_IDX \
+            --run_type pre_collections \
+            --start_idx 1000 \
+            --end_idx 2000 \
+            --checkpoint 200 \
+            --mode train
+
+        echo "RUNNING PRE_COLLECTIONS TEST"
+        python run_datamodels.py \
+            --seed $S \
+            --instruction_idx $INSTRUCTION_IDX \
+            --run_type pre_collections \
+            --start_idx 0 \
+            --end_idx 200 \
+            --checkpoint 200 \
+            --mode test
+
+                echo "RUNNING PRE_COLLECTIONS TRAIN "
+        python run_datamodels.py \
+            --seed $S \
+            --instruction_idx $INSTRUCTION_IDX \
+            --run_type pre_collections \
+            --start_idx 1000 \
+            --end_idx 2000 \
+            --checkpoint 200 \
+            --evaluator Judge \
+            --mode train
+
+        echo "RUNNING PRE_COLLECTIONS TEST"
+        python run_datamodels.py \
+            --seed $S \
+            --instruction_idx $INSTRUCTION_IDX \
+            --run_type pre_collections \
+            --start_idx 0 \
+            --end_idx 200 \
+            --checkpoint 200 \
+            --evaluator Judge \
+            --mode test
 
 
-S=${SEEDS[$SLURM_ARRAY_TASK_ID]}
+        echo "-----------------------------------------------"
+        echo "RUNNING COLLECTIONS TRAIN"
+        python run_datamodels.py \
+            --seed $S \
+            --instruction_idx $INSTRUCTION_IDX \
+            --run_type collections \
+            --start_idx 0 \
+            --end_idx 1000000 \
+            --checkpoint 20000 \
+            --num_subprocesses 5 \
+            --mode train
 
-for INSTRUCTION_IDX in "${INSTUCTIONS[@]}"; do
-     
-    echo "Running setup for seed $S and instruction index $INSTRUCTION_IDX"
-    echo "-----------------------------------------------"
-    # echo "RUNNING SETUP"
-    # python run_datamodels.py \
-    #     --seed $S \
-    #     --instruction_idx $INSTRUCTION_IDX \
-    #     --run_type setup
+        echo "RUNNING COLLECTIONS TEST"
+        python run_datamodels.py \
+            --seed $S \
+            --instruction_idx $INSTRUCTION_IDX \
+            --run_type collections \
+            --start_idx 0 \
+            --end_idx 200000 \
+            --checkpoint 20000 \
+            --num_subprocesses 5 \
+            --mode test
 
-    # echo "-----------------------------------------------"
-    echo "RUNNING PRE_COLLECTIONS TRAIN "
-    python run_datamodels.py \
-        --seed $S \
-        --instruction_idx $INSTRUCTION_IDX \
-        --run_type pre_collections \
-        --start_idx 1000 \
-        --end_idx 2000 \
-        --checkpoint 200 \
-        --mode train
+        
+        echo "-----------------------------------------------"
+        echo "TRAINING DATAMODELS"
 
-    # echo "RUNNING PRE_COLLECTIONS TEST"
-    # python run_datamodels.py \
-    #     --seed $S \
-    #     --instruction_idx $INSTRUCTION_IDX \
-    #     --run_type pre_collections \
-    #     --start_idx 0 \
-    #     --end_idx 400 \
-    #     --checkpoint 200 \
-    #     --mode test
+        python run_datamodels.py \
+            --seed $S \
+            --instruction_idx $INSTRUCTION_IDX \
+            --run_type training
 
-    # echo "-----------------------------------------------"
-    # echo "RUNNING COLLECTIONS TRAIN"
-    # python run_datamodels.py \
-    #     --seed $S \
-    #     --instruction_idx $INSTRUCTION_IDX \
-    #     --run_type collections \
-    #     --start_idx 0 \
-    #     --end_idx 1000000 \
-    #     --checkpoint 20000 \
-    #     --num_subprocesses 5 \
-    #     --mode train
+        python run_datamodels.py \
+            --seed $S \
+            --instruction_idx $INSTRUCTION_IDX \
+            --run_type training \
+            --num_subprocesses 1 \
+            --evaluator Judge
 
-    # echo "RUNNING COLLECTIONS TEST"
-    # python run_datamodels.py \
-    #     --seed $S \
-    #     --instruction_idx $INSTRUCTION_IDX \
-    #     --run_type collections \
-    #     --start_idx 0 \
-    #     --end_idx 200000 \
-    #     --checkpoint 20000 \
-    #     --num_subprocesses 5 \
-    #     --mode test
 
-    
-    # echo "-----------------------------------------------"
-    # echo "TRAINING DATAMODELS"
+        echo "-----------------------------------------------"
+        echo "GENERATING USING DATAMODELS"
 
-    # python run_datamodels.py \
-    #     --seed $S \
-    #     --instruction_idx $INSTRUCTION_IDX \
-    #     --run_type training
+        python run_datamodels.py \
+            --seed $S \
+            --instruction_idx $INSTRUCTION_IDX \
+            --run_type generations
 
-    # echo "-----------------------------------------------"
-    # echo "GENERATING USING DATAMODELS"
-
-    # python run_datamodels.py \
-    #     --seed $S \
-    #     --instruction_idx $INSTRUCTION_IDX \
-    #     --run_type generations
-
+    done
+        
 done
-    

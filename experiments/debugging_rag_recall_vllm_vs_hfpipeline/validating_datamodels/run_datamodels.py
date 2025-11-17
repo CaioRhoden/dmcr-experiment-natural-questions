@@ -115,12 +115,11 @@ def initiate_pipeline(args: DatamodelsConfig) -> ParallelRAGBasedPipeline:
     """
     model_run_id = f"instruction-{args.instruction_idx}_experiment-{args.seed}_evaluator-{args.evaluator}"
 
-
     lm_configs = {
-            "temperature": 0.7,
-            "top_p": 0.8,
-            "max_new_tokens": 10,
-            "n": 5
+                "temperature": 0.7,
+                "top_p": 0.8,
+                "max_new_tokens": 10,
+                "n": 5
     }
 
     questions_path = f"experiment_{args.seed}/questions.feather"
@@ -214,8 +213,8 @@ if __name__ == "__main__":
 
     elif args.run_type == "generation":
 
-        pipeline.get_datamodels_generations(f"instruction-{args.instruction_idx}-{args.seed}",f"instruction-{args.instruction_idx}-{args.seed}")
-        pipeline.get_datamodels_retrieval(f"instruction-{args.instruction_idx}-{args.seed}-{args.seed}")
+        pipeline.get_datamodels_generations(f"instruction-{args.instruction_idx}_experiment-{args.seed}_evaluator-{args.evaluator}",f"instruction-{args.instruction_idx}_experiment-{args.seed}_evaluator-{args.evaluator}")
+        pipeline.get_datamodels_retrieval(f"instruction-{args.instruction_idx}_experiment-{args.seed}_evaluator-{args.evaluator}")
         sys.exit(0)
 
     else:
