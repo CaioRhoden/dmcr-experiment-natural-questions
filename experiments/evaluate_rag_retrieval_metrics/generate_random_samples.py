@@ -4,7 +4,7 @@ from utils.get_random_nq_dataset import get_random_nq_dataset
 if __name__ == "__main__":
 
     args = argparse.ArgumentParser()
-    args.add_argument("--n_samples", type=int, default=250)
+    args.add_argument("--n_samples", type=int, default=1500)
     args.add_argument("--seed", type=int, default=42)
     args.add_argument("--partition", type=str, default="dev")
 

@@ -5,7 +5,7 @@ import tyro
 import numpy as np
 import os
 
-
+from dmcr.models import GenericVLLMBatch, GenericInstructBatchHF
 
 from utils.pipelines.RAGPipeline import RAGPipeline
 from utils.set_random_seed import set_random_seed
@@ -30,7 +30,7 @@ class RAGRetrievalsConfig:
     '''Path to the embedder model.'''
     vector_db_path: str = "data/wiki_dump2018_nq_open/processed"
     '''Path to the vector database.'''
-    questions_path: str = "questions_250_42_dev.feather"
+    questions_path: str = "questions_1500_42_dev.feather"
     '''Path to the questions dataset file.'''
     language_model_path: str = "models/Llama-3.2-3B-Instruct"
     '''Path to the language model.'''
@@ -78,7 +78,8 @@ def initiate_rag_pipeline(args:RAGRetrievalsConfig, tag: str) -> RAGPipeline:
         lm_configs=args.lm_configs,
         instruction=args.instruction,
         root_path=f"experiments_{tag}",
-        log=True
+        log=True,
+        batch_size=8
     )
         
 
@@ -101,6 +102,9 @@ if __name__ == "__main__":
     rag = initiate_rag_pipeline(args, tag)
     rag.setup()
     rag.get_rag_retrieval()
-    rag.get_rag_generations()
+    model = GenericInstructBatchHF(
+        path=args.language_model_path,
+    )
+    rag.get_rag_generations(model=model)
 
 
