@@ -270,7 +270,10 @@ class RAGPipeline:
             ## Generate prompt
             prompt = "Documents: \n"
             for doc_idx in range(len(top_k)-1, -1, -1):
-                prompt += f"Document[{self.k-doc_idx}](Title: {docs.filter(pl.col('idx')==top_k[doc_idx])['title'].to_numpy().flatten()[0]}){docs.filter(pl.col('idx')==top_k[doc_idx])['text'].to_numpy().flatten()[0]}\n\n"
+                if top_k[doc_idx] >= 0:
+                    ## some documents can't find k documents and fill with -1
+                    prompt += f"Document[{self.k-doc_idx}](Title: {docs.filter(pl.col('idx')==top_k[doc_idx])['title'].to_list()[0]}){docs.filter(pl.col('idx')==top_k[doc_idx])['text'].to_numpy().flatten()[0]}\n\n"
+
             prompt += f"Question: {questions[idx]['question'].to_numpy().flatten()[0]}\nAnswer: "
             
             if self.batch_size > 1:
