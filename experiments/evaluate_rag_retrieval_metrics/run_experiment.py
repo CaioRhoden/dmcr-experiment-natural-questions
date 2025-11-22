@@ -79,7 +79,7 @@ def initiate_rag_pipeline(args:RAGRetrievalsConfig, tag: str) -> RAGPipeline:
         instruction=args.instruction,
         root_path=f"experiments_{tag}",
         log=True,
-        batch_size=8
+        batch_size=1500
     )
         
 
@@ -95,15 +95,16 @@ if __name__ == "__main__":
     args.embeder_path = f"{root}/{args.embeder_path}"
     args.questions_path = f"{args.questions_path}"
     args.language_model_path = f"{root}/{args.language_model_path}"
-    args.vector_db_path = f"{root}/{args.vector_db_path}/wiki_{tag}.index"
+    args.vector_db_path = f"{root}/{args.vector_db_path}/wiki_{tag}_upgrade.index"
 
 
     set_random_seed(42)
     rag = initiate_rag_pipeline(args, tag)
     rag.setup()
     rag.get_rag_retrieval()
-    model = GenericInstructBatchHF(
+    model = GenericVLLMBatch(
         path=args.language_model_path,
+        vllm_kwargs={"max_model_len": 32768}
     )
     rag.get_rag_generations(model=model)
 
