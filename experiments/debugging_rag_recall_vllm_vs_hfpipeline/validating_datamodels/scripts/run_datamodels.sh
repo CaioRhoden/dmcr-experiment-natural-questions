@@ -65,53 +65,53 @@ for S in "${SEEDS[@]}"; do
             --mode test
 
 
-        echo "-----------------------------------------------"
-        echo "RUNNING COLLECTIONS TRAIN"
-        python run_datamodels.py \
-            --seed $S \
-            --instruction_idx $INSTRUCTION_IDX \
-            --run_type collections \
-            --start_idx 0 \
-            --end_idx 1000000 \
-            --checkpoint 20000 \
-            --num_subprocesses 5 \
-            --mode train
+        # echo "-----------------------------------------------"
+        # echo "RUNNING COLLECTIONS TRAIN"
+        # python run_datamodels.py \
+        #     --seed $S \
+        #     --instruction_idx $INSTRUCTION_IDX \
+        #     --run_type collections \
+        #     --start_idx 0 \
+        #     --end_idx 1000000 \
+        #     --checkpoint 20000 \
+        #     --num_subprocesses 5 \
+        #     --mode train
 
-        echo "RUNNING COLLECTIONS TEST"
-        python run_datamodels.py \
-            --seed $S \
-            --instruction_idx $INSTRUCTION_IDX \
-            --run_type collections \
-            --start_idx 0 \
-            --end_idx 200000 \
-            --checkpoint 20000 \
-            --num_subprocesses 5 \
-            --mode test
+        # echo "RUNNING COLLECTIONS TEST"
+        # python run_datamodels.py \
+        #     --seed $S \
+        #     --instruction_idx $INSTRUCTION_IDX \
+        #     --run_type collections \
+        #     --start_idx 0 \
+        #     --end_idx 200000 \
+        #     --checkpoint 20000 \
+        #     --num_subprocesses 5 \
+        #     --mode test
 
         
-        echo "-----------------------------------------------"
-        echo "TRAINING DATAMODELS"
+        # echo "-----------------------------------------------"
+        # echo "TRAINING DATAMODELS"
 
-        python run_datamodels.py \
-            --seed $S \
-            --instruction_idx $INSTRUCTION_IDX \
-            --run_type training
+        # python run_datamodels.py \
+        #     --seed $S \
+        #     --instruction_idx $INSTRUCTION_IDX \
+        #     --run_type training
 
-        python run_datamodels.py \
-            --seed $S \
-            --instruction_idx $INSTRUCTION_IDX \
-            --run_type training \
-            --num_subprocesses 1 \
-            --evaluator Judge
+        # python run_datamodels.py \
+        #     --seed $S \
+        #     --instruction_idx $INSTRUCTION_IDX \
+        #     --run_type training \
+        #     --num_subprocesses 1 \
+        #     --evaluator Judge
 
 
-        echo "-----------------------------------------------"
-        echo "GENERATING USING DATAMODELS"
+        # echo "-----------------------------------------------"
+        # echo "GENERATING USING DATAMODELS"
 
-        python run_datamodels.py \
-            --seed $S \
-            --instruction_idx $INSTRUCTION_IDX \
-            --run_type generations
+        # python run_datamodels.py \
+        #     --seed $S \
+        #     --instruction_idx $INSTRUCTION_IDX \
+        #     --run_type generations
 
     done
         
