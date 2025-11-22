@@ -23,5 +23,6 @@ if __name__ == "__main__":
 
 
     create_flag_embedder(
-        metric=args.metric
+        metric=args.metric,
+        saving_path=args.saving_path,
     )

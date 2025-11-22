@@ -79,9 +79,9 @@ def initiate_pipeline(args: RagConfig) -> RAGPipeline:
             "temperature": 0.7,
             "top_p": 0.9,
             "max_new_tokens": 10,
+            "n": args.num_sentences,
     }
 
-    lm_configs["n"] = args.num_sentences
 
     
 
@@ -96,7 +96,7 @@ def initiate_pipeline(args: RagConfig) -> RAGPipeline:
         model_run_id=args.model_run_id,
         k=args.k,
         size_index=100,
-        lm_configs=args.lm_configs,
+        lm_configs=lm_configs,
         instruction="You are given a question and you MUST give a SHORT ANSWER in 5 tokens, you can use the available documents but if they are not helpful, try to answer without them",
         root_path=f"{args.exp_name}",
         seed=args.seed,
