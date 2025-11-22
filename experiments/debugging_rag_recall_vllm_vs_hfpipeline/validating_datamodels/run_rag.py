@@ -77,9 +77,9 @@ def initiate_pipeline(args: RagConfig) -> RAGPipeline:
 
     lm_configs = {
             "temperature": 0.7,
-            "top_p": 0.8,
+            "top_p": 0.9,
             "max_new_tokens": 10,
-            "n": 5
+            "n": 1
     }
 
     questions_path = f"experiment_{args.seed}/questions.feather"
