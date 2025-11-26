@@ -1,16 +1,13 @@
 #!/bin/bash
-#SBATCH --job-name=generating_rag_debbuging_validation
-#SBATCH --output=/home/caio.rhoden/slurm/%A_%a_generating_rag_debbuging_validation.out
-#SBATCH --error=/home/caio.rhoden/slurm/%A_%a_generating_rag_debbuging_validation.err
+#SBATCH --job-name=pc_rag_debbuging_validation
+#SBATCH --output=/home/caio.rhoden/slurm/%A_%a_pc_rag_debbuging_validation.out
+#SBATCH --error=/home/caio.rhoden/slurm/%A_%a_pc_rag_debbuging_validation.err
 #SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=8
-#SBATCH --mem-per-gpu=45G
+#SBATCH --mem-per-gpu=43G
 #SBATCH --time=48:00:00
 #SBATCH --mail-user="c214129@dac.unicamp.br"
+#SBATCH --array=3
 #SBATCH --mail-type=BEGIN,END,FAIL
-#SBATCH --partition=a5000
-#SBATCH --array=2-4
-
 
 source ~/miniconda3/bin/activate
 conda activate nq
@@ -19,12 +16,40 @@ export VLLM_WORKER_MULTIPROC_METHOD=spawn
 export C_INCLUDE_PATH=$CONDA_PREFIX/include
 export CPLUS_INCLUDE_PATH=$CONDA_PREFIX/include
 
-SEEDS=(1 4 54 61 73)
-INSTRUCTIONS=(0 1 2)
+INSTUCTIONS=(1)
+S=1
 
-python run_datamodels.py \
-        --seed 1 \
-        --instruction_idx 0 \
-        --evaluator Judge \
-        --run_type generation \
-        --batch_size 500
+for INSTRUCTION_IDX in "${INSTUCTIONS[@]}"; do
+    
+    echo "Running setup for seed $S and instruction index $INSTRUCTION_IDX"
+    echo "-----------------------------------------------"
+    echo "RUNNING SETUP"
+    python run_datamodels.py \
+        --seed $S \
+        --instruction_idx $INSTRUCTION_IDX \
+        --run_type setup
+
+    echo "-----------------------------------------------"
+    echo "RUNNING PRE_COLLECTIONS TRAIN "
+    python run_datamodels.py \
+        --seed $S \
+        --instruction_idx $INSTRUCTION_IDX \
+        --run_type pre_collections \
+        --start_idx 0 \
+        --end_idx 6 \
+        --checkpoint 2 \
+        --mode train
+
+    # echo "RUNNING PRE_COLLECTIONS TEST"
+    # python run_datamodels.py \
+    #     --seed $S \
+    #     --instruction_idx $INSTRUCTION_IDX \
+    #     --run_type pre_collections \
+    #     --start_idx 0 \
+    #     --end_idx 200 \
+    #     --checkpoint 200 \
+    #     --mode test
+
+    
+done
+        
