@@ -2,6 +2,7 @@ from typing import Optional
 import torch.multiprocessing as mp
 import math
 import os
+import logging
 
 from curses import start_color
 from tracemalloc import start
@@ -39,46 +40,41 @@ def _run_pre_collections_worker(init_kwargs: dict, run_kwargs: dict):
 
 def _run_collections_worker(init_kwargs: dict, run_kwargs: dict):
     """
-    Top-level worker function designed to be the target for each subprocess.
-    
-    This function instantiates a new `RAGBasedExperimentPipeline` object using the
-    provided initialization arguments and then calls its `run_collections` method
-    with the arguments specific to this worker's assigned data chunk.
-    This approach ensures process safety and avoids issues with serializing
-    complex, non-picklable objects (like GPU models) from the main process.
+    Worker function for parallel collection creation.
 
-    Args:
-        init_kwargs (dict): A dictionary of keyword arguments required to initialize
-                            the `RAGBasedExperimentPipeline`.
-        run_kwargs (dict): A dictionary of keyword arguments for the `run_collections`
-                           method, including the specific `start_idx` and `end_idx` for the chunk.
+    Instantiates a `RAGBasedExperimentPipeline` in the subprocess using
+    `init_kwargs` and runs `run_collections` with `run_kwargs`.
     """
-    # Each process re-instantiates the base pipeline class to ensure a clean state
-    # and avoid issues with CUDA context in forked processes.
     pipeline = RAGBasedExperimentPipeline(**init_kwargs)
-    
+
     print(
         f"Process {os.getpid()} starting task: "
         f"mode='{run_kwargs.get('mode')}', "
         f"range=[{run_kwargs.get('start_idx')}, {run_kwargs.get('end_idx')}), "
         f"collection='{run_kwargs.get('collection_id')}'"
     )
-    
+
     pipeline.run_collections(**run_kwargs)
-    
+
     print(f"Process {os.getpid()} finished task for collection '{run_kwargs.get('collection_id')}'.")
 
 
 def _run_training_worker(init_kwargs: dict, run_kwargs: dict):
     """
-    Worker function for parallel training of datamodels. Instantiates a 
-    RAGBasedExperimentPipeline and runs training for a specific collection.
+    Worker function for parallel training of datamodels.
+
+    Instantiates a `RAGBasedExperimentPipeline` inside the subprocess and
+    calls its `train_datamodels` with the provided `run_kwargs`.
     """
     pipeline = RAGBasedExperimentPipeline(**init_kwargs)
     print(
         f"Process {os.getpid()} starting training model: "
+        f"collection='{run_kwargs.get('collection_id')}', "
+        f"range=[{run_kwargs.get('start_idx')}, {run_kwargs.get('end_idx')} )"
     )
+
     pipeline.train_datamodels(**run_kwargs)
+
     print(f"Process {os.getpid()} finished training for collection '{run_kwargs.get('collection_id')}'.")
 
 class ParallelRAGBasedPipeline(RAGBasedExperimentPipeline):
@@ -220,6 +216,8 @@ class ParallelRAGBasedPipeline(RAGBasedExperimentPipeline):
             test_set_path=self.questions_path
         )
         datamodel = DatamodelsIndexBasedNQPipeline(config)
+        datamodel.set_collections_index()
+        # datamodel.set_test_dataframes()
         
         if mode == "train":
             total_samples = len(datamodel.train_collections_idx) * self.num_models
@@ -279,7 +277,7 @@ class ParallelRAGBasedPipeline(RAGBasedExperimentPipeline):
         
         if num_subprocesses <= 1:
             print("Number of subprocesses is 1 or less. Running in standard serial mode.")
-            super().train_datamodels(collection_id=collection_id)
+            super().train_datamodels(collection_id=collection_id, start_idx=start_idx, end_idx=end_idx, checkpoint=checkpoint)
             return
 
         # Set the multiprocessing start method to 'spawn'. This is critical for
@@ -293,14 +291,6 @@ class ParallelRAGBasedPipeline(RAGBasedExperimentPipeline):
 
         # Determine the total number of samples to calculate the processing range.
         # This mirrors the logic in the parent method to ensure consistency.
-        config = DatamodelIndexBasedConfig(
-            k=self.k,
-            num_models=self.num_models,
-            datamodels_path=f"{self.root_path}/datamodels",
-            train_set_path=self.wiki_path,
-            test_set_path=self.questions_path
-        )
-        datamodel = DatamodelsIndexBasedNQPipeline(config)
 
         total_samples = self.num_models
 
@@ -319,8 +309,8 @@ class ParallelRAGBasedPipeline(RAGBasedExperimentPipeline):
         print(f"Splitting collection creation for '{collection_id}' across {num_subprocesses} processes.")
 
         for i in range(num_subprocesses):
-            p_start_idx = start_idx + i * chunk_size
-            p_end_idx = min(start_idx + (i + 1) * chunk_size, effective_end_idx)
+            p_start_idx = start_idx + (i * chunk_size)
+            p_end_idx = min(start_idx + ((i + 1) * chunk_size), effective_end_idx)
 
             # Do not create a process for an empty range.
             if p_start_idx >= p_end_idx:
@@ -332,11 +322,12 @@ class ParallelRAGBasedPipeline(RAGBasedExperimentPipeline):
                 "start_idx": p_start_idx,
                 "end_idx": p_end_idx,
                 "checkpoint": checkpoint,
-                "collection_id": f"{collection_id}"            }
+                "collection_id": f"{collection_id}"            
+            }
             
             # Create the process targeting the top-level worker function.
             process = mp.Process(
-                target=_run_training_worker, 
+                target=_run_training_worker,
                 args=(self._init_kwargs, run_kwargs)
             )
             processes.append(process)
@@ -344,4 +335,5 @@ class ParallelRAGBasedPipeline(RAGBasedExperimentPipeline):
         
         # Wait for all created processes to complete their execution.
         for process in processes:
+            print(f"Waiting for process {process.pid} to complete.")
             process.join()

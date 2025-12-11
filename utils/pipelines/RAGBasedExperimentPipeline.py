@@ -245,6 +245,9 @@ class RAGBasedExperimentPipeline:
 
 
         datamodel = DatamodelsIndexBasedNQPipeline(config=config)
+        datamodel.set_collections_index()
+        datamodel.set_train_dataframes(datamodel.train_set_path)
+        datamodel.set_test_dataframes(datamodel.test_set_path)
 
         print("Start Creating Train Pre Collection")
         pre_collection_data = DatamodelsPreCollectionsData(
@@ -370,6 +373,7 @@ class RAGBasedExperimentPipeline:
 
 
         datamodel = DatamodelsIndexBasedNQPipeline(config)
+        datamodel.set_collections_index()
         log_config = None
         if self.log:
 
@@ -439,7 +443,6 @@ class RAGBasedExperimentPipeline:
                 id=f"test_train_datamoles_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
                 name=self.model_run_id,
                 config={
-                    "gpu": f"{torch.cuda.get_device_name(0)}",
                     "index": "FAISS_L2",
                     "size_index": self.size_index,
                     "datamodel_configs": repr(config),
@@ -455,6 +458,7 @@ class RAGBasedExperimentPipeline:
             out_features=1,
             device=str(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
         )
+
 
         datamodel.train_datamodels(
             model_factory=model_factory,
@@ -555,7 +559,7 @@ class RAGBasedExperimentPipeline:
             weights = torch.load(f"{weights_dir}/weights.pt", weights_only=True)
         elif not exists_weights and exists_more_weights:
             weights = concat_sorted_tensors(weights_dir)
-            assert weights.shape[0] == self.num_models, f"Number of models in the weights tensor ({weights.shape[0]}) does not match the expected number of models ({self.num_models})."
+            # assert weights.shape[0] == self.num_models, f"Number of models in the weights tensor ({weights.shape[0]}) does not match the expected number of models ({self.num_models})."
 
         ## Get self.k highest weights
         k_values, k_indices = weights.topk(self.k, dim=1)
@@ -579,7 +583,7 @@ class RAGBasedExperimentPipeline:
 
 
         ## Iterate questions
-        for r_idx in range(len(retrieval_data)):
+        for r_idx in range(weights.size(0)):
 
             top_k = [retrieval_data[str(r_idx)][i] for i in k_indices[r_idx]]
             docs = wiki.filter(pl.col("idx").is_in(top_k))
@@ -588,7 +592,8 @@ class RAGBasedExperimentPipeline:
             ## Generate prompt
             prompt = "Documents: \n"
             for doc_idx in range(len(top_k)-1, -1, -1):
-                prompt += f"Document[{self.k-doc_idx}](Title: {docs.filter(pl.col('idx')==top_k[doc_idx])['title'].to_numpy().flatten()[0]}){docs.filter(pl.col('idx')==top_k[doc_idx])['text'].to_numpy().flatten()[0]}\n\n"
+                if top_k[doc_idx] >= 0:
+                    prompt += f"Document[{self.k-doc_idx}](Title: {docs.filter(pl.col('idx')==top_k[doc_idx])['title'].to_numpy().flatten()[0]}){docs.filter(pl.col('idx')==top_k[doc_idx])['text'].to_numpy().flatten()[0]}\n\n"
             prompt += f"Question: {questions[r_idx]['question'].to_numpy().flatten()[0]}\nAnswer: "
 
             if self.batch_size > 1 and isinstance(model, GenericInstructBatchHF| GenericVLLMBatch):
