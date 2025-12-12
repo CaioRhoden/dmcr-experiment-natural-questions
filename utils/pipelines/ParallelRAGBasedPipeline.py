@@ -130,6 +130,9 @@ class ParallelRAGBasedPipeline(RAGBasedExperimentPipeline):
             train_set_path=self.wiki_path, test_set_path=self.questions_path
         )
         datamodel = DatamodelsIndexBasedNQPipeline(config)
+        datamodel.set_collections_index()
+        datamodel.set_test_dataframes()
+        datamodel.set_train_dataframes()
         
         total_samples = len(datamodel.train_collections_idx) if mode == "train" else len(datamodel.test_collections_idx)
         effective_end_idx = end_idx if end_idx != -1 and end_idx <= total_samples else total_samples
