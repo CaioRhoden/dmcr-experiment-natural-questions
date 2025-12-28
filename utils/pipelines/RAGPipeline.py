@@ -122,7 +122,7 @@ class RAGPipeline:
 
         return results
 
-    def get_rag_retrieval(self):
+    def get_rag_retrieval(self, nprobe: int = 32, retrieval_path: str = "retrieval/rag_retrieval_indexes.json"):
 
         ## Setup variables
         """
@@ -136,7 +136,8 @@ class RAGPipeline:
         None
         """
         
-
+        ## Fix root path in parameters
+        retrieval_path = f"{self.root_path}/{retrieval_path}"
 
         retrieval_indexes = {}
         retrieval_distances = {}
@@ -183,7 +184,7 @@ class RAGPipeline:
             query_embedding = query_embedding.astype('float32').reshape(1, -1)
 
             ### Get l2 and ip neighbors
-            scores, ids = index.search(query_embedding, self.size_index)
+            scores, ids = index.search(query_embedding, self.size_index, nprobe=nprobe)
             # ip_ids, ip_scores = ip_index.search(query_embedding, 100)
 
             retrieval_indexes[idx] = ids.tolist()[0]
@@ -203,12 +204,17 @@ class RAGPipeline:
                 "duration": (datetime.datetime.now() - start_time).total_seconds()
             })
             artifact = wandb.Artifact(name="rag_retrieval", type="json", description="RAG retrieval data")
-            artifact.add_file(f"{self.root_path}/retrieval/rag_retrieval_indexes.json")
+            artifact.add_file(f"{retrieval_path}")
             artifact.add_file(f"{self.root_path}/retrieval/rag_retrieval_distances.json")
             wandb.log_artifact(artifact)
             wandb.finish()
 
-    def get_rag_generations(self, model: None | BatchModel | BaseLLM = None):
+    def get_rag_generations(self, 
+                            model: None | BatchModel | BaseLLM = None,
+                            generation_path: str = "generations/rag_generations.json",
+                            retrieval_path: str = "retrieval/rag_retrieval_indexes.json"
+
+                        ):
         """
         Get RAG generations for the given batch model language model.
 
@@ -219,10 +225,14 @@ class RAGPipeline:
             None
         """
 
+        ## Fix root path in parameters
+        generation_path = f"{self.root_path}/{generation_path}"
+        retrieval_path = f"{self.root_path}/{retrieval_path}"
+
         wiki = pl.read_ipc(self.wiki_path).with_row_index("idx")
         questions = pl.read_ipc(self.questions_path)
         ## Load retrieval data
-        with open(f"{self.root_path}/retrieval/rag_retrieval_indexes.json", "r") as f:
+        with open(retrieval_path, "r") as f:
             retrieval_data = json.load(f)
 
         self.lm_instance_kwargs["seed"] = self.seed
