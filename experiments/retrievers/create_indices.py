@@ -34,7 +34,7 @@ def main(indice_name: str):
         )
     elif indice_name == "bm25":
         create_bm25_corpus(
-            saving_path=f"{PATH}/data/indices/nq_corpus/bm25_corpus.pkl",
+            saving_path=f"{PATH}/data/indices/nq_corpus/bm25_corpus",
         )
     else:
         raise ValueError(f"Unknown indice name: {indice_name}")
