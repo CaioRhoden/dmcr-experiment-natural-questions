@@ -36,7 +36,7 @@ class RAGBasedExperimentPipeline:
         # We define a parameter for each field in the Config dataclass
         retrieval_path: str,
         wiki_path: str,
-        embeder_path: str,
+        embedder_path: str,
         vector_db_path: str,
         questions_path: str,
         language_model_path: str,
@@ -77,7 +77,7 @@ class RAGBasedExperimentPipeline:
 
         self.retrieval_path = retrieval_path
         self.wiki_path = wiki_path
-        self.embeder_path = embeder_path
+        self.embedder_path = embedder_path
         self.vector_db_path = vector_db_path
         self.questions_path = questions_path
         self.language_model_path = language_model_path

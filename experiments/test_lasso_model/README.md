@@ -43,7 +43,7 @@ This table describes the parameters available in the `pipeline.py` script, which
 | `step`                | `str`        | The specific pipeline step to execute (e.g., `setup`, `train`, `evaluate`).                                   |
 | `retrieval_path`      | `str`        | Path to the retrieval indexes JSON file.                                                                    |
 | `wiki_path`           | `str`        | Path to the wiki dataset file.                                                                              |
-| `embeder_path`        | `str`        | Path to the embedder model.                                                                                 |
+| `embedder_path`        | `str`        | Path to the embedder model.                                                                                 |
 | `vector_db_path`      | `str`        | Path to the vector database.                                                                                |
 | `questions_path`      | `str`        | Path to the questions dataset file.                                                                         |
 | `language_model_path`  | `str`        | Path to the language model.                                                                                 |

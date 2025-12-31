@@ -26,7 +26,7 @@ class RAGRetrievalsConfig:
     '''Path to the retrieval indexes JSON file.'''
     wiki_path: str = "data/wiki_dump2018_nq_open/processed/wiki.feather"
     '''Path to the wiki dataset file.'''
-    embeder_path: str = "models/bge-base-en-v1.5"
+    embedder_path: str = "models/bge-base-en-v1.5"
     '''Path to the embedder model.'''
     vector_db_path: str = "data/wiki_dump2018_nq_open/processed"
     '''Path to the vector database.'''
@@ -65,7 +65,7 @@ def initiate_rag_pipeline(args:RAGRetrievalsConfig, tag: str) -> RAGPipeline:
         seed=42,
         retrieval_path=args.retrieval_path,
         wiki_path=args.wiki_path,
-        embeder_path=args.embeder_path,
+        embedder_path=args.embedder_path,
         vector_db_path=args.vector_db_path,
         questions_path=args.questions_path,
         language_model_path=args.language_model_path,
@@ -92,7 +92,7 @@ if __name__ == "__main__":
 
     ## Add root to paths (except test)
     args.wiki_path = f"{root}/data/wiki_dump2018_nq_open/processed/wiki.feather"
-    args.embeder_path = f"{root}/{args.embeder_path}"
+    args.embedder_path = f"{root}/{args.embedder_path}"
     args.questions_path = f"{args.questions_path}"
     args.language_model_path = f"{root}/{args.language_model_path}"
     args.vector_db_path = f"{root}/{args.vector_db_path}/wiki_{tag}_upgrade.index"

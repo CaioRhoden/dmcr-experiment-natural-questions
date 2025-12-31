@@ -1,10 +1,5 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-import random
-from re import S
-from IPython import embed
-from sympy import Li
-from torch import embedding, seed
 import tyro
 from dmcr.models import GenericVLLMBatch
 from typing import Literal
@@ -12,22 +7,20 @@ from typing import Literal
 from utils.set_random_seed import set_random_seed
 from utils.pipelines.RAGPipeline import RAGPipeline
 
-from pathlib import Path
+
 root = Path(__file__).parent.parent.parent
-
-
-root = Path(__file__).parent.parent.parent.parent
 @dataclass
 class RagConfig:
     '''
     Configuration class for the experiment.
     '''
-    retriever: Literal["bge","hybrid", "qwen"] = "bge"
-    '''Type of retriever to be used in the experiment.'''
+
     vector_db_path: str
     '''Path to the vector database.'''
     embedder_path: str
     '''Path to the embedder model.'''
+    retriever: Literal["bge","hybrid", "qwen"] = "bge"
+    '''Type of retriever to be used in the experiment.'''
 
     nprobe: int = 32
     '''Number of probes for the vector search.'''
@@ -57,7 +50,7 @@ def initiate_pipeline(args: RagConfig) -> RAGPipeline:
     }
 
     questions_path = "questions.feather"
-    retrieval_path = f"retrieval/{args.retriever}_indices.json"
+    retrieval_path = f"retrieval/{args.retriever}_{args.nprobe}_indices.json"
     if args.retriever != "hybrid":
         return RAGPipeline(
             retrieval_path=retrieval_path,
@@ -83,16 +76,16 @@ def initiate_pipeline(args: RagConfig) -> RAGPipeline:
 if __name__ == "__main__":
     args = tyro.cli(RagConfig)
 
-    set_random_seed(args.seed)
+    set_random_seed(42)
 
 
     pipeline = initiate_pipeline(args)
     pipeline.setup()
-    pipeline.get_rag_retrieval()
+    pipeline.get_rag_retrieval(retrieval_prefix=f"retrieval/{args.retriever}_{args.nprobe}")
 
     model = GenericVLLMBatch(
         path=f"{root}/models/Llama-3.2-3B-Instruct",
         thinking=False,
         vllm_kwargs={"max_model_len": 32768}
     )
-    pipeline.get_rag_generations(model=model)
+    pipeline.get_rag_generations(model=model, generation_path=f"generations/rag_{args.retriever}_{args.nprobe}_generations.feather", retrieval_path=f"retrieval/{args.retriever}_{args.nprobe}_indexes.json")
