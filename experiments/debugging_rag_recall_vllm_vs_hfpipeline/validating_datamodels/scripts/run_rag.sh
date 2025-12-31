@@ -1,13 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=rag_debbuging_validation
-#SBATCH --output=/home/caio.rhoden/slurm/%A_%a_rag_debbuging_validation.out
-#SBATCH --error=/home/caio.rhoden/slurm/%A_%a_rag_debbuging_validation.err
+#SBATCH --job-name=rag_debbuging_validation_rag
+#SBATCH --output=/home/caio.rhoden/slurm/%A_%a_rag_debbuging_validation_rag.out
+#SBATCH --error=/home/caio.rhoden/slurm/%A_%a_rag_debbuging_validation_rag.err
 #SBATCH --gres=gpu:1
-#SBATCH --mem-per-gpu=23G
-#SBATCH --time=1:00:00
+#SBATCH --mem-per-gpu=40G
+#SBATCH --time=3:00:00
 #SBATCH --mail-user="c214129@dac.unicamp.br"
-#SBATCH --array=0-4%2
-#SBATCH --partition=a5000
+#SBATCH --array=0-4
 #SBATCH --mail-type=BEGIN,END,FAIL
 
 source ~/miniconda3/bin/activate
@@ -16,7 +15,7 @@ export WANDB_MODE="offline"
 export VLLM_WORKER_MULTIPROC_METHOD=spawn
 
 SEEDS=(1 4 54 61 73)
-INSTUCTIONS=(1 2)
+INSTUCTIONS=(0 1 2)
 
 
 S=${SEEDS[$SLURM_ARRAY_TASK_ID]}
