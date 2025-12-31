@@ -71,7 +71,7 @@ def create_flag_embedder(
 
     # ADDING PHASE
     batch_size = 80000
-    for start in range(0, total_size, batch_size):
+    for start in tqdm(range(0, total_size, batch_size), desc="Adding batches to index", unit="batch"):
         end = min(start + batch_size, total_size)
         print(f"Processing batch: {start} to {end}")
         
@@ -146,14 +146,16 @@ def create_hf_embedder(
     if metric == "cosine" or metric == faiss.METRIC_INNER_PRODUCT:
         faiss.normalize_L2(train_embeddings)
         
+    print("Training FAISS index...")
     index.train(train_embeddings)
+    print("FAISS index trained.")
     
     # Cleanup training memory
     del train_texts, train_embeddings, train_embeddings_list, train_data
     gc.collect()
 
     # ADDING PHASE
-    for start in range(0, total_size, batch_size):
+    for start in tqdm(range(0, total_size, batch_size), desc="Adding batches to index", unit="batch"):
         end = min(start + batch_size, total_size)
         print(f"Processing batch: {start} to {end}")
         

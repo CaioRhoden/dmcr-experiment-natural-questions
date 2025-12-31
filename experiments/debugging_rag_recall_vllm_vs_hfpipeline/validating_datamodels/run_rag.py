@@ -41,7 +41,7 @@ class RagConfig:
     '''Path to the language model.'''
     retrieval_path: str = "retrieval/rag_retrieval_indexes.json"
     '''Path to the retrieval indexes JSON file.'''
-    embeder_path: str = "models/bge-base-en-v1.5"
+    embedder_path: str = "models/bge-base-en-v1.5"
     '''Path to the embedder model.'''
     vector_db_path: str = "data/wiki_dump2018_nq_open/processed/wiki_cosine.index"
     '''Path to the vector database.'''
@@ -87,7 +87,7 @@ def initiate_pipeline(args: RagConfig) -> RAGPipeline:
     return RAGPipeline(
         retrieval_path=args.retrieval_path,
         wiki_path=args.wiki_path,
-        embeder_path=args.embeder_path,
+        embedder_path=args.embedder_path,
         vector_db_path=args.vector_db_path,
         questions_path=questions_path,
         project_log=args.project_log,
@@ -115,7 +115,7 @@ if __name__ == "__main__":
     args.language_model_path = f"{root}/{args.language_model_path}"
     args.wiki_path = f"{root}/{args.wiki_path}"
     args.retrieval_path = f"{root}/{args.retrieval_path}"
-    args.embeder_path = f"{root}/{args.embeder_path}"
+    args.embedder_path = f"{root}/{args.embedder_path}"
     args.vector_db_path = f"{root}/{args.vector_db_path}"
 
 

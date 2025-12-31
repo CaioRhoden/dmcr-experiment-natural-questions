@@ -17,13 +17,14 @@ from dmcr.models import  BaseLLM, BatchModel, GenericVLLMBatch
 BATCH_MODEL_LM = Literal["hf", "vllm"]
 
 from utils.set_random_seed import set_random_seed
+
 class RAGPipeline:
     def __init__(
         self,
         # We define a parameter for each field in the Config dataclass
         retrieval_path: str,
         wiki_path: str,
-        embeder_path: str,
+        embedder_path: str,
         vector_db_path: str,
         questions_path: str,
         project_log: str,
@@ -51,7 +52,7 @@ class RAGPipeline:
 
         self.retrieval_path = retrieval_path
         self.wiki_path = wiki_path
-        self.embeder_path = embeder_path
+        self.embedder_path = embedder_path
         self.vector_db_path = vector_db_path
         self.questions_path = questions_path
         self.project_log = project_log
@@ -69,7 +70,6 @@ class RAGPipeline:
         }
         self.lm_instance_kwargs = lm_instance_kwargs
         self.tags = tags
-        self.log = True
         self.root_path = root_path
         self.seed = seed
         self.batch_size = batch_size
@@ -122,7 +122,7 @@ class RAGPipeline:
 
         return results
 
-    def get_rag_retrieval(self, nprobe: int = 32, retrieval_path: str = "retrieval/rag_retrieval_indexes.json"):
+    def get_rag_retrieval(self, nprobe: int = 32, retrieval_prefix: str = "retrieval/rag_retrieval"):
 
         ## Setup variables
         """
@@ -137,7 +137,8 @@ class RAGPipeline:
         """
         
         ## Fix root path in parameters
-        retrieval_path = f"{self.root_path}/{retrieval_path}"
+        retrieval_path = f"{self.root_path}/{retrieval_prefix}_indexes.json"
+        retrieval_distances_path = f"{self.root_path}/{retrieval_prefix}_distances.json"
 
         retrieval_indexes = {}
         retrieval_distances = {}
@@ -146,8 +147,9 @@ class RAGPipeline:
 
         ### Load faiss indices
         index = faiss.read_index(self.vector_db_path)
+        index.nprobe = int(nprobe)
         # ip_index = faiss.read_index(IP_FAISS_INDEX_PATH)
-        embedder = FlagModel(self.embeder_path, devices=["cuda:0"], use_fp16=True, batch_size=1)
+        embedder = FlagModel(self.embedder_path, devices=["cuda:0"], use_fp16=True, batch_size=1)
         
         if self.log:
             start_time = datetime.datetime.now()
@@ -161,7 +163,7 @@ class RAGPipeline:
                     "size_index": self.size_index,
                     "index": self.vector_db_path,
                     "questions_path": self.questions_path,
-                    "embeder_path": self.embeder_path,
+                    "embedder_path": self.embedder_path,
 
                 },
                 tags = self.tags.extend(["RAG", "retrieval"]),
@@ -184,7 +186,7 @@ class RAGPipeline:
             query_embedding = query_embedding.astype('float32').reshape(1, -1)
 
             ### Get l2 and ip neighbors
-            scores, ids = index.search(query_embedding, self.size_index, nprobe=nprobe)
+            scores, ids = index.search(query_embedding, self.size_index)
             # ip_ids, ip_scores = ip_index.search(query_embedding, 100)
 
             retrieval_indexes[idx] = ids.tolist()[0]
@@ -192,10 +194,10 @@ class RAGPipeline:
             # retrieval_data["ip"][idx] = (ip_ids.tolist()[0], ip_scores.tolist()[0])
 
         ## Save into json
-        with open(f"{self.root_path}/retrieval/rag_retrieval_indexes.json", "w") as f:
+        with open(f"{retrieval_path}", "w") as f:
             json.dump(retrieval_indexes, f)
 
-        with open(f"{self.root_path}/retrieval/rag_retrieval_distances.json", "w") as f:
+        with open(f"{retrieval_distances_path}", "w") as f:
             json.dump(retrieval_distances, f)
 
         if self.log:
@@ -205,7 +207,7 @@ class RAGPipeline:
             })
             artifact = wandb.Artifact(name="rag_retrieval", type="json", description="RAG retrieval data")
             artifact.add_file(f"{retrieval_path}")
-            artifact.add_file(f"{self.root_path}/retrieval/rag_retrieval_distances.json")
+            artifact.add_file(f"{retrieval_distances_path}")
             wandb.log_artifact(artifact)
             wandb.finish()
 
@@ -260,7 +262,7 @@ class RAGPipeline:
                     "size_index": self.size_index,
                     "index": self.vector_db_path,
                     "questions_path": self.questions_path,
-                    "embeder_path": self.embeder_path,
+                    "embedder_path": self.embedder_path,
 
                 },
                 tags = self.tags.extend(["RAG", "generations"]),
