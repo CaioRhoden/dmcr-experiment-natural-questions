@@ -1,13 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=MI_pc_rag_debbuging_validation
-#SBATCH --output=/home/caio.rhoden/slurm/%A_%a_MI_pc_rag_debbuging_validation.out
-#SBATCH --error=/home/caio.rhoden/slurm/%A_%a_MI_pc_rag_debbuging_validation.err
+#SBATCH --output=/home/users/caio.rhoden/slurm/%A_%a_MI_pc_rag_debbuging_validation.out
+#SBATCH --error=/home/users/caio.rhoden/slurm/%A_%a_MI_pc_rag_debbuging_validation.err
 #SBATCH --gres=gpu:1
-#SBATCH --mem-per-gpu=45G
+#SBATCH --mem-per-gpu=139G
 #SBATCH --time=48:00:00
 #SBATCH --mail-user="c214129@dac.unicamp.br"
 #SBATCH --array=0-9
-#SBATCH --partition=rtx8000
+#SBATCH --exclude=gpu03
 #SBATCH --mail-type=BEGIN,END,FAIL
 
 source ~/miniconda3/bin/activate
