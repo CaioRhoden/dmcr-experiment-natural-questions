@@ -6,7 +6,7 @@
 #SBATCH --mem-per-gpu=138G
 #SBATCH --time=48:00:00
 #SBATCH --mail-user="c214129@dac.unicamp.br"
-#SBATCH --array=4-7
+#SBATCH --array=0-14
 #SBATCH --exclude=gpu03
 #SBATCH --mail-type=BEGIN,END,FAIL
 
@@ -37,11 +37,11 @@ python run_datamodels.py \
     --instruction_idx $INSTRUCTION_IDX \
     --run_type collections \
     --start_idx 0 \
-    --end_idx 1000000 \
+    --end_idx 100000 \
     --checkpoint 20000 \
     --num_subprocesses 1 \
     --evaluator Judge \
-    --mode train
+    --mode test
 
     
         
