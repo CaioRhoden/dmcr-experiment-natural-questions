@@ -1,12 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=pc_rag_debbuging_validation
-#SBATCH --output=/home/caio.rhoden/slurm/%A_%a_pc_rag_debbuging_validation.out
-#SBATCH --error=/home/caio.rhoden/slurm/%A_%a_pc_rag_debbuging_validation.err
+#SBATCH --output=/home/users/caio.rhoden/slurm/%A_%a_pc_rag_debbuging_validation.out
+#SBATCH --error=/home/users/caio.rhoden/slurm/%A_%a_pc_rag_debbuging_validation.err
 #SBATCH --gres=gpu:1
-#SBATCH --mem-per-gpu=44G
+#SBATCH --mem-per-gpu=139G
 #SBATCH --time=48:00:00
 #SBATCH --mail-user="c214129@dac.unicamp.br"
-#SBATCH --array=0-14%10
+#SBATCH --array=10-14
+#SBATCH --exclude=gpu03
 #SBATCH --mail-type=BEGIN,END,FAIL
 
 source ~/miniconda3/bin/activate
@@ -39,20 +40,20 @@ python run_datamodels.py \
     --seed $S \
     --instruction_idx $INST \
     --run_type pre_collections \
-    --start_idx 1000 \
+    --start_idx 0 \
     --end_idx 2000 \
     --checkpoint 200 \
     --mode train
 
-echo "RUNNING PRE_COLLECTIONS TEST"
-python run_datamodels.py \
-    --seed $S \
-    --instruction_idx $INST \
-    --run_type pre_collections \
-    --start_idx 0 \
-    --end_idx 200 \
-    --checkpoint 200 \
-    --mode test
+# echo "RUNNING PRE_COLLECTIONS TEST"
+# python run_datamodels.py \
+#     --seed $S \
+#     --instruction_idx $INST \
+#     --run_type pre_collections \
+#     --start_idx 0 \
+#     --end_idx 200 \
+#     --checkpoint 200 \
+#     --mode test
 
     
 done
