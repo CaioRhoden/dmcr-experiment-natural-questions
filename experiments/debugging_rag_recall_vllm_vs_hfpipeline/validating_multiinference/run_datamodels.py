@@ -208,8 +208,8 @@ if __name__ == "__main__":
 
     elif args.run_type == "generation":
 
-        pipeline.get_datamodels_generations(f"num-sentences-{args.num_sentences}_experiment-{args.seed}_evaluator-{args.evaluator}",f"num-sentences-{args.num_sentences}_experiment-{args.seed}_evaluator-{args.evaluator}")
-        pipeline.get_datamodels_retrieval(f"num-sentences-{args.num_sentences}_experiment-{args.seed}_evaluator-{args.evaluator}")
+        pipeline.get_datamodels_generations(f"num-sentences-{args.num_sentences}_experiment-{args.seed}_evaluator-{args.evaluator}",f"num_sentences-{args.num_sentences}_experiment-{args.seed}_evaluator-{args.evaluator}")
+        pipeline.get_datamodels_retrieval(f"num_sentences-{args.num_sentences}_experiment-{args.seed}_evaluator-{args.evaluator}")
         sys.exit(0)
 
     else:
