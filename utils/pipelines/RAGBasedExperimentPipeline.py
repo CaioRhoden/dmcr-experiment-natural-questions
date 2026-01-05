@@ -384,7 +384,6 @@ class RAGBasedExperimentPipeline:
                 name=collection_id,
                 config={
                     "evaluator": self.evaluator,
-                    "gpu": f"{torch.cuda.get_device_name(0)}",
                     "size_index": self.size_index,
                     "datamodel_configs": repr(config)
                 },
