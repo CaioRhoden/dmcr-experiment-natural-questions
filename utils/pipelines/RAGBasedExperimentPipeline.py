@@ -95,7 +95,7 @@ class RAGBasedExperimentPipeline:
             "temperature": 0.7,
             "top_p": 0.9,
             "max_new_tokens": 10,
-            "num_return_sequences": 5
+            "num_return_sequences": 1
         }
         self.train_samples = train_samples
         self.test_samples = test_samples
@@ -310,7 +310,8 @@ class RAGBasedExperimentPipeline:
                         start_idx: int = 0,
                         end_idx: int = -1,
                         checkpoint: int = 50,
-                        collection_id: str = "default_collection"
+                        collection_id: str = "default_collection",
+                        model_configs: dict | None = None
       ):
 
 
@@ -322,6 +323,13 @@ class RAGBasedExperimentPipeline:
             train_set_path=self.wiki_path,
             test_set_path=self.questions_path
         )
+
+        if model_configs is None:
+            model_configs = {
+                    "temperature": 0.5,
+                    "top_p": 0.9,
+                    "max_new_tokens": 1024,
+            }
 
         ## Config evaluator based on yaml parameter
         if self.evaluator == "Rouge-L":
@@ -354,6 +362,37 @@ class RAGBasedExperimentPipeline:
                 """
             evaluator = JudgeEvaluator(
                 model_path=self.language_model_path,
+                model_configs = model_configs,
+                instruction="",
+                format_template=format_input,
+                thinking=self.thinking,
+                judge=judge_model,
+                batch_size=self.batch_size
+            )
+
+        elif self.evaluator == "BinaryJudge":
+            judge_model = GenericVLLMBatch(
+                path=self.language_model_path,
+                thinking=self.thinking,
+                vllm_kwargs={
+                    "max_model_len": 32768,
+                    "tensor_parallel_size": 1,
+                    "gpu_memory_utilization": 0.9
+                }
+            )
+
+            def format_input(question, response):
+                return f""""
+                [System] 
+                Please act as an impartial judge and evaluate the quality of the response provided by an AI assistant to a question displayed below. Your evaluation should consider factors such as relevance and accuracy. Begin your evaluation by providing a short explanation. Be as objective as possible. After providing your explanation, please classify the response as 1 for GOOD and 0 for BAD by strictly following this format: "[[classification]]", for example: "Classification: [[1]]".  
+                [Question] 
+                {question}  
+                [The Start of Assistant’s Answer] 
+                {response}
+                [The End of Assistant’s Answer]
+                """
+            evaluator = JudgeEvaluator(
+                model_path=self.language_model_path,
                 model_configs = {
                     "temperature": 0.5,
                     "top_p": 0.9,
@@ -363,9 +402,8 @@ class RAGBasedExperimentPipeline:
                 format_template=format_input,
                 thinking=self.thinking,
                 judge=judge_model,
-                batch_size=self.batch_size
-
-
+                batch_size=self.batch_size,
+                regex_pattern= r'Classification: \[\[(\d+)\]\]'
             )
 
         else:
