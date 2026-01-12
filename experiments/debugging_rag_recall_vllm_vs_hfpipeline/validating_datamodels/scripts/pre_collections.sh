@@ -6,8 +6,7 @@
 #SBATCH --mem-per-gpu=139G
 #SBATCH --time=48:00:00
 #SBATCH --mail-user="c214129@dac.unicamp.br"
-#SBATCH --array=10-14
-#SBATCH --exclude=gpu03
+#SBATCH --array=1
 #SBATCH --mail-type=BEGIN,END,FAIL
 
 source ~/miniconda3/bin/activate
@@ -27,33 +26,33 @@ INST=${INSTRUCTIONS[$INST_ID]}
 
     
 echo "Running setup for seed $S and instruction index $INST"
-echo "-----------------------------------------------"
-echo "RUNNING SETUP"
-python run_datamodels.py \
-    --seed $S \
-    --instruction_idx $INST \
-    --run_type setup
+# echo "-----------------------------------------------"
+# echo "RUNNING SETUP"
+# python run_datamodels.py \
+#     --seed $S \
+#     --instruction_idx $INST \
+#     --run_type setup
 
-echo "-----------------------------------------------"
-echo "RUNNING PRE_COLLECTIONS TRAIN "
+# echo "-----------------------------------------------"
+# echo "RUNNING PRE_COLLECTIONS TRAIN "
+# python run_datamodels.py \
+#     --seed $S \
+#     --instruction_idx $INST \
+#     --run_type pre_collections \
+#     --start_idx 800 \
+#     --end_idx 1000 \
+#     --checkpoint 200 \
+#     --mode train
+
+echo "RUNNING PRE_COLLECTIONS TEST"
 python run_datamodels.py \
     --seed $S \
     --instruction_idx $INST \
     --run_type pre_collections \
     --start_idx 0 \
-    --end_idx 2000 \
+    --end_idx 200 \
     --checkpoint 200 \
-    --mode train
-
-# echo "RUNNING PRE_COLLECTIONS TEST"
-# python run_datamodels.py \
-#     --seed $S \
-#     --instruction_idx $INST \
-#     --run_type pre_collections \
-#     --start_idx 0 \
-#     --end_idx 200 \
-#     --checkpoint 200 \
-#     --mode test
+    --mode test
 
     
 done
