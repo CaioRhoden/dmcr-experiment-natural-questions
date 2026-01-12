@@ -31,6 +31,8 @@ python run_datamodels.py \
     --instruction_idx $INSTRUCTION_IDX \
     --run_type setup
 
+
+
 echo "RUNNING COLLECTIONS TRAIN"
 python run_datamodels.py \
     --seed $S \
@@ -39,23 +41,24 @@ python run_datamodels.py \
     --batch_size 1000000 \
     --start_idx 0 \
     --end_idx 1000000 \
-    --checkpoint 50000 \
+    --checkpoint 25000 \
     --num_subprocesses 1 \
     --evaluator Judge \
-    --mode train
+    --mode train \
+    --multiple_grading
+
 
 echo "RUNNING COLLECTIONS TRAIN"
 python run_datamodels.py \
     --seed $S \
     --instruction_idx $INSTRUCTION_IDX \
     --run_type collections \
+    --batch_size 100000\
     --start_idx 0 \
     --end_idx 100000 \
-    --checkpoint 5 \
+    --checkpoint 25000 \
     --num_subprocesses 1 \
     --evaluator Judge \
-    --mode train \
+    --mode test \
     --multiple_grading
-
-    
         
