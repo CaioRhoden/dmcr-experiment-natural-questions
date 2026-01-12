@@ -7,8 +7,8 @@
 #SBATCH --time=48:00:00
 #SBATCH --mail-user="c214129@dac.unicamp.br"
 #SBATCH --mail-type=BEGIN,END,FAIL
-#SBATCH --partition=rtx5000,a5000,l40s
-#SBATCH --array=0-9
+#SBATCH --partition=p5000,rtx5000,a5000,rtx8000
+#SBATCH --array=1
 
 
 SEEDS=(1 4 54 61 73)
@@ -35,9 +35,9 @@ python run_datamodels.py \
     --instruction_idx $INST \
     --run_type collections \
     --start_idx 0 \
-    --end_idx 1000000 \
+    --end_idx 100000 \
     --checkpoint 50000 \
     --num_subprocesses 4 \
-    --mode train
+    --mode test
 
 

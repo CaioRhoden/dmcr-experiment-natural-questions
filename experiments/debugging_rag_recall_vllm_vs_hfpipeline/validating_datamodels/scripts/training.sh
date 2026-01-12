@@ -4,12 +4,12 @@
 #SBATCH --error=/home/caio.rhoden/slurm/%A_%a_training_rag_debbuging_validation.err
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=7
-#SBATCH --mem=30G
+#SBATCH --mem=10G
 #SBATCH --time=48:00:00
 #SBATCH --mail-user="c214129@dac.unicamp.br"
 #SBATCH --mail-type=BEGIN,END,FAIL
-#SBATCH --array=0-3
-#SBATCH --partition=rtx8000
+#SBATCH --array=8
+#SBATCH --partition=a5000,rtx5000,rtx8000,l40s
 
 
 source ~/miniconda3/bin/activate
@@ -35,5 +35,5 @@ python run_datamodels.py \
     --instruction_idx $INSTRUCTION_IDX \
     --run_type training \
     --num_subprocesses 5 \
-    --checkpoint 50 \
-    --evaluator Judge
+    --checkpoint 50  \
+    --evaluation_metric R2Score
