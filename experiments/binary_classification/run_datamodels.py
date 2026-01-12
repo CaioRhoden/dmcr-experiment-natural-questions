@@ -9,11 +9,8 @@ import sys
 from utils.set_random_seed import set_random_seed
 from utils.pipelines.ParallelRAGBasedPipeline import ParallelRAGBasedPipeline
 from pathlib import Path
-root = Path(__file__).parent.parent
+root = Path(__file__).parent.parent.parent
 
-
-
-root = Path(__file__).parent.parent.parent.parent
 instruction = "You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens"
 
 @dataclass
@@ -199,7 +196,6 @@ if __name__ == "__main__":
         sys.exit(0)
     
     elif args.run_type == "training":
-        print(f"DEBUG: Staring idx: {args.start_idx}, Ending idx: {args.end_idx}")
         pipeline.train_datamodels(collection_id=args.collection_id, num_subprocesses=args.num_subprocesses, checkpoint=args.checkpoint, start_idx=args.start_idx, end_idx=args.end_idx)
         pipeline.evaluate_datamodels(collection_id=args.collection_id)
         sys.exit(0)
