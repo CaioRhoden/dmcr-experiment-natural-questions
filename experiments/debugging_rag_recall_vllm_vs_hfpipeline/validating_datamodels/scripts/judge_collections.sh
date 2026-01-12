@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=pc_rag_debbuging_validation
-#SBATCH --output=/home/users/caio.rhoden/slurm/%A_%a_pc_rag_debbuging_validation.out
-#SBATCH --error=/home/users/caio.rhoden/slurm/%A_%a_pc_rag_debbuging_validation.err
+#SBATCH --job-name=multi_judge
+#SBATCH --output=/home/users/caio.rhoden/slurm/%A_%a_multi_judge.out
+#SBATCH --error=/home/users/caio.rhoden/slurm/%A_%a_multi_judge.err
 #SBATCH --gres=gpu:1
-#SBATCH --mem-per-gpu=138G
+#SBATCH --mem-per-gpu=40G
 #SBATCH --time=48:00:00
 #SBATCH --mail-user="c214129@dac.unicamp.br"
-#SBATCH --array=0-14
+#SBATCH --array=5-9
 #SBATCH --exclude=gpu03
 #SBATCH --mail-type=BEGIN,END,FAIL
 
@@ -36,12 +36,14 @@ python run_datamodels.py \
     --seed $S \
     --instruction_idx $INSTRUCTION_IDX \
     --run_type collections \
+    --batch_size 1000000 \
     --start_idx 0 \
     --end_idx 100000 \
-    --checkpoint 20000 \
+    --checkpoint 5 \
     --num_subprocesses 1 \
     --evaluator Judge \
-    --mode test
+    --mode train \
+    --multiple_grading
 
     
         

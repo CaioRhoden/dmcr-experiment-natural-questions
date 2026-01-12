@@ -35,6 +35,8 @@ class DatamodelsConfig:
     '''Index of the instruction to be used in the experiment'''
     log: bool = True
     '''Flag to enable logging. Options: "setup", "baseline", "rag", "datamodels".'''
+    multiple_grading: bool = False
+    '''Flag to enable multiple grading per sample in Judge evaluation'''
 
     
     # RAG Based configs Config Fields
@@ -176,6 +178,15 @@ if __name__ == "__main__":
 
     set_random_seed(args.seed)
 
+    if args.multiple_grading and args.evaluator == "Judge":
+        model_args = {
+                "temperature": 0.5,
+                "top_p": 0.9,
+                "max_new_tokens": 1024,
+                "n": 3
+        }
+        args.collection_id = f"evaluator-{args.evaluator}_multi"
+
     if args.run_type == "setup":
         pipeline.setup()
         pipeline.create_datamodels_datasets()
@@ -195,11 +206,12 @@ if __name__ == "__main__":
     
     elif args.run_type == "collections":
 
+
+
         pipeline.run_collections(
             start_idx=args.start_idx,
             end_idx=args.end_idx,
             checkpoint=args.checkpoint,
-            mode=args.mode,
             collection_id=args.collection_id,
             num_subprocesses=args.num_subprocesses
         )
