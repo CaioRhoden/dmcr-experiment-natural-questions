@@ -34,8 +34,18 @@ INST=${INSTRUCTIONS[$INST_ID]}
 #     --instruction_idx $INST \
 #     --run_type setup
 
-echo "-----------------------------------------------"
-echo "RUNNING PRE_COLLECTIONS TRAIN "
+# echo "-----------------------------------------------"
+# echo "RUNNING PRE_COLLECTIONS TRAIN "
+# python run_datamodels.py \
+#     --seed $S \
+#     --instruction_idx $INST \
+#     --run_type pre_collections \
+#     --start_idx 800 \
+#     --end_idx 1000 \
+#     --checkpoint 200 \
+#     --mode train
+
+echo "RUNNING PRE_COLLECTIONS TEST"
 python run_datamodels.py \
     --seed $S \
     --instruction_idx $INST \

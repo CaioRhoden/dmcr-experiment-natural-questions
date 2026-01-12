@@ -38,6 +38,18 @@ python run_datamodels.py \
     --run_type collections \
     --batch_size 1000000 \
     --start_idx 0 \
+    --end_idx 1000000 \
+    --checkpoint 50000 \
+    --num_subprocesses 1 \
+    --evaluator Judge \
+    --mode train
+
+echo "RUNNING COLLECTIONS TRAIN"
+python run_datamodels.py \
+    --seed $S \
+    --instruction_idx $INSTRUCTION_IDX \
+    --run_type collections \
+    --start_idx 0 \
     --end_idx 100000 \
     --checkpoint 5 \
     --num_subprocesses 1 \
