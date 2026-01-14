@@ -213,7 +213,8 @@ if __name__ == "__main__":
             end_idx=args.end_idx,
             checkpoint=args.checkpoint,
             collection_id=args.collection_id,
-            num_subprocesses=args.num_subprocesses
+            num_subprocesses=args.num_subprocesses,
+            model_configs=model_args if args.multiple_grading and args.evaluator == "Judge" else None,
         )
         sys.exit(0)
     

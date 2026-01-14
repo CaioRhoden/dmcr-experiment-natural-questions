@@ -177,8 +177,8 @@ class ParallelRAGBasedPipeline(RAGBasedExperimentPipeline):
                         end_idx: int = -1,
                         checkpoint: int = 50,
                         collection_id: str = "default_collection",
-                        num_subprocesses: int = 1
-
+                        num_subprocesses: int = 1,
+                        model_configs: dict | None = None
                        ) -> None:
         """
         Overrides the parent method to run collection creation in parallel.
@@ -197,7 +197,7 @@ class ParallelRAGBasedPipeline(RAGBasedExperimentPipeline):
         """
         if num_subprocesses <= 1:
             print("Number of subprocesses is 1 or less. Running in standard serial mode.")
-            super().run_collections(mode, start_idx, end_idx, checkpoint, collection_id)
+            super().run_collections(mode, start_idx, end_idx, checkpoint, collection_id, model_configs=model_configs)
             return
 
         # Set the multiprocessing start method to 'spawn'. This is critical for
@@ -259,6 +259,7 @@ class ParallelRAGBasedPipeline(RAGBasedExperimentPipeline):
                 "end_idx": p_end_idx,
                 "checkpoint": checkpoint,
                 "collection_id": f"{collection_id}_{p_start_idx}_{p_end_idx}",
+                "model_configs": model_configs
             }
             
             # Create the process targeting the top-level worker function.
