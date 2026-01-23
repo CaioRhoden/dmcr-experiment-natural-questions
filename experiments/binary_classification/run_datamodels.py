@@ -20,6 +20,8 @@ class DatamodelsConfig:
     '''
     run_type: Literal["setup", "pre_collections", "collections", "training", "generation"] = "setup"
     '''Type of run to execute. Options: "setup", "pre_collections", "collections", "training", "generation".'''
+    model_tag: str = "generic"
+    ''' Indication of what model is being tested for generation'''
     mode: Literal["train", "test"] = "train"
     '''Mode for the experiment section. Options: "train" or "test".'''
     seed: Literal[1, 4, 54, 61, 73] = 1
@@ -104,7 +106,7 @@ def initiate_pipeline(args: DatamodelsConfig) -> ParallelRAGBasedPipeline:
     Returns:
         ZeroShotBaselinePipeline: An instance of the baseline pipeline.
     """
-    model_run_id = f"experiment-{args.seed}_evaluator-{args.evaluator}"
+    model_run_id = f"{args.model_tag}"
 
     lm_configs = {
                 "temperature": 0.7,
@@ -113,7 +115,7 @@ def initiate_pipeline(args: DatamodelsConfig) -> ParallelRAGBasedPipeline:
                 "n": 1
     }
 
-    questions_path = f"experiment_{args.seed}/questions.feather"
+    questions_path = f"runs/experiment_{args.seed}/questions.feather"
 
     return ParallelRAGBasedPipeline(
         seed=args.seed,
@@ -140,7 +142,7 @@ def initiate_pipeline(args: DatamodelsConfig) -> ParallelRAGBasedPipeline:
         val_size=args.val_size,
         patience=args.patience,
         log_epochs=args.log_epochs,
-        root_path=f"experiment_{args.seed}",
+        root_path=f"runs/experiment_{args.seed}",
         batch_size=args.batch_size,
         tags=args.tags,
         lm_configs=lm_configs,
@@ -157,10 +159,10 @@ if __name__ == "__main__":
 
     args.language_model_path = f"{root}/{args.language_model_path}"
     args.wiki_path = f"{root}/{args.wiki_path}"
-    args.retrieval_path = f"experiment_{args.seed}/{args.retrieval_path}"
+    args.retrieval_path = f"runs/experiment_{args.seed}/{args.retrieval_path}"
     args.embedder_path = f"{root}/{args.embedder_path}"
     args.vector_db_path = f"{root}/{args.vector_db_path}"
-    args.collection_id = f"experiment-{args.seed}_evaluator-{args.evaluator}"
+    args.collection_id = f"runs/experiment-{args.seed}_evaluator-{args.evaluator}"
 
     pipeline = initiate_pipeline(args)
 
@@ -184,12 +186,11 @@ if __name__ == "__main__":
         sys.exit(0)
     
     elif args.run_type == "collections":
-
         pipeline.run_collections(
+            mode=args.mode,
             start_idx=args.start_idx,
             end_idx=args.end_idx,
             checkpoint=args.checkpoint,
-            mode=args.mode,
             collection_id=args.collection_id,
             num_subprocesses=args.num_subprocesses
         )
@@ -202,8 +203,8 @@ if __name__ == "__main__":
 
     elif args.run_type == "generation":
 
-        pipeline.get_datamodels_generations(f"experiment-{args.seed}_evaluator-{args.evaluator}",f"experiment-{args.seed}_evaluator-{args.evaluator}")
-        pipeline.get_datamodels_retrieval(f"experiment-{args.seed}_evaluator-{args.evaluator}")
+        pipeline.get_datamodels_generations(f"{args.model_tag}",f"{args.model_tag}")
+        pipeline.get_datamodels_retrieval(f"{args.model_tag}")
         sys.exit(0)
 
     else:

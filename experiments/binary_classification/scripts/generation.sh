@@ -1,15 +1,14 @@
 #!/bin/bash
-#SBATCH --job-name=generating_rag_debbuging_validation
-#SBATCH --output=/home/caio.rhoden/slurm/%A_%a_generating_rag_debbuging_validation.out
-#SBATCH --error=/home/caio.rhoden/slurm/%A_%a_generating_rag_debbuging_validation.err
+#SBATCH --job-name=generation_model_analysis
+#SBATCH --output=/home/caio.rhoden/slurm/%A_%a_generation_model_analysis.out
+#SBATCH --error=/home/caio.rhoden/slurm/%A_%a_generation_model_analysis.err
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=2
-#SBATCH --mem-per-gpu=45G
+#SBATCH --mem-per-gpu=44G
 #SBATCH --time=2:00:00
 #SBATCH --mail-user="c214129@dac.unicamp.br"
 #SBATCH --mail-type=BEGIN,END,FAIL
-#SBATCH --array=14
-
+#SBATCH --array=0-4
 
 source ~/miniconda3/bin/activate
 conda activate nq
@@ -19,14 +18,29 @@ export C_INCLUDE_PATH=$CONDA_PREFIX/include
 export CPLUS_INCLUDE_PATH=$CONDA_PREFIX/include
 
 SEEDS=(1 4 54 61 73)
-INSTRUCTIONS=(0 1 2)
 S_ID=$((SLURM_ARRAY_TASK_ID % 5))
 S=${SEEDS[$S_ID]}
-INST_ID=$((SLURM_ARRAY_TASK_ID / 5))
-INST=${INSTRUCTIONS[$INST_ID]}
+
+# python run_datamodels.py \
+#         --seed $S \
+#         --run_type generation \
+#         --batch_size 500 \
+#         --model_tag lr_groundtruth
+
+# python run_datamodels.py \
+#         --seed $S \
+#         --run_type generation \
+#         --batch_size 500 \
+#         --model_tag lr_judge
+
+# python run_datamodels.py \
+#         --seed $S \
+#         --run_type generation \
+#         --batch_size 500 \
+#         --model_tag lr_balanced_groundtruth
 
 python run_datamodels.py \
         --seed $S \
-        --instruction_idx $INST \
         --run_type generation \
         --batch_size 500 \
+        --model_tag lr_balanced_judge
