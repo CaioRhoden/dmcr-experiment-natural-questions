@@ -41,7 +41,7 @@ class DatamodelsConfig:
     '''Path to the embedder model.'''
     vector_db_path: str = "data/wiki_dump2018_nq_open/processed/wiki_cosine.index"
     '''Path to the vector database.'''
-    project_log: str = "binary_clasification"
+    project_log: str = "nq_val_ablation"
     '''Project log name fgor wandb'''
     model_run_id: str = "datamodels"
     '''ID of the model run.'''
@@ -162,7 +162,7 @@ if __name__ == "__main__":
     args.retrieval_path = f"runs/experiment_{args.seed}/{args.retrieval_path}"
     args.embedder_path = f"{root}/{args.embedder_path}"
     args.vector_db_path = f"{root}/{args.vector_db_path}"
-    args.collection_id = f"runs/experiment-{args.seed}_evaluator-{args.evaluator}"
+    args.collection_id = f"experiment-{args.seed}_evaluator-{args.evaluator}"
 
     pipeline = initiate_pipeline(args)
 

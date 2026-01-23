@@ -231,7 +231,7 @@ class RAGBasedExperimentPipeline:
             log_config = LogConfig(
                 project=self.project_log,
                 dir=f"{self.root_path}/logs",
-                id=f"pre_collection_{collection_id}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
+                id=f"pre_collection_{collection_id}_{int(datetime.datetime.now().timestamp())}",
                 name=f"pre_collection_{collection_id}",
                 config={
                     "llm": f"{self.language_model_path}",
@@ -418,7 +418,7 @@ class RAGBasedExperimentPipeline:
             log_config = LogConfig(
                 project=self.project_log,
                 dir=f"{self.root_path}/logs",
-                id=f"{mode}_collections_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
+                id=f"{mode}_collections_{int(datetime.datetime.now().timestamp())}",
                 name=collection_id,
                 config={
                     "evaluator": self.evaluator,
@@ -477,7 +477,7 @@ class RAGBasedExperimentPipeline:
             log_config = LogConfig(
                 project=self.project_log,
                 dir=f"{self.root_path}/logs",
-                id=f"test_train_datamoles_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
+                id=f"test_train_datamoles_{int(datetime.datetime.now().timestamp())}",
                 name=self.model_run_id,
                 config={
                     "index": "FAISS_L2",
@@ -532,7 +532,7 @@ class RAGBasedExperimentPipeline:
             log_config = LogConfig(
                 project=self.project_log,
                 dir=f"{self.root_path}/logs",
-                id=f"{self.model_run_id}_evaluate_datamodels_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
+                id=f"{self.model_run_id}_evaluate_datamodels_{int(datetime.datetime.now().timestamp())}",
                 name=f"{self.model_run_id}_evaluate_datamodels",
                 config={
                     "gpu": f"{torch.cuda.get_device_name(0)}",
@@ -607,7 +607,7 @@ class RAGBasedExperimentPipeline:
                 project=self.project_log,
                 dir=f"{self.root_path}/logs",
                 name=f"datamodels_generations_{model_run_id}",
-                id = f"datamodels_generations_{model_run_id}_{start_time.strftime('%Y-%m-%d_%H-%M-%S')}",
+                id = f"datamodels_generations_{model_run_id}_{int(start_time.timestamp())}",
                 config={
                     "gpu": f"{torch.cuda.get_device_name(0)}",
                     "size_index": self.size_index,
@@ -616,7 +616,7 @@ class RAGBasedExperimentPipeline:
                 tags = self.tags.extend(["datamodels", "generation"]),
             )
 
-            wandb.log({"start_time": start_time.strftime('%Y-%m-%d_%H-%M-%S')})
+            wandb.log({"start_time": start_time.strftime("%Y-%m-%d %H:%M:%S")})
 
 
         ## Iterate questions
@@ -668,7 +668,7 @@ class RAGBasedExperimentPipeline:
 
         if self.log:
             wandb.log({
-                "end_time": datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
+                "end_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "total_duration": (datetime.datetime.now() - start_time).total_seconds(),
             })
             artifact = wandb.Artifact(
@@ -702,7 +702,7 @@ class RAGBasedExperimentPipeline:
                 project=self.project_log,
                 dir=f"{self.root_path}/logs",
                 name=f"datamodels_retrieval_{model_run_id}",
-                id = f"datmaodels_retieval_{model_run_id}_{start_time.strftime('%Y-%m-%d_%H-%M-%S')}",
+                id = f"datmaodels_retieval_{model_run_id}_{start_time.timestamp()}",
                 config={
                     "gpu": f"{torch.cuda.get_device_name(0)}",
                     "size_index": self.size_index,
@@ -711,7 +711,7 @@ class RAGBasedExperimentPipeline:
                 tags = self.tags.extend(["datamodels", "retrieval"]),
             )
 
-            wandb.log({"start_time": start_time.strftime('%Y-%m-%d_%H-%M-%S')})
+            wandb.log({"start_time": start_time.strftime("%Y-%m-%d %H:%M:%S")})
 
 
         load_weights_to_json(
@@ -724,7 +724,7 @@ class RAGBasedExperimentPipeline:
 
         if self.log:
             wandb.log({
-                    "end_time": datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
+                    "end_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "total_duration": (datetime.datetime.now() - start_time).total_seconds(),
             })
             artifact = wandb.Artifact(
