@@ -25,17 +25,17 @@ python run_datamodels.py \
         --seed $S \
         --run_type generation \
         --batch_size 500 \
-        --model_tag lr_groundtruth
+        --model_tag lasso_groundtruth
 
 python run_datamodels.py \
         --seed $S \
         --run_type generation \
         --batch_size 500 \
-        --model_tag lr_judge
+        --model_tag lasso_judge
 
 python run_datamodels.py \
         --seed $S \
         --run_type generation \
         --batch_size 500 \
-        --model_tag lr_multi
+        --model_tag lasso_multi
 
