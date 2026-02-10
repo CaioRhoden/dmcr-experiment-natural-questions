@@ -44,7 +44,7 @@ PARAM_GRID = [
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="GridSearch for binary classification embeddings.")
-    parser.add_argument("--subfolder", choices=["judge", "groundtruth"], required=True,
+    parser.add_argument("--subfolder", choices=["judge", "groundtruth", "debug"], required=True,
                         help="Which binary collection to use.")
     parser.add_argument("--exp-index", type=int, choices=list(range(len(EXPERIMENTS))), required=True,
                         help="Experiment index (0-4) mapping to the predefined experiments list.")
