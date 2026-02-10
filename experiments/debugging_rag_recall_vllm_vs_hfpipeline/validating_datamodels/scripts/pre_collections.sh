@@ -3,10 +3,10 @@
 #SBATCH --output=/home/users/caio.rhoden/slurm/%A_%a_pc_rag_debbuging_validation.out
 #SBATCH --error=/home/users/caio.rhoden/slurm/%A_%a_pc_rag_debbuging_validation.err
 #SBATCH --gres=gpu:1
-#SBATCH --mem-per-gpu=139G
+#SBATCH --mem-per-gpu=40G
 #SBATCH --time=48:00:00
 #SBATCH --mail-user="c214129@dac.unicamp.br"
-#SBATCH --array=1
+#SBATCH --array=5-9
 #SBATCH --exclude=gpu03
 #SBATCH --mail-type=BEGIN,END,FAIL
 
@@ -45,15 +45,15 @@ INST=${INSTRUCTIONS[$INST_ID]}
 #     --checkpoint 200 \
 #     --mode train
 
-echo "RUNNING PRE_COLLECTIONS TEST"
-python run_datamodels.py \
-    --seed $S \
-    --instruction_idx $INST \
-    --run_type pre_collections \
-    --start_idx 800 \
-    --end_idx 1000 \
-    --checkpoint 200 \
-    --mode train
+# echo "RUNNING PRE_COLLECTIONS TEST"
+# python run_datamodels.py \
+#     --seed $S \
+#     --instruction_idx $INST \
+#     --run_type pre_collections \
+#     --start_idx 800 \
+#     --end_idx 1000 \
+#     --checkpoint 200 \
+#     --mode train
 
 echo "RUNNING PRE_COLLECTIONS TEST"
 python run_datamodels.py \
