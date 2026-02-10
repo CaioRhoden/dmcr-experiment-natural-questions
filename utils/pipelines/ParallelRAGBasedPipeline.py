@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Callable, Optional
 import torch.multiprocessing as mp
 import math
 import os
@@ -178,7 +178,8 @@ class ParallelRAGBasedPipeline(RAGBasedExperimentPipeline):
                         checkpoint: int = 50,
                         collection_id: str = "default_collection",
                         num_subprocesses: int = 1,
-                        model_configs: dict | None = None
+                        model_configs: dict | None = None,
+                        format_input: None | Callable = None
                        ) -> None:
         """
         Overrides the parent method to run collection creation in parallel.
@@ -259,7 +260,8 @@ class ParallelRAGBasedPipeline(RAGBasedExperimentPipeline):
                 "end_idx": p_end_idx,
                 "checkpoint": checkpoint,
                 "collection_id": f"{collection_id}_{p_start_idx}_{p_end_idx}",
-                "model_configs": model_configs
+                "model_configs": model_configs,
+                "format_input": format_input
             }
             
             # Create the process targeting the top-level worker function.
