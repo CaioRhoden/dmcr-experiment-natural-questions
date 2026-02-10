@@ -2,7 +2,7 @@ from langchain.prompts import PromptTemplate
 from dmcr.datamodels.pipeline.DatamodelsPipelineData import DatamodelsPreCollectionsData
 
 
-def nq_context_strategy(idx_row: int, idx_test: int, rag_indexes: dict, datamodels: DatamodelsPreCollectionsData) -> str:
+def nq_context_strategy(idx_row: int, idx_test: int, rag_indexes: dict, datamodels: DatamodelsPreCollectionsData, mode: str = "train") -> str:
     template = """
         Documents:
         {context}
@@ -13,7 +13,9 @@ def nq_context_strategy(idx_row: int, idx_test: int, rag_indexes: dict, datamode
 
     context = ""
     count = 0
-    for collection_idx in datamodels.train_collections_idx[idx_row]:
+    # Use the appropriate collections_idx based on mode
+    collections_idx = datamodels.test_collections_idx if mode == "test" else datamodels.train_collections_idx
+    for collection_idx in collections_idx[idx_row]:
         
         idx = rag_indexes[str(idx_test)][collection_idx]
         title = datamodels.train_set[idx]["title"].to_numpy().flatten()[0]
