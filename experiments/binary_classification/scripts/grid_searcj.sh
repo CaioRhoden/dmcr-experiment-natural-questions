@@ -8,7 +8,7 @@
 #SBATCH --time=48:00:00
 #SBATCH --mail-user="c214129@dac.unicamp.br"
 #SBATCH --mail-type=BEGIN,END,FAIL
-#SBATCH --array=0-9
+#SBATCH --array=1
 #SBATCH --partition=p5000,rtx5000,a5000,rtx8000,l40s
 
 source ~/miniconda3/bin/activate

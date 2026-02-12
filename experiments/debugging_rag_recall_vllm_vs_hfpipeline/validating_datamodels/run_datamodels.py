@@ -209,6 +209,7 @@ if __name__ == "__main__":
 
 
         pipeline.run_collections(
+            mode=args.mode,
             start_idx=args.start_idx,
             end_idx=args.end_idx,
             checkpoint=args.checkpoint,
@@ -219,7 +220,6 @@ if __name__ == "__main__":
         sys.exit(0)
     
     elif args.run_type == "training":
-        print(f"DEBUG: Staring idx: {args.start_idx}, Ending idx: {args.end_idx}")
         pipeline.train_datamodels(collection_id=args.collection_id, num_subprocesses=args.num_subprocesses, checkpoint=args.checkpoint, start_idx=args.start_idx, end_idx=args.end_idx)
         pipeline.evaluate_datamodels(collection_id=args.collection_id)
         sys.exit(0)
