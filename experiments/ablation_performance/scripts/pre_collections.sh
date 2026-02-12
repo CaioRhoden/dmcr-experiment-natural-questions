@@ -6,15 +6,13 @@
 #SBATCH --mem-per-gpu=139G
 #SBATCH --time=48:00:00
 #SBATCH --mail-user="c214129@dac.unicamp.br"
-#SBATCH --array=1,3,4
+#SBATCH --array=1
 #SBATCH --exclude=gpu03
 #SBATCH --mail-type=BEGIN,END,FAIL
 
 source ~/miniconda3/bin/activate
 conda activate nq
-
-export NCCL_P2P_DISABLE=1
-export NCCL_IB_DISABLE=1
+export WANDB_MODE="offline"
 export VLLM_WORKER_MULTIPROC_METHOD=spawn
 export C_INCLUDE_PATH=$CONDA_PREFIX/include
 export CPLUS_INCLUDE_PATH=$CONDA_PREFIX/include
@@ -34,19 +32,19 @@ echo "RUNNING PRE_COLLECTIONS TRAIN "
 python run_datamodels.py \
     --seed $S \
     --run_type pre_collections \
-    --start_idx 0 \
+    --start_idx 18000 \
     --end_idx 20000 \
     --checkpoint 1000 \
     --mode train
 
-echo "RUNNING PRE_COLLECTIONS TEST"
-python run_datamodels.py \
-    --seed $S \
-    --run_type pre_collections \
-    --start_idx 0 \
-    --end_idx 1000 \
-    --checkpoint 1000 \
-    --mode test
+# echo "RUNNING PRE_COLLECTIONS TEST"
+# python run_datamodels.py \
+#     --seed $S \
+#     --run_type pre_collections \
+#     --start_idx 0 \
+#     --end_idx 1000 \
+#     --checkpoint 1000 \
+#     --mode test
 
 
             
