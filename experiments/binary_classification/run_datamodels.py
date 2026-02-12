@@ -13,6 +13,46 @@ root = Path(__file__).parent.parent.parent
 
 instruction = "You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens"
 
+def alt_format_input_1(question, response):
+    return f""""
+    [System] 
+    Please act as an impartial judge and evaluate the quality of the response provided by an AI assistant to a question displayed below. Begin your evaluation by providing a short explanation. Be as objective as possible. After providing your explanation, please classify the response as 1 for RESPONDS QUESTION and 0 for NOT RESPONDES QUESTION by strictly following this format: "[[classification]]", for example: "Classification: [[1]]".  
+    [Question] 
+    {question}  
+    [The Start of Assistant’s Answer] 
+    {response}
+    [The End of Assistant’s Answer]
+    """
+
+def alt_format_input_2(question, response):
+    return f"""
+    [System]
+    You are an expert evaluator focusing on "Helpfulness-First" metrics. Your goal is to identify if the AI response successfully helps the user, even if the phrasing isn't perfect.
+
+    ### Scoring Guidelines:
+    - Classify as GOOD (1): The answer is factually correct, addresses the user's intent, and is safe. Minor stylistic issues or slight wordiness should NOT result in a 0.
+    - Classify as BAD (0): The answer is factually wrong, ignores the user's constraints, or is completely unhelpful.
+
+    [Question]
+    {question}
+
+    [Assistant's Answer]
+    {response}
+
+    ### Task:
+    1. Determine if the core question was answered correctly.
+    2. Ignore minor formatting or conversational filler.
+    3. Provide your reasoning briefly.
+    4. Format the final output as: Classification: [[1]] or Classification: [[0]]
+    
+    Analysis and Classification:
+    """
+
+ALT_FORMAT_INPUT = {
+    "ALT1": alt_format_input_1,
+    "ALT2": alt_format_input_2
+}
+
 @dataclass
 class DatamodelsConfig:
     '''
@@ -20,6 +60,8 @@ class DatamodelsConfig:
     '''
     run_type: Literal["setup", "pre_collections", "collections", "training", "generation"] = "setup"
     '''Type of run to execute. Options: "setup", "pre_collections", "collections", "training", "generation".'''
+    format_input: Literal[None, "ALT1", "ALT2"] = None
+
     model_tag: str = "generic"
     ''' Indication of what model is being tested for generation'''
     mode: Literal["train", "test"] = "train"
@@ -162,7 +204,8 @@ if __name__ == "__main__":
     args.retrieval_path = f"runs/experiment_{args.seed}/{args.retrieval_path}"
     args.embedder_path = f"{root}/{args.embedder_path}"
     args.vector_db_path = f"{root}/{args.vector_db_path}"
-    args.collection_id = f"runs/experiment-{args.seed}_evaluator-{args.evaluator}"
+    print(f"DEBUG: {args.collection_id}")
+    args.collection_id = f"experiment-{args.seed}_evaluator-{args.evaluator}-{str(args.format_input)}"
 
     pipeline = initiate_pipeline(args)
 
@@ -186,13 +229,18 @@ if __name__ == "__main__":
         sys.exit(0)
     
     elif args.run_type == "collections":
+        if args.format_input:
+            args.format_input = ALT_FORMAT_INPUT[args.format_input]
+
         pipeline.run_collections(
             mode=args.mode,
             start_idx=args.start_idx,
             end_idx=args.end_idx,
             checkpoint=args.checkpoint,
             collection_id=args.collection_id,
-            num_subprocesses=args.num_subprocesses
+            num_subprocesses=args.num_subprocesses,
+            format_input=args.format_input
+
         )
         sys.exit(0)
     
