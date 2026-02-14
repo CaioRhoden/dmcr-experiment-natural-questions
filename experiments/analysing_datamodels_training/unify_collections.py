@@ -69,7 +69,7 @@ def unify_collections_for_experiment(base_path: Path, experiment: str, split: st
     output_path = f"{output_dir}/{output_filename}"
     
     # Save unified collection
-    unified_df.write_ipc(output_path)
+    unified_df.write_ipc(output_path, compression="zstd")
     print(f"  Saved: {output_path} (shape: {unified_df.shape})")
 
 def unify_collections():
@@ -85,7 +85,7 @@ def unify_collections():
     # Define experiments and evaluators
     experiments = ["experiment_1", "experiment_4", "experiment_54", "experiment_61", "experiment_73"]
     splits = ["train", "test"]
-    evaluators = ["multi"]
+    evaluators = ["Rouge-L", "multi"]
     
     print(f"Base path: {validating_datamodels_path}")
     print(f"Output directory: {output_dir}")

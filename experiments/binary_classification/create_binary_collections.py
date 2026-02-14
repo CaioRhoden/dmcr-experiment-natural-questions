@@ -13,7 +13,7 @@ def read_ipc(path: Path) -> pl.DataFrame:
 
 def write_ipc(df: pl.DataFrame, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    df.write_ipc(path)
+    df.write_ipc(path, compression="zstd")
 
 
 def process_rougel_groundtruth(input_dir: Path, output_dir: Path) -> None:
@@ -28,7 +28,7 @@ def process_rougel_groundtruth(input_dir: Path, output_dir: Path) -> None:
             write_ipc(df_bin, out_path)
 
 
-def unify_and_process_runs(runs_dir: Path, output_dir: Path) -> None:
+def unify_and_process_runs(runs_dir: Path, output_dir: Path, pattern=None) -> None:
     """Unify checkpoints per split for each experiment and save binary collections."""
     for exp_folder in runs_dir.iterdir():
         if not exp_folder.is_dir():
@@ -41,8 +41,13 @@ def unify_and_process_runs(runs_dir: Path, output_dir: Path) -> None:
             if not split_path.exists():
                 continue
             feather_files = sorted(split_path.glob("*.feather"))
+            if pattern is None:
+                feather_files = [f for f in feather_files if f.name.split(".")[0].split("-")[-1].startswith("BinaryJudge")]
+            else:
+                feather_files = [f for f in feather_files if pattern in f.name]
             if not feather_files:
                 continue
+            
             dfs = [read_ipc(f) for f in feather_files]
             unified = pl.concat(dfs, how="vertical")
             unified_bin = to_binary(unified)
@@ -61,6 +66,18 @@ def main() -> None:
         runs_dir=Path("runs"),
         output_dir=Path("binary_collections/judge"),
     )
+
+    unify_and_process_runs(
+        runs_dir=Path("runs"),
+        output_dir=Path("binary_collections/alt1"),
+        pattern="ALT1"
+    )
+    unify_and_process_runs(
+        runs_dir=Path("runs"),
+        output_dir=Path("binary_collections/alt2"),
+        pattern="ALT2"
+    )
+
 
 
 if __name__ == "__main__":
