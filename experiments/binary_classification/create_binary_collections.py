@@ -42,8 +42,7 @@ def unify_and_process_runs(runs_dir: Path, output_dir: Path, pattern=None) -> No
                 continue
             feather_files = sorted(split_path.glob("*.feather"))
             if pattern is None:
-                feather_files = [f for f in feather_files if f.name.split(".")[0].split("-")[-1].startswith("BinaryJudge")]
-            else:
+                pattern = "None"
                 feather_files = [f for f in feather_files if pattern in f.name]
             if not feather_files:
                 continue

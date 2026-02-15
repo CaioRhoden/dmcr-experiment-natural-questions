@@ -85,7 +85,7 @@ def unify_collections():
     # Define experiments and evaluators
     experiments = ["experiment_1", "experiment_4", "experiment_54", "experiment_61", "experiment_73"]
     splits = ["train", "test"]
-    evaluators = ["Rouge-L", "multi"]
+    evaluators = ["Rouge-L"]
     
     print(f"Base path: {validating_datamodels_path}")
     print(f"Output directory: {output_dir}")
