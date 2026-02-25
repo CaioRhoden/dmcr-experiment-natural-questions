@@ -198,7 +198,15 @@ class ParallelRAGBasedPipeline(RAGBasedExperimentPipeline):
         """
         if num_subprocesses <= 1:
             print("Number of subprocesses is 1 or less. Running in standard serial mode.")
-            super().run_collections(mode, start_idx, end_idx, checkpoint, collection_id, model_configs=model_configs)
+            super().run_collections(
+                mode,
+                start_idx,
+                end_idx,
+                checkpoint,
+                collection_id,
+                model_configs=model_configs,
+                format_input=format_input,
+            )
             return
 
         # Set the multiprocessing start method to 'spawn'. This is critical for
