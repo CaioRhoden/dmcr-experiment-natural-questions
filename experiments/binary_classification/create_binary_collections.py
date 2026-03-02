@@ -43,11 +43,20 @@ def unify_and_process_runs(runs_dir: Path, output_dir: Path, pattern=None) -> No
             feather_files = sorted(split_path.glob("*.feather"))
             if pattern is None:
                 pattern = "None"
-                feather_files = [f for f in feather_files if pattern in f.name]
+            feather_files = [f for f in feather_files if pattern in f.name]
             if not feather_files:
                 continue
             
-            dfs = [read_ipc(f) for f in feather_files]
+            dfs = []
+            for f in feather_files:
+                try:
+                    df = read_ipc(f)
+                    dfs.append(df)
+                except Exception:
+                    print(f"Failed to read {f}")
+                    continue
+            if not dfs:
+                continue
             unified = pl.concat(dfs, how="vertical")
             unified_bin = to_binary(unified)
             out_path = output_dir / exp_folder.name / f"{split}.feather"
