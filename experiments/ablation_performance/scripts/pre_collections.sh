@@ -32,8 +32,8 @@ echo "RUNNING PRE_COLLECTIONS TRAIN "
 python run_datamodels.py \
     --seed $S \
     --run_type pre_collections \
-    --start_idx 18000 \
-    --end_idx 20000 \
+    --start_idx 14000 \
+    --end_idx 15000 \
     --checkpoint 1000 \
     --mode train
 
