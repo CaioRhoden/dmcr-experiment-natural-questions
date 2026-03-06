@@ -8,7 +8,6 @@
 #SBATCH --mail-user="c214129@dac.unicamp.br"
 #SBATCH --array=0-4
 #SBATCH --mail-type=BEGIN,END,FAIL
-#SBATCH --exclude=gpu03
 
 source ~/miniconda3/bin/activate
 conda activate nq
@@ -22,20 +21,16 @@ SEEDS=(1 4 54 61 73)
 S_ID=$((SLURM_ARRAY_TASK_ID % 5))
 S=${SEEDS[$S_ID]}
 
-echo "RUNNING SETUP"
-python run_datamodels.py \
-    --seed $S \
-    --run_type setup
-
 echo "RUNNING COLLECTIONS TRAIN"
 python run_datamodels.py \
     --seed $S \
     --run_type collections \
     --start_idx 0 \
     --end_idx 1000000 \
-    --checkpoint 20000 \
+    --checkpoint 50000 \
     --num_subprocesses 1 \
     --evaluator BinaryJudge \
+    --format_input ALT1 \
     --mode train
 
     
@@ -44,9 +39,10 @@ python run_datamodels.py \
     --run_type collections \
     --start_idx 0 \
     --end_idx 100000 \
-    --checkpoint 20000 \
+    --checkpoint 50000 \
     --num_subprocesses 1 \
     --evaluator BinaryJudge \
+    --format_input ALT1 \
     --mode test
 
     
