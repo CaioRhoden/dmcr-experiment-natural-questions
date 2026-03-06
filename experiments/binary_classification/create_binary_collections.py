@@ -4,7 +4,7 @@ from pathlib import Path
 
 def to_binary(df: pl.DataFrame) -> pl.DataFrame:
     """Convert 'evaluation' column to binary (1 if > 0, else 0)."""
-    return df.with_columns((pl.col("evaluation") > 0).cast(pl.Int32).alias("evaluation"))
+    return df.with_columns((pl.col("evaluation").is_in([0.1, 0.666667])).cast(pl.Int32).alias("evaluation"))
 
 
 def read_ipc(path: Path) -> pl.DataFrame:
@@ -65,25 +65,31 @@ def unify_and_process_runs(runs_dir: Path, output_dir: Path, pattern=None) -> No
 
 def main() -> None:
     # Groundtruth
-    process_rougel_groundtruth(
-        input_dir=Path("rougel_groundtruth"),
-        output_dir=Path("binary_collections/groundtruth"),
-    )
-    # Runs (judge)
-    unify_and_process_runs(
-        runs_dir=Path("runs"),
-        output_dir=Path("binary_collections/judge"),
-    )
+    # process_rougel_groundtruth(
+    #     input_dir=Path("rougel_groundtruth"),
+    #     output_dir=Path("binary_collections/groundtruth"),
+    # )
+    # # Runs (judge)
+    # unify_and_process_runs(
+    #     runs_dir=Path("runs"),
+    #     output_dir=Path("binary_collections/judge"),
+    # )
+
+    # unify_and_process_runs(
+    #     runs_dir=Path("runs"),
+    #     output_dir=Path("binary_collections/alt1"),
+    #     pattern="ALT1"
+    # )
+    # unify_and_process_runs(
+    #     runs_dir=Path("runs"),
+    #     output_dir=Path("binary_collections/alt2"),
+    #     pattern="ALT2"
+    # )
 
     unify_and_process_runs(
         runs_dir=Path("runs"),
-        output_dir=Path("binary_collections/alt1"),
-        pattern="ALT1"
-    )
-    unify_and_process_runs(
-        runs_dir=Path("runs"),
-        output_dir=Path("binary_collections/alt2"),
-        pattern="ALT2"
+        output_dir=Path("binary_collections/voting_alt1"),
+        pattern="Voting"
     )
 
 
