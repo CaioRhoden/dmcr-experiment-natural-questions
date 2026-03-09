@@ -36,14 +36,20 @@ def unify_and_process_runs(runs_dir: Path, output_dir: Path, pattern=None) -> No
         collections_path = exp_folder / "datamodels" / "collections"
         if not collections_path.exists():
             continue
-        for split in ["train", "test"]:
+        for split in ["train","test"]:
             split_path = collections_path / split
             if not split_path.exists():
                 continue
             feather_files = sorted(split_path.glob("*.feather"))
+            
             if pattern is None:
-                pattern = "None"
-            feather_files = [f for f in feather_files if pattern in f.name]
+                feather_files = [f for f in feather_files if ("BinaryJudge_" in f.name or "None" in f.name)]
+
+            elif pattern == "ALT1":
+                feather_files = [f for f in feather_files if ("ALT1" in f.name and "Voting" not in f.name)]
+            else:
+                feather_files = [f for f in feather_files if pattern in f.name]
+
             if not feather_files:
                 continue
             
@@ -69,22 +75,23 @@ def main() -> None:
     #     input_dir=Path("rougel_groundtruth"),
     #     output_dir=Path("binary_collections/groundtruth"),
     # )
-    # # Runs (judge)
-    # unify_and_process_runs(
-    #     runs_dir=Path("runs"),
-    #     output_dir=Path("binary_collections/judge"),
-    # )
+    # Runs (judge)
+    unify_and_process_runs(
+        runs_dir=Path("runs"),
+        output_dir=Path("binary_collections/judge"),
+        pattern=None
+    )
 
-    # unify_and_process_runs(
-    #     runs_dir=Path("runs"),
-    #     output_dir=Path("binary_collections/alt1"),
-    #     pattern="ALT1"
-    # )
-    # unify_and_process_runs(
-    #     runs_dir=Path("runs"),
-    #     output_dir=Path("binary_collections/alt2"),
-    #     pattern="ALT2"
-    # )
+    unify_and_process_runs(
+        runs_dir=Path("runs"),
+        output_dir=Path("binary_collections/alt1"),
+        pattern="ALT1"
+    )
+    unify_and_process_runs(
+        runs_dir=Path("runs"),
+        output_dir=Path("binary_collections/alt2"),
+        pattern="ALT2"
+    )
 
     unify_and_process_runs(
         runs_dir=Path("runs"),

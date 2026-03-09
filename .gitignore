@@ -3,7 +3,7 @@ data
 /models
 logs
 batch_scripts/
-
+.csv
 
 wandb
 
@@ -185,3 +185,8 @@ experiments/experiment_rag_proportions/rag_150/datamodels/collections/train/150_
 experiments/binary_classification/ebm/ebm_groundtruth_models.pkl
 .gitignore
 experiments/binary_classification/ebm/ebm_judge_models.pkl
+experiments/binary_classification/ebm/ebm_voting_models.pkl
+<<<<<<< HEAD
+
+=======
+>>>>>>> 54e1cc95 (fixed binary collections duplicates)
