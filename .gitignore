@@ -186,7 +186,11 @@ experiments/binary_classification/ebm/ebm_groundtruth_models.pkl
 .gitignore
 experiments/binary_classification/ebm/ebm_judge_models.pkl
 experiments/binary_classification/ebm/ebm_voting_models.pkl
-<<<<<<< HEAD
 
-=======
->>>>>>> 54e1cc95 (fixed binary collections duplicates)
+experiments/zero_shot_low_performance/proxy_experiments/datamodels/collections/train/proxy_llama_0.feather
+experiments/zero_shot_low_performance/proxy_results/llama3.2-3b/baseline_metrics.feather
+experiments/zero_shot_low_performance/proxy_results/llama3.2-3b/datamodels_metrics.feather
+experiments/zero_shot_low_performance/proxy_results/llama3.2-3b/rag_metrics.feather
+experiments/zero_shot_low_performance/proxy_results/llama3.2-3b/baseline_metrics.feather
+experiments/zero_shot_low_performance/proxy_results/llama3.2-3b/datamodels_metrics.feather
+experiments/zero_shot_low_performance/proxy_results/llama3.2-3b/rag_metrics.feather
