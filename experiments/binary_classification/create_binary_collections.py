@@ -76,30 +76,34 @@ def main() -> None:
     #     output_dir=Path("binary_collections/groundtruth"),
     # )
     # Runs (judge)
-    unify_and_process_runs(
-        runs_dir=Path("runs"),
-        output_dir=Path("binary_collections/judge"),
-        pattern=None
-    )
+    # unify_and_process_runs(
+    #     runs_dir=Path("runs"),
+    #     output_dir=Path("binary_collections/judge"),
+    #     pattern=None
+    # )
+
+    # unify_and_process_runs(
+    #     runs_dir=Path("runs"),
+    #     output_dir=Path("binary_collections/alt1"),
+    #     pattern="ALT1"
+    # )
+    # unify_and_process_runs(
+    #     runs_dir=Path("runs"),
+    #     output_dir=Path("binary_collections/alt2"),
+    #     pattern="ALT2"
+    # )
+
+    # unify_and_process_runs(
+    #     runs_dir=Path("runs"),
+    #     output_dir=Path("binary_collections/voting_alt1"),
+    #     pattern="Voting"
+    # )
 
     unify_and_process_runs(
-        runs_dir=Path("runs"),
-        output_dir=Path("binary_collections/alt1"),
-        pattern="ALT1"
-    )
-    unify_and_process_runs(
-        runs_dir=Path("runs"),
-        output_dir=Path("binary_collections/alt2"),
-        pattern="ALT2"
-    )
-
-    unify_and_process_runs(
-        runs_dir=Path("runs"),
-        output_dir=Path("binary_collections/voting_alt1"),
+        runs_dir=Path("runs_qwen"),
+        output_dir=Path("binary_collections/voting_qwen"),
         pattern="Voting"
     )
-
-
 
 if __name__ == "__main__":
     main()

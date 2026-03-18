@@ -70,6 +70,8 @@ class DatamodelsConfig:
     '''Random seed for reproducibility based on the previous random generated'''
     log: bool = True
     '''Flag to enable logging. Options: "setup", "baseline", "rag", "datamodels".'''
+    root_path: str = "runs"
+    '''Root path for saving logs and outputs.'''
 
     
     # RAG Based configs Config Fields
@@ -157,7 +159,7 @@ def initiate_pipeline(args: DatamodelsConfig) -> ParallelRAGBasedPipeline:
                 "n": 1
     }
 
-    questions_path = f"runs/experiment_{args.seed}/questions.feather"
+    questions_path = f"{args.root_path}/experiment_{args.seed}/questions.feather"
 
     return ParallelRAGBasedPipeline(
         seed=args.seed,
@@ -184,7 +186,7 @@ def initiate_pipeline(args: DatamodelsConfig) -> ParallelRAGBasedPipeline:
         val_size=args.val_size,
         patience=args.patience,
         log_epochs=args.log_epochs,
-        root_path=f"runs/experiment_{args.seed}",
+        root_path=f"{args.root_path}/experiment_{args.seed}",
         batch_size=args.batch_size,
         tags=args.tags,
         lm_configs=lm_configs,
@@ -201,7 +203,7 @@ if __name__ == "__main__":
 
     args.language_model_path = f"{root}/{args.language_model_path}"
     args.wiki_path = f"{root}/{args.wiki_path}"
-    args.retrieval_path = f"runs/experiment_{args.seed}/{args.retrieval_path}"
+    args.retrieval_path = f"{args.root_path}/experiment_{args.seed}/{args.retrieval_path}"
     args.embedder_path = f"{root}/{args.embedder_path}"
     args.vector_db_path = f"{root}/{args.vector_db_path}"
     print(f"DEBUG: {args.collection_id}")

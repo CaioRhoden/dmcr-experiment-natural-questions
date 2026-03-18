@@ -6,9 +6,9 @@
 #SBATCH --mem-per-gpu=20G
 #SBATCH --time=48:00:00
 #SBATCH --mail-user="c214129@dac.unicamp.br"
-#SBATCH --array=0-4
+#SBATCH --array=0
 #SBATCH --mail-type=BEGIN,END,FAIL
-#SBATCH --exclude=gpu03
+#SBATCH --exclude=gpu01,gpu03
 
 source ~/miniconda3/bin/activate
 conda activate nq
@@ -27,16 +27,16 @@ python run_datamodels.py \
     --seed $S \
     --run_type setup
 
-echo "RUNNING COLLECTIONS TRAIN"
-python run_datamodels.py \
-    --seed $S \
-    --run_type collections \
-    --start_idx 0 \
-    --end_idx 1000000 \
-    --checkpoint 20000 \
-    --num_subprocesses 1 \
-    --evaluator BinaryJudge \
-    --mode train
+# echo "RUNNING COLLECTIONS TRAIN"
+# python run_datamodels.py \
+#     --seed $S \
+#     --run_type collections \
+#     --start_idx 0 \
+#     --end_idx 1000000 \
+#     --checkpoint 20000 \
+#     --num_subprocesses 1 \
+#     --evaluator VotingBinaryJudge \
+#     --mode train
 
     
 python run_datamodels.py \
@@ -46,7 +46,7 @@ python run_datamodels.py \
     --end_idx 100000 \
     --checkpoint 20000 \
     --num_subprocesses 1 \
-    --evaluator BinaryJudge \
+    --evaluator VotingBinaryJudge \
     --mode test
 
     
