@@ -83,7 +83,7 @@ class DatamodelsConfig:
     '''Path to the retrieval indexes JSON file.'''
     embedder_path: str = "models/bge-base-en-v1.5"
     '''Path to the embedder model.'''
-    vector_db_path: str = "data/wiki_dump2018_nq_open/processed/wiki_cosine.index"
+    vector_db_path: str = "data/indices/bge_index.faiss"
     '''Path to the vector database.'''
     project_log: str = "binary_clasification"
     '''Project log name fgor wandb'''
