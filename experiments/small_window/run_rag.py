@@ -27,7 +27,7 @@ class RagConfig:
     '''Path to the retrieval indexes JSON file.'''
     embedder_path: str = "models/bge-base-en-v1.5"
     '''Path to the embedder model.'''
-    vector_db_path: str = "data/wiki_dump2018_nq_open/processed/wiki_cosine.index"
+    vector_db_path: str = "data/indices/bge_index.faiss"
     '''Path to the vector database.'''
     project_log: str = "small_window"
     '''Project log name for wandb'''
@@ -100,7 +100,7 @@ def initiate_pipeline(args: RagConfig) -> RAGPipeline:
 if __name__ == "__main__":
     args = tyro.cli(RagConfig)
     args.tags.append("rag")
-    args.questions_path = f"{root}/{args.questions_path}"
+    args.questions_path = f"runs/experiment_{args.seed}/questions.feather"
     args.language_model_path = f"{root}/{args.language_model_path}"
     args.wiki_path = f"{root}/{args.wiki_path}"
     args.retrieval_path = f"{root}/{args.retrieval_path}"
