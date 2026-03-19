@@ -424,7 +424,7 @@ class RAGBasedExperimentPipeline:
                 def format_input(question, response):
                     return f""""
                     [System] 
-                    Please act as an impartial judge and evaluate the quality of the response provided by an AI assistant to a question displayed below. Your evaluation should consider factors such as relevance and accuracy. Begin your evaluation by providing a short explanation. Be as objective as possible. After providing your explanation, please classify the response as 1 for GOOD and 0 for BAD by strictly following this format: "[[classification]]", for example: "Classification: [[1]]".  
+                    Please act as an impartial judge and evaluate the quality of the response provided by an AI assistant to a question displayed below. Begin your evaluation by providing a short explanation. Be as objective as possible. After providing your explanation, please classify the response as 1 for RESPONDS QUESTION and 0 for NOT RESPONDES QUESTION by strictly following this format: "[[classification]]", for example: "Classification: [[1]]".  
                     [Question] 
                     {question}  
                     [The Start of Assistant’s Answer] 
@@ -448,10 +448,53 @@ class RAGBasedExperimentPipeline:
                 batch_size=self.batch_size,
                 regex_pattern= r'Classification: \[\[(\d+)\]\]'
             )
+
+        elif self.evaluator == "Faithfulness":
+            judge_model = GenericVLLMBatch(
+                path=self.language_model_path,
+                thinking=self.thinking,
+                vllm_kwargs={
+                    "max_model_len": 32768,
+                    "tensor_parallel_size": 1,
+                    "gpu_memory_utilization": 0.9,
+                }
+            )
+
+            if not format_input:
+                def format_input(question, response):
+                    return f""""
+                    [System] 
+                    Please act as an impartial judge and evaluate the quality of the response provided by an AI assistant to a question displayed below. Begin your evaluation by providing a short explanation. Be as objective as possible. After providing your explanation, please classify the response as 1 for RESPONDS QUESTION and 0 for NOT RESPONDES QUESTION by strictly following this format: "[[classification]]", for example: "Classification: [[1]]".  
+                    [Question] 
+                    {question}  
+                    [The Start of Assistant’s Answer] 
+                    {response}
+                    [The End of Assistant’s Answer]
+                    """
+
+            evaluator = JudgeEvaluator(
+                model_path=self.language_model_path,
+                model_configs = {
+                    "temperature": 0.5,
+                    "top_p": 0.9,
+                    "max_new_tokens": 1024,
+                    "n": 3
+                    
+                },
+                instruction="",
+                format_template=format_input,
+                thinking=self.thinking,
+                judge=judge_model,
+                batch_size=self.batch_size,
+                regex_pattern= r'Classification: \[\[(\d+)\]\]'
+            )
+    
         
         else:
             raise ValueError(f"Invalid evaluator")
 
+
+    
 
         datamodel = DatamodelsIndexBasedNQPipeline(config)
         datamodel.set_collections_index()
