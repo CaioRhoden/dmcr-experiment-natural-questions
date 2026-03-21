@@ -8,7 +8,7 @@
 #SBATCH --time=2:00:00
 #SBATCH --mail-user="c214129@dac.unicamp.br"
 #SBATCH --mail-type=BEGIN,END,FAIL
-#SBATCH --array=0-4
+#SBATCH --array=0
 
 source ~/miniconda3/bin/activate
 conda activate nq
@@ -21,26 +21,98 @@ SEEDS=(1 4 54 61 73)
 S_ID=$((SLURM_ARRAY_TASK_ID % 5))
 S=${SEEDS[$S_ID]}
 
-# python run_datamodels.py \
-#         --seed $S \
-#         --run_type generation \
-#         --batch_size 500 \
-#         --model_tag lr_groundtruth
-
-# python run_datamodels.py \
-#         --seed $S \
-#         --run_type generation \
-#         --batch_size 500 \
-#         --model_tag lr_judge
-
-# python run_datamodels.py \
-#         --seed $S \
-#         --run_type generation \
-#         --batch_size 500 \
-#         --model_tag lr_balanced_groundtruth
+python run_datamodels.py \
+        --seed $S \
+        --run_type generation \
+        --batch_size 500 \
+        --model_tag groundtruth_500
 
 python run_datamodels.py \
         --seed $S \
         --run_type generation \
         --batch_size 500 \
-        --model_tag lr_balanced_judge
+        --model_tag judge_500
+
+python run_datamodels.py \
+        --seed $S \
+        --run_type generation \
+        --batch_size 500 \
+        --model_tag groundtruth_1k
+
+python run_datamodels.py \
+        --seed $S \
+        --run_type generation \
+        --batch_size 500 \
+        --model_tag judge_1k
+
+python run_datamodels.py \
+        --seed $S \
+        --run_type generation \
+        --batch_size 500 \
+        --model_tag groundtruth_2k
+
+python run_datamodels.py \
+        --seed $S \
+        --run_type generation \
+        --batch_size 500 \
+        --model_tag judge_2k
+
+python run_datamodels.py \
+        --seed $S \
+        --run_type generation \
+        --batch_size 500 \
+        --model_tag groundtruth_3k
+
+python run_datamodels.py \
+        --seed $S \
+        --run_type generation \
+        --batch_size 500 \
+        --model_tag judge_3k
+
+python run_datamodels.py \
+        --seed $S \
+        --run_type generation \
+        --batch_size 500 \
+        --model_tag groundtruth_5k
+
+python run_datamodels.py \
+        --seed $S \
+        --run_type generation \
+        --batch_size 500 \
+        --model_tag judge_5k
+
+python run_datamodels.py \
+        --seed $S \
+        --run_type generation \
+        --batch_size 500 \
+        --model_tag groundtruth_10k
+
+python run_datamodels.py \
+        --seed $S \
+        --run_type generation \
+        --batch_size 500 \
+        --model_tag judge_10k
+
+python run_datamodels.py \
+        --seed $S \
+        --run_type generation \
+        --batch_size 500 \
+        --model_tag groundtruth_15k
+
+python run_datamodels.py \
+        --seed $S \
+        --run_type generation \
+        --batch_size 500 \
+        --model_tag judge_15k
+
+python run_datamodels.py \
+        --seed $S \
+        --run_type generation \
+        --batch_size 500 \
+        --model_tag groundtruth_19k
+
+python run_datamodels.py \
+        --seed $S \
+        --run_type generation \
+        --batch_size 500 \
+        --model_tag judge_19k

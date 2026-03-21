@@ -91,11 +91,11 @@ def main() -> None:
     #     pattern="ALT2"
     # )
 
-    # unify_and_process_runs(
-    #     runs_dir=Path("runs"),
-    #     output_dir=Path("binary_collections/voting_alt1"),
-    #     pattern="Voting"
-    # )
+    unify_and_process_runs(
+        runs_dir=Path("runs"),
+        output_dir=Path("binary_collections/voting_alt1"),
+        pattern="Voting"
+    )
 
     unify_and_process_runs(
         runs_dir=Path("runs"),
