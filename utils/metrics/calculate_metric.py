@@ -88,9 +88,10 @@ def calculate_agg_metric(
             results["max"].append(np.max(results_i))
             results["metric"].append(metric)
 
-        df_results = pl.DataFrame(results)
-        if saving_path is not None:
-            df_results.write_ipc(saving_path, compression="zstd")
+    df_results = pl.DataFrame(results)
 
-        else:
-            return df_results
+    if saving_path is not None:
+        df_results.write_ipc(saving_path, compression="zstd")
+
+    else:
+        return df_results
