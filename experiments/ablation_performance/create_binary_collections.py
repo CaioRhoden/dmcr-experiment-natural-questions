@@ -2,9 +2,13 @@ import polars as pl
 from pathlib import Path
 
 
-def to_binary(df: pl.DataFrame) -> pl.DataFrame:
+def default_to_binary(df: pl.DataFrame) -> pl.DataFrame:
     """Convert 'evaluation' column to binary (1 if > 0, else 0)."""
-    return df.with_columns(pl.when(~pl.col("evaluation").is_in([0.0, 0.033333])).then(1).otherwise(0).alias("evaluation"))
+    return df.with_columns(pl.when(pl.col("evaluation")>0).then(1).otherwise(0).alias("evaluation"))
+
+def voting_judge_to_binary(df: pl.DataFrame) -> pl.DataFrame:
+    """Convert 'evaluation' column to binary (1 if > 0, else 0)."""
+    return df.with_columns(pl.when(pl.col("evaluation").is_in([0.1, 0.067777])).then(1).otherwise(0).alias("evaluation"))
 
 
 def read_ipc(path: Path) -> pl.DataFrame:
@@ -15,17 +19,6 @@ def write_ipc(df: pl.DataFrame, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     df.write_ipc(path, compression="zstd")
 
-
-def process_rougel_groundtruth(input_dir: Path, output_dir: Path) -> None:
-    """Process groundtruth collections per experiment, saving binary 'evaluation'."""
-    for exp_folder in input_dir.iterdir():
-        if not exp_folder.is_dir():
-            continue
-        for feather_file in exp_folder.glob("*.feather"):
-            df = read_ipc(feather_file)
-            df_bin = to_binary(df)
-            out_path = output_dir / exp_folder.name / feather_file.name
-            write_ipc(df_bin, out_path)
 
 
 def unify_and_process_runs(runs_dir: Path, output_dir: Path, pattern=None) -> None:
@@ -64,7 +57,12 @@ def unify_and_process_runs(runs_dir: Path, output_dir: Path, pattern=None) -> No
             if not dfs:
                 continue
             unified = pl.concat(dfs, how="vertical")
-            unified_bin = to_binary(unified)
+
+            if "Voting" in pattern:
+                unified_bin = voting_judge_to_binary(unified)
+            else:
+                unified_bin = default_to_binary(unified)
+
             out_path = output_dir / exp_folder.name / f"{split}.feather"
             write_ipc(unified_bin, out_path)
 
@@ -98,6 +96,13 @@ def main() -> None:
         output_dir=Path("binary_collections/voting_alt1"),
         pattern="Voting"
     )
+
+    unify_and_process_runs(
+        runs_dir=Path("runs"),
+        output_dir=Path("binary_collections/groundtruth"),
+        pattern="Rouge"
+    )
+
 
 
 

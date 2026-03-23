@@ -763,7 +763,7 @@ class RAGBasedExperimentPipeline:
                 description="Datamodels generation daa"
             )
 
-            artifact.add_file(f"{self.root_path}/generations/{self.datamodels_generation_name}.json")
+            artifact.add_file(f"{self.root_path}/generations/{datamodels_generation_name}.json")
             wandb.log_artifact(artifact)
 
             wandb.finish()
