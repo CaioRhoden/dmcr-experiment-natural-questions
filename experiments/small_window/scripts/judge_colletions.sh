@@ -1,5 +1,6 @@
 #!/bin/bash
-#SBATCH --job-name=pc_rag_debbuging_validation
+#SBATCH --job-name=collections_small_window
+
 #SBATCH --output=/home/users/caio.rhoden/slurm/%A_%a_collections_binary_classification.out
 #SBATCH --error=/home/users/caio.rhoden/slurm/%A_%a_collections_binary_classification.err
 #SBATCH --gres=gpu:1
@@ -29,7 +30,6 @@ python run_datamodels.py \
     --end_idx 1000000 \
     --checkpoint 50000 \
     --num_subprocesses 1 \
-    --evaluator BinaryJudge \
     --format_input ALT1 \
     --mode train
 
@@ -41,7 +41,6 @@ python run_datamodels.py \
     --end_idx 100000 \
     --checkpoint 50000 \
     --num_subprocesses 1 \
-    --evaluator BinaryJudge \
     --format_input ALT1 \
     --mode test
 
