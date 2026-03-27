@@ -1,42 +1,62 @@
 import datetime
+import json
 import os
 from typing import Optional, Literal
 
 import polars as pl
-from dmcr.models import GenericInstructModelHF, GenericInstructBatchHF, GenericVLLMBatch
-import json
-
 import torch
 import wandb
+from dmcr.models import GenericVLLMBatch
+
 from utils.set_random_seed import set_random_seed
 
-BATCH_MODEL_LM = Literal["hf", "vllm"]
+# Constants
+DEFAULT_MAX_MODEL_LEN = 32768
 
 
 
 class ZeroShotBaselinePipeline:
+    """Pipeline for generating baseline zero-shot inferences from a language model."""
 
-    def __init__(self,
-                questions_path: str,
-                language_model_path: str,
-                root_path: str = ".",
-                lm_configs: dict[str, float|int] = {
-                    "temperature": 0.7,
-                    "top_p": 0.9,
-                    "max_new_tokens": 15,
-                    "seed": 42
-                },
-                tags: list[str] = [],
-                log: bool = False,
-                project_log: str = "none",
-                model_run_id: str = "none",
-                batch_size: int = 1,
-                instruction: str = "You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens",
-                attn_implementation: str = "sdpa",
-                thinking: bool = False, 
-                seed: Optional[int] = None):
-    
+    def __init__(
+        self,
+        questions_path: str,
+        language_model_path: str,
+        root_path: str = ".",
+        lm_configs: dict[str, float | int] = {
+            "temperature": 0.7,
+            "top_p": 0.9,
+            "max_new_tokens": 15,
+            "seed": 42,
+        },
+        tags: list[str] = [],
+        log: bool = False,
+        project_log: str = "none",
+        model_run_id: str = "none",
+        batch_size: int = 1,
+        instruction: str = "You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens",
+        attn_implementation: str = "sdpa",
+        thinking: bool = False,
+        seed: Optional[int] = None,
+    ):
+        """
+        Initialize the ZeroShotBaselinePipeline.
 
+        Args:
+            questions_path: Path to the questions dataset (Polars IPC format)
+            language_model_path: Path to the language model
+            root_path: Root directory for outputs
+            lm_configs: Language model configuration parameters
+            tags: Tags for logging
+            log: Whether to log to W&B
+            project_log: W&B project name
+            model_run_id: Unique identifier for this run
+            batch_size: Number of prompts to process in parallel
+            instruction: System instruction for the model
+            attn_implementation: Attention implementation type
+            thinking: Whether to parse thinking tokens
+            seed: Random seed for reproducibility
+        """
         self.questions_path = questions_path
         self.language_model_path = language_model_path
         self.lm_configs = lm_configs
@@ -48,145 +68,136 @@ class ZeroShotBaselinePipeline:
         self.log = log
         self.project_log = project_log
         self.batch_size = batch_size
-        self.attn_implementation: str = attn_implementation
+        self.attn_implementation = attn_implementation
         self.thinking = thinking
-        
+
         if seed:
             set_random_seed(seed)
 
-    def _parse_generation_output(self, output: dict) -> str:
+    def _parse_generation_output(self, output: list) -> list[str]:
         """
-        Parse the output of the generation model, analyze if is it "enable_thinking"
+        Parse the output of the generation model.
 
-        Parameters:
-        - output (str): The raw output from the generation model.
+        Handles both standard generation output and models with extended thinking.
+        When thinking is enabled, extracts text after the thinking tag.
+
+        Args:
+            output: List of generation outputs from the model
 
         Returns:
-        - str: The parsed output.
+            List of parsed text strings
         """
-        
         parsed_output = []
         for out in output:
-
             if self.thinking:
-                # Example parsing logic for "enable_thinking"
-                # This is a placeholder; replace with actual logic as needed
-                parsed_output.append(str(out["generated_text"].split("</think>")[-1].strip()))
+                # Extract text after closing thinking tag for extended thinking models
+                text = str(out["generated_text"]).split("</think>")[-1].strip()
             else:
-                parsed_output.append(str(out["generated_text"]))
-        
+                text = str(out["generated_text"])
+            parsed_output.append(text)
+
         return parsed_output
     
-    def generate_inferences(self, batch_model_lm: BATCH_MODEL_LM = "vllm"):
-        """
-        Make baseline generations for a specific set and save them to the "generations" folder with "baseline_generations.json"
+    def _save_generations(self, generations: dict, path: str) -> None:
+        """Save generations to a JSON file."""
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w") as f:
+            json.dump(generations, f)
 
+    def _get_output_path(self) -> str:
+        """Determine the output path for generations."""
+        if self.model_run_id is None:
+            return f"{self.root_path}/generations/baseline_zero_shot_generations.json"
+        else:
+            return f"{self.root_path}/generations/{self.model_run_id}.json"
+
+    def generate_inferences(self) -> None:
+        """
+        Generate baseline inferences for questions and save results.
+
+        Processes questions in batches through the language model and saves
+        generations to JSON. Optionally logs to Weights & Biases.
 
         Returns:
-        None
+            None
         """
+        # Setup output directories
+        os.makedirs(f"{self.root_path}", exist_ok=True)
+        os.makedirs(f"{self.root_path}/generations", exist_ok=True)
+        if self.log:
+            os.makedirs(f"{self.root_path}/logs", exist_ok=True)
 
-        if not os.path.exists(f"{self.root_path}"):
-            os.mkdir(f"{self.root_path}")
-        if not os.path.exists(f"{self.root_path}/generations"):
-            os.mkdir(f"{self.root_path}/generations")
-        if self.log and not os.path.exists(f"{self.root_path}/logs"):
-            os.mkdir(f"{self.root_path}/logs")
-        
-
-
-        ## Setup variables
+        # Load questions dataset
         questions = pl.read_ipc(self.questions_path)
 
-       # Validate indices
-        assert(self.batch_size >= 1, "Batch size must be at least 1")
-        if self.batch_size == 1:
-           model = GenericInstructModelHF(self.language_model_path, attn_implementation=self.attn_implementation, thinking=self.thinking)
-        elif self.batch_size > 1 and batch_model_lm == "vllm":
-           model = GenericVLLMBatch(self.language_model_path, max_model_len=32768, seed=self.seed)
-        elif self.batch_size > 1 and batch_model_lm == "hf":
-            model = GenericInstructBatchHF(self.language_model_path, batch_size=self.batch_size, attn_implementation=self.attn_implementation, thinking=self.thinking)
-        else:
-            raise ValueError("Invalid batch_model_lm value. Choose either 'hf' or 'vllm' or set batch_size to at least 1.")
+        # Validate batch size
+        assert self.batch_size >= 1, "Batch size must be at least 1"
 
-        model_configs = self.lm_configs
+        # Initialize model and tracking variables
+        model = GenericVLLMBatch(
+            self.language_model_path,
+            vllm_kwargs={"max_model_len": DEFAULT_MAX_MODEL_LEN},
+        )
         generations = {}
+        batch_list = []
+        output_path = self._get_output_path()
 
+        # Initialize W&B logging if enabled
         if self.log:
             start_time = datetime.datetime.now()
             wandb.init(
                 project=self.project_log,
-                name=f"Baselien_{self.model_run_id}",
-                id = f"Baseline_{self.model_run_id}_{start_time.strftime('%Y-%m-%d_%H-%M-%S')}",
+                name=f"Baseline_{self.model_run_id}",
+                id=f"Baseline_{self.model_run_id}_{start_time.strftime('%Y-%m-%d_%H-%M-%S')}",
                 config={
                     "gpu": f"{torch.cuda.get_device_name(0)}",
                     "questions_path": self.questions_path,
                 },
-                tags = self.tags.extend(["generations"]),
+                tags=self.tags + ["generations"],
             )
-            artifact = wandb.Artifact(name="generations", type="json", description="Baseline generations data")
-            
+            artifact = wandb.Artifact(
+                name="generations",
+                type="json",
+                description="Baseline generations data",
+            )
 
-        ## Iterate questions within the specified range
+        # Process questions in batches
         for idx in range(len(questions)):
+            # Create prompt from question
+            question_text = questions[idx]["question"].to_numpy().flatten()[0]
+            prompt = f"Question: {question_text}\nAnswer: "
+            batch_list.append((idx, prompt))
 
-            ## Generate prompt
-            prompt = f"Question: {questions[idx]['question'].to_numpy().flatten()[0]}\nAnswer: "
-
-            if self.batch_size > 1:
-                if len(batch_list) < self.batch_size:
-                    batch_list.append((idx, prompt))
-                
-                if len(batch_list) == self.batch_size or idx == len(questions) - 1:
-                    outputs = model.run(
-                    [str(_q[1]) for _q in batch_list], 
-                    instruction=self.instruction, 
-                    config_params=model_configs
-                    )
-                    for i, _q in enumerate(batch_list):
-                        generations[f"{_q[0]}"] = [self._parse_generation_output(outputs[i][0])]
-                    batch_list = []
-                
-                    if self.model_run_id is None:
-                        path = f"{self.root_path}/generations/baseline_zero_shot_generations.json"
-                        with open(path, "w") as f:
-                            json.dump(generations, f)
-                    
-                    else:
-                        path = f"{self.root_path}/generations/{self.model_run_id}.json"
-                        with open(path, "w") as f:
-                            json.dump(generations, f)
-
-            else:
-                assert isinstance(model, GenericInstructModelHF)
-                ## Generate output
+            # Process batch when full or at the end
+            if len(batch_list) == self.batch_size or idx == len(questions) - 1:
+                # Get model outputs
+                prompts = [prompt for _, prompt in batch_list]
                 outputs = model.run(
-                    prompt, 
-                    instruction=self.instruction, 
-                    config_params=model_configs
+                    prompts,
+                    instruction=self.instruction,
+                    config_params=self.lm_configs,
                 )
 
-                generations[f"{idx}"] = [self._parse_generation_output(out) for out in outputs]
+                # Store parsed outputs
+                for i, (question_idx, _) in enumerate(batch_list):
+                    generations[str(question_idx)] = self._parse_generation_output(
+                        outputs[i]
+                    )
 
-                if self.model_run_id is None:
-                    path = f"{self.root_path}/generations/baseline_zero_shot_generations.json"
-                    with open(path, "w") as f:
-                        json.dump(generations, f)
-                
-                else:
-                    path = f"{self.root_path}/generations/{self.model_run_id}.json"
-                    with open(path, "w") as f:
-                        json.dump(generations, f)
-            
+                # Save generations
+                self._save_generations(generations, output_path)
+                batch_list = []
+
+        # Finalize W&B logging if enabled
         if self.log:
-            artifact.add_file(path)
+            artifact.add_file(output_path)
             wandb.log_artifact(artifact)
-            wandb.log({
-                "end_time": datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
-                "duration": (datetime.datetime.now() - start_time).total_seconds(),
-            })
+            wandb.log(
+                {
+                    "end_time": datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"),
+                    "duration": (
+                        datetime.datetime.now() - start_time
+                    ).total_seconds(),
+                }
+            )
             wandb.finish()
-
-        
-
-        return
