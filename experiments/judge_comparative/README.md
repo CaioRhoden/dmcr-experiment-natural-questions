@@ -4,7 +4,7 @@ The goal of the experiment is to evaluate how close each reference-free binary c
 
 
 ## Results
-TODO
+
 
 ## Setup
 1. Creation of a random subset of 1000 samples from the NQ dev set through the `subset_generation.py` script.
@@ -25,5 +25,9 @@ We will be using the following judges for the experiment:
 5. **Faithfulness Judge**: Judge that evaluates the faithfulness of a generation to the question and the retrieved passage, indicating 1 if the generation is faithful and 0 otherwise.
 
 ## Reference Prompts
-TODO
+ 
+ The prompts used for the judges are available on `judge_prompts.json` file. The instructions for the generation of the pre-collections (generations used to create the judge scores) are the following:
+
+ - *Experiment 1*: You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens
+ - *Experiment 2*: You are given a question and you MUST respond by EXTRACTING the answer (max 5 tokens) from one of the provided documents. If none of the documents contain the answer, respond with NO-RES.
 
