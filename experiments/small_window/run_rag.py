@@ -60,6 +60,8 @@ class RagConfig:
     tags: list[str] = field(default_factory=list)
     '''List of tags for the experiment.'''
 
+    root_path: str = "runs"
+
 
 
 
@@ -88,7 +90,7 @@ def initiate_pipeline(args: RagConfig) -> RAGPipeline:
         size_index=args.size_index,
         lm_configs=args.lm_configs,
         instruction=args.instruction,
-        root_path=f"runs/experiment_{args.seed}",
+        root_path=f"{args.root_path}/experiment_{args.seed}",
         tags = args.tags,
         log=args.log,
         attn_implementation=args.attn_implementation,
@@ -100,7 +102,7 @@ def initiate_pipeline(args: RagConfig) -> RAGPipeline:
 if __name__ == "__main__":
     args = tyro.cli(RagConfig)
     args.tags.append("rag")
-    args.questions_path = f"runs/experiment_{args.seed}/questions.feather"
+    args.questions_path = f"{args.root_path}/experiment_{args.seed}/questions.feather"
     args.language_model_path = f"{root}/{args.language_model_path}"
     args.wiki_path = f"{root}/{args.wiki_path}"
     args.retrieval_path = f"{root}/{args.retrieval_path}"
