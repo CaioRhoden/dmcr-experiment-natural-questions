@@ -365,7 +365,7 @@ class RAGBasedExperimentPipeline:
             evaluator = JudgeEvaluator(
                 model_path=self.language_model_path,
                 model_configs = model_configs,
-                instruction="",
+                instruction=self.instruction,
                 format_template=format_input,
                 thinking=self.thinking,
                 judge=judge_model,
@@ -401,7 +401,7 @@ class RAGBasedExperimentPipeline:
                     "top_p": 0.9,
                     "max_new_tokens": 1024,
                 },
-                instruction="",
+                instruction=self.instruction,
                 format_template=format_input,
                 thinking=self.thinking,
                 judge=judge_model,
@@ -441,7 +441,7 @@ class RAGBasedExperimentPipeline:
                     "n": 3
                     
                 },
-                instruction="",
+                instruction=self.instruction,
                 format_template=format_input,
                 thinking=self.thinking,
                 judge=judge_model,
