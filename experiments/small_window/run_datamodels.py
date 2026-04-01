@@ -11,7 +11,7 @@ from utils.pipelines.ParallelRAGBasedPipeline import ParallelRAGBasedPipeline
 from pathlib import Path
 root = Path(__file__).parent.parent.parent
 
-instruction = "You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens"
+INSTRUCTION = "You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens"
 
 def alt_format_input_1(question, response):
     return f""""
@@ -24,8 +24,18 @@ def alt_format_input_1(question, response):
     [The End of Assistant’s Answer]
     """
 
+def format_input_recall(question, response):
+    return f""""
+    [Question] 
+    {question}  
+    [The Start of Assistant’s Answer] 
+    {response}
+    [The End of Assistant’s Answer]
+    """
+
 ALT_FORMAT_INPUT = {
     "ALT1": alt_format_input_1,
+    "recall": format_input_recall
 }
 
 @dataclass
@@ -35,7 +45,7 @@ class DatamodelsConfig:
     '''
     run_type: Literal["setup", "pre_collections", "collections", "training", "generation"] = "setup"
     '''Type of run to execute. Options: "setup", "pre_collections", "collections", "training", "generation".'''
-    format_input: Literal[None, "ALT1", "ALT2"] = "ALT1"
+    format_input: Literal[None, "ALT1", "ALT2", "recall"] = "ALT1"
     mode: Literal["train", "test"] = "train"
     '''Mode for the experiment section. Options: "train" or "test".'''
     seed: Literal[1, 4, 54, 61, 73] = 1
@@ -44,6 +54,8 @@ class DatamodelsConfig:
     '''Flag to enable logging. Options: "setup", "baseline", "rag", "datamodels".'''
     model_run_id: str = "judge"
     '''ID of the model run.'''
+    instruction: str = INSTRUCTION
+
 
     
     # RAG Based configs Config Fields
@@ -108,6 +120,8 @@ class DatamodelsConfig:
     '''Checkpoint interval for saving progress.'''
     num_subprocesses: int = 1
     '''Number of subprocesses for parallel execution.'''
+    root_path: str = "runs"
+    '''Root path for saving runs.'''
 
 
 
@@ -147,7 +161,7 @@ def initiate_pipeline(args: DatamodelsConfig) -> ParallelRAGBasedPipeline:
         num_models=args.num_models,
         evaluation_metric=args.evaluation_metric,
         evaluator=args.evaluator,
-        instruction=instruction,
+        instruction=args.instruction,
         train_samples=args.train_samples,
         test_samples=args.test_samples,
         epochs=args.epochs,
@@ -157,7 +171,7 @@ def initiate_pipeline(args: DatamodelsConfig) -> ParallelRAGBasedPipeline:
         val_size=args.val_size,
         patience=args.patience,
         log_epochs=args.log_epochs,
-        root_path=f"runs/experiment_{args.seed}",
+        root_path=f"{args.root_path}/experiment_{args.seed}",
         batch_size=args.batch_size,
         tags=args.tags,
         lm_configs=lm_configs,
@@ -174,7 +188,7 @@ if __name__ == "__main__":
 
     args.language_model_path = f"{root}/{args.language_model_path}"
     args.wiki_path = f"{root}/{args.wiki_path}"
-    args.retrieval_path = f"runs/experiment_{args.seed}/{args.retrieval_path}"
+    args.retrieval_path = f"{args.root_path}/experiment_{args.seed}/{args.retrieval_path}"
     args.embedder_path = f"{root}/{args.embedder_path}"
     args.vector_db_path = f"{root}/{args.vector_db_path}"
     args.collection_id = f"experiment-{args.seed}_evaluator-{args.evaluator}-{str(args.format_input)}"
