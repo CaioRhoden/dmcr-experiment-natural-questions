@@ -4,7 +4,7 @@ from pathlib import Path
 
 def to_binary(df: pl.DataFrame) -> pl.DataFrame:
     """Convert 'evaluation' column to binary (1 if > 0, else 0)."""
-    return df.with_columns((pl.col("evaluation").is_in([0.1, 0.666667])).cast(pl.Int32).alias("evaluation"))
+    return df.with_columns((pl.col("evaluation").is_in([0.1, 0.066667])).cast(pl.Int32).alias("evaluation"))
 
 
 def read_ipc(path: Path) -> pl.DataFrame:
