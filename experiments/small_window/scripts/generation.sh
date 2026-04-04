@@ -9,7 +9,7 @@
 #SBATCH --mail-user="c214129@dac.unicamp.br"
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --partition=a5000,rtx5000,rtx8000
-#SBATCH --array=0-4
+#SBATCH --array=0-3
 
 source ~/miniconda3/bin/activate
 conda activate nq
@@ -40,3 +40,11 @@ python run_zero.py --seed $S
 #         --run_type generation \
 #         --batch_size 500 \
 #         --model_run_id rougel
+
+
+
+python run_datamodels.py \
+        --seed $S \
+        --run_type generation \
+        --batch_size 500 \
+        --model_run_id opt_voting

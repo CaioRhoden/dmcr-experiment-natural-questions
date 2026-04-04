@@ -7,6 +7,23 @@ import tyro
 
 from utils.pipelines.RAGPipeline import RAGPipeline
 
+DEFAULT_INSTRUCTION = "You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens"
+EXTRACTION_INSTRUCTION = "You are given a question and you MUST respond by EXTRACTING the answer (max 5 tokens) from one of the provided documents. If none of the documents contain the answer, respond with NO-RES. Begin your answer by providing a short explanation. Be as objective as possible. After providing your explanation, please generate your response by strictly following this format: \"RESPONSE: [[<response>]]\"."
+REASONING_INSTRUCTION = "You are given a question and you MUST respond giving a answer answer (max 5 tokens), respond with NO-RES if you cannot answer. Begin your answer by providing a short explanation. Be as objective as possible. After providing your explanation, please generate your response by strictly following this format: \"RESPONSE: [[<response>]]\"."
+
+INSTRUCTIONS_DICT = {
+    "default": DEFAULT_INSTRUCTION,
+    "extraction": EXTRACTION_INSTRUCTION,
+    "reasoning": REASONING_INSTRUCTION
+}
+
+LM_CONFIGS = {
+    "temperature": 0.7,
+    "top_p": 0.9,
+    "max_new_tokens": 10,
+}
+
+
 root = Path(__file__).parent.parent.parent
 @dataclass
 class RagConfig:
@@ -48,20 +65,23 @@ class RagConfig:
     end_idx: int|None = None
     '''Ending index for the questions to be processed. None means process all questions.'''
 
+
+
     
     # Pre-collections Config Fields
     instruction: str = "You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens"
     '''Instruction for the pre-collections step.'''
-    lm_configs: dict[str, float|int] = field(default_factory=lambda: {
-            "temperature": 0.7,
-            "top_p": 0.9,
-            "max_new_tokens": 10,
-        })
-    tags: list[str] = field(default_factory=list)
+    lm_configs: dict[str, float|int] = field(default_factory=lambda: LM_CONFIGS)
+    tags: list[str] = field(default_factory=lambda: ["rag"])
     '''List of tags for the experiment.'''
 
     root_path: str = "runs"
 
+    ## Config
+    only_generate: bool = False
+    '''Whether to only run the generation step.'''
+    only_retrieval: bool = False
+    '''Whether to only run the retrieval step.'''
 
 
 
@@ -112,5 +132,11 @@ if __name__ == "__main__":
 
     pipeline = initiate_pipeline(args)
     pipeline.setup()
-    pipeline.get_rag_retrieval()
-    pipeline.get_rag_generations()
+
+    if args.only_retrieval:
+        pipeline.get_rag_retrieval()
+    elif args.only_generate:
+        pipeline.get_rag_generations()
+    else:
+        pipeline.get_rag_retrieval()
+        pipeline.get_rag_generations()

@@ -77,20 +77,37 @@ def unify_and_process_runs(runs_dir: Path, output_dir: Path, pattern=None) -> No
 
 def main() -> None:
 
+    # unify_and_process_runs(
+    #     runs_dir=Path("runs"),
+    #     output_dir=Path("binary_collections/binary_judge"),
+    #     pattern="-BinaryJudge-"
+    # )
+    # unify_and_process_runs(
+    #     runs_dir=Path("runs"),
+    #     output_dir=Path("binary_collections/rougel"),
+    #     pattern="Rouge-L"
+    # )
+
+    # unify_and_process_runs(
+    #     runs_dir=Path("runs"),
+    #     output_dir=Path("binary_collections/voting"),
+    #     pattern="Voting"
+    # )
+
     unify_and_process_runs(
-        runs_dir=Path("runs"),
-        output_dir=Path("binary_collections/binary_judge"),
+        runs_dir=Path("runs_opt"),
+        output_dir=Path("binary_collections/opt_binary_judge"),
         pattern="-BinaryJudge-"
     )
     unify_and_process_runs(
-        runs_dir=Path("runs"),
-        output_dir=Path("binary_collections/rougel"),
+        runs_dir=Path("runs_opt"),
+        output_dir=Path("binary_collections/opt_rougel"),
         pattern="Rouge-L"
     )
 
     unify_and_process_runs(
-        runs_dir=Path("runs"),
-        output_dir=Path("binary_collections/voting"),
+        runs_dir=Path("runs_opt"),
+        output_dir=Path("binary_collections/opt_voting"),
         pattern="Voting"
     )
 
