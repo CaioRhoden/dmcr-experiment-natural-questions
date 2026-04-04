@@ -11,7 +11,23 @@ from utils.pipelines.ParallelRAGBasedPipeline import ParallelRAGBasedPipeline
 from pathlib import Path
 root = Path(__file__).parent.parent.parent
 
-INSTRUCTION = "You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens"
+
+DEFAULT_INSTRUCTION = "You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens"
+EXTRACTION_INSTRUCTION = "You are given a question and you MUST respond by EXTRACTING the answer (max 5 tokens) from one of the provided documents. If none of the documents contain the answer, respond with NO-RES. Begin your answer by providing a short explanation. Be as objective as possible. After providing your explanation, please generate your response by strictly following this format: \"RESPONSE: [[<response>]]\"."
+REASONING_INSTRUCTION = "You are given a question and you MUST respond giving a answer answer (max 5 tokens), respond with NO-RES if you cannot answer. Begin your answer by providing a short explanation. Be as objective as possible. After providing your explanation, please generate your response by strictly following this format: \"RESPONSE: [[<response>]]\"."
+
+INSTRUCTIONS_DICT = {
+    "default": DEFAULT_INSTRUCTION,
+    "extraction": EXTRACTION_INSTRUCTION,
+    "reasoning": REASONING_INSTRUCTION
+}
+
+LM_CONFIGS = {
+    "temperature": 0.7,
+    "top_p": 0.9,
+    "max_new_tokens": 10,
+    "n": 1
+}
 
 def alt_format_input_1(question, response):
     return f""""
@@ -54,7 +70,10 @@ class DatamodelsConfig:
     '''Flag to enable logging. Options: "setup", "baseline", "rag", "datamodels".'''
     model_run_id: str = "judge"
     '''ID of the model run.'''
-    instruction: str = INSTRUCTION
+    instruction: Literal["default", "extraction", "reasoning"] = "default"
+    '''Instruction type for the language model. Options: "default", "extraction", "reasoning".'''
+    lm_configs: dict = field(default_factory=lambda: LM_CONFIGS)
+    '''Language model configuration parameters.'''
 
 
     
@@ -137,13 +156,6 @@ def initiate_pipeline(args: DatamodelsConfig) -> ParallelRAGBasedPipeline:
         ZeroShotBaselinePipeline: An instance of the baseline pipeline.
     """
 
-    lm_configs = {
-                "temperature": 0.7,
-                "top_p": 0.9,
-                "max_new_tokens": 10,
-                "n": 1
-    }
-
     questions_path = f"runs/experiment_{args.seed}/questions.feather"
 
     return ParallelRAGBasedPipeline(
@@ -161,7 +173,7 @@ def initiate_pipeline(args: DatamodelsConfig) -> ParallelRAGBasedPipeline:
         num_models=args.num_models,
         evaluation_metric=args.evaluation_metric,
         evaluator=args.evaluator,
-        instruction=args.instruction,
+        instruction=INSTRUCTIONS_DICT[args.instruction],
         train_samples=args.train_samples,
         test_samples=args.test_samples,
         epochs=args.epochs,
@@ -174,7 +186,7 @@ def initiate_pipeline(args: DatamodelsConfig) -> ParallelRAGBasedPipeline:
         root_path=f"{args.root_path}/experiment_{args.seed}",
         batch_size=args.batch_size,
         tags=args.tags,
-        lm_configs=lm_configs,
+        lm_configs=args.lm_configs,
         log=args.log,
         num_subprocesses=args.num_subprocesses,
         model_run_id=args.model_run_id
