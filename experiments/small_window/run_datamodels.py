@@ -109,7 +109,7 @@ class DatamodelsConfig:
     '''Number of training samples.'''
     test_samples: int = 200
     '''Number of testing samples.'''
-    tags: list[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=lambda: ["datamodels"])
     '''List of tags for the experiment.'''
     
     # Datamodels Training Config Fields
