@@ -11,7 +11,22 @@ from utils.pipelines.ParallelRAGBasedPipeline import ParallelRAGBasedPipeline
 from pathlib import Path
 root = Path(__file__).parent.parent.parent
 
-instruction = "You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens"
+DEFAULT_INSTRUCTION = "You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens"
+EXTRACTION_INSTRUCTION = "You are given a question and you MUST respond by EXTRACTING the answer (max 5 tokens) from one of the provided documents. If none of the documents contain the answer, respond with NO-RES. Begin your answer by providing a short explanation. Be as objective as possible. After providing your explanation, please generate your response by strictly following this format: \"RESPONSE: [[<response>]]\"."
+REASONING_INSTRUCTION = "You are given a question and you MUST respond giving a answer answer (max 5 tokens), respond with NO-RES if you cannot answer. Begin your answer by providing a short explanation. Be as objective as possible. After providing your explanation, please generate your response by strictly following this format: \"RESPONSE: [[<response>]]\"."
+
+instructions = {
+    "default": DEFAULT_INSTRUCTION,
+    "extraction": EXTRACTION_INSTRUCTION,
+    "reasoning": REASONING_INSTRUCTION
+}
+
+LM_CONFIGS = {
+    "temperature": 0.7,
+    "top_p": 0.9,
+    "max_new_tokens": 10,
+    "n": 1
+}
 
 def alt_format_input_1(question, response):
     return f""""
@@ -70,9 +85,11 @@ class DatamodelsConfig:
     '''Random seed for reproducibility based on the previous random generated'''
     log: bool = True
     '''Flag to enable logging. Options: "setup", "baseline", "rag", "datamodels".'''
-    root_path: str = "runs"
+    root_path: str = "datamodels_runs/runs"
     '''Root path for saving logs and outputs.'''
 
+    lm_configs: dict = field(default_factory=lambda: LM_CONFIGS)
+    '''Dictionary containing instructions for different configurations.'''
     
     # RAG Based configs Config Fields
     wiki_path: str = "data/wiki_dump2018_nq_open/processed/wiki.feather"
@@ -152,12 +169,7 @@ def initiate_pipeline(args: DatamodelsConfig) -> ParallelRAGBasedPipeline:
     """
     model_run_id = f"{args.model_tag}"
 
-    lm_configs = {
-                "temperature": 0.7,
-                "top_p": 0.9,
-                "max_new_tokens": 10,
-                "n": 1
-    }
+
 
     questions_path = f"{args.root_path}/experiment_{args.seed}/questions.feather"
 
@@ -176,7 +188,7 @@ def initiate_pipeline(args: DatamodelsConfig) -> ParallelRAGBasedPipeline:
         num_models=args.num_models,
         evaluation_metric=args.evaluation_metric,
         evaluator=args.evaluator,
-        instruction=instruction,
+        instruction=args.instruction,
         train_samples=args.train_samples,
         test_samples=args.test_samples,
         epochs=args.epochs,
@@ -189,7 +201,7 @@ def initiate_pipeline(args: DatamodelsConfig) -> ParallelRAGBasedPipeline:
         root_path=f"{args.root_path}/experiment_{args.seed}",
         batch_size=args.batch_size,
         tags=args.tags,
-        lm_configs=lm_configs,
+        lm_configs=args.lm_configs,
         log=args.log,
         num_subprocesses=args.num_subprocesses,
         model_run_id=model_run_id
