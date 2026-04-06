@@ -50,13 +50,6 @@ class RAGBasedExperimentPipeline:
         instruction: str, 
         train_samples: int,
         test_samples: int,
-        epochs: int,
-        lr: float,
-        train_batches: int,
-        val_batches: int,
-        val_size: float,
-        patience: int,
-        log_epochs: int,
         tags: list[str] = [],
         seed: Optional[int] = None,
         lm_configs: Optional[dict[str, int|float]] = None,
@@ -99,15 +92,6 @@ class RAGBasedExperimentPipeline:
         }
         self.train_samples = train_samples
         self.test_samples = test_samples
-
-        ## Training parameters
-        self.epochs = epochs
-        self.lr = lr
-        self.train_batches = train_batches
-        self.val_batches = val_batches
-        self.val_size = val_size
-        self.patience = patience
-        self.log_epochs = log_epochs
         self.tags = tags
         self.log = log
 
@@ -201,8 +185,28 @@ class RAGBasedExperimentPipeline:
         log_config, checkpoint, output_column, model_configs, and rag_indexes_path
         as parameters. It returns nothing.
         """
+
+
+        def extract_response(text: str):
+            pattern1 = r"response:\s*\[+(.*?)\]+"
+            pattern2 = r"no-res"
+            pattern3 = r"response:\s*(.*)"
+            
+            match1= re.search(pattern1, text.lower())
+            match2 = re.search(pattern2, text.lower())
+            match3 = re.search(pattern3, text.lower())
+            if match1:
+                return match1.group(1).strip()
+            elif match2:
+                return "NO-RES"
+            elif match3:
+                return match3.group(1).strip()
+            else:
+                return " ".join(text.strip().split(" ")[:15])
+
+
+
         ### Initiate models
-        batch_list = []
         if model is None and self.batch_size == 1:
             model = GenericInstructModelHF(self.language_model_path, attn_implementation=self.attn_implementation, thinking=self.thinking)
         elif model is None and self.batch_size > 1:
@@ -286,6 +290,7 @@ class RAGBasedExperimentPipeline:
                 instruction= self.instruction,
                 model = model,
                 context_strategy= nq_context_strategy,
+                extract_response_strategy=extract_response,
                 start_idx = start_idx, 
                 end_idx = end_idx, 
                 mode = mode, 
@@ -529,77 +534,77 @@ class RAGBasedExperimentPipeline:
 
 
 
-    def train_datamodels(
-            self,
-            collection_id: str = "default_collection",
-            start_idx: int = 0,
-            end_idx: int | None = None,
-            checkpoint: int | None = None,
-        )-> None:
+    # def train_datamodels(
+    #         self,
+    #         collection_id: str = "default_collection",
+    #         start_idx: int = 0,
+    #         end_idx: int | None = None,
+    #         checkpoint: int | None = None,
+    #     )-> None:
 
 
-        epochs = self.epochs
-        lr = self.lr
-        train_batches = self.train_batches
-        val_batches = self.val_batches
-        val_size = self.val_size
-        patience = self.patience
-        log_epochs = self.log_epochs
+    #     epochs = self.epochs
+    #     lr = self.lr
+    #     train_batches = self.train_batches
+    #     val_batches = self.val_batches
+    #     val_size = self.val_size
+    #     patience = self.patience
+    #     log_epochs = self.log_epochs
 
 
-        config = DatamodelIndexBasedConfig(
-            k = self.k,
-            num_models= self.num_models,
-            datamodels_path = f"{self.root_path}/datamodels",
-            train_set_path=self.wiki_path,
-            test_set_path=self.questions_path
-        )
-
-
-
-        datamodel = DatamodelsIndexBasedNQPipeline(config)
-        log_config = None
-        if self.log:
-            log_config = LogConfig(
-                project=self.project_log,
-                dir=f"{self.root_path}/logs",
-                id=f"test_train_datamoles_{int(datetime.datetime.now().timestamp())}",
-                name=self.model_run_id,
-                config={
-                    "index": "FAISS_L2",
-                    "size_index": self.size_index,
-                    "datamodel_configs": repr(config),
-
-                },
-                tags=self.tags.extend(["training", collection_id, self.model_run_id]) # type: ignore
-            )
+    #     config = DatamodelIndexBasedConfig(
+    #         k = self.k,
+    #         num_models= self.num_models,
+    #         datamodels_path = f"{self.root_path}/datamodels",
+    #         train_set_path=self.wiki_path,
+    #         test_set_path=self.questions_path
+    #     )
 
 
 
-        model_factory = FactoryLinearRegressor(
-            in_features=self.size_index,
-            out_features=1,
-            device=str(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
-        )
+    #     datamodel = DatamodelsIndexBasedNQPipeline(config)
+    #     log_config = None
+    #     if self.log:
+    #         log_config = LogConfig(
+    #             project=self.project_log,
+    #             dir=f"{self.root_path}/logs",
+    #             id=f"test_train_datamoles_{int(datetime.datetime.now().timestamp())}",
+    #             name=self.model_run_id,
+    #             config={
+    #                 "index": "FAISS_L2",
+    #                 "size_index": self.size_index,
+    #                 "datamodel_configs": repr(config),
+
+    #             },
+    #             tags=self.tags.extend(["training", collection_id, self.model_run_id]) # type: ignore
+    #         )
 
 
-        datamodel.train_datamodels(
-            model_factory=model_factory,
-            collection_name=collection_id,	
-            epochs=epochs,
-            train_batches=train_batches,
-            val_batches=val_batches,
-            val_size=val_size,
-            lr=lr,
-            patience=patience,
-            log = self.log,
-            log_config=log_config,
-            log_epochs=log_epochs,
-            run_id=self.model_run_id,
-            checkpoint=checkpoint,
-            start_idx=start_idx,
-            end_idx=end_idx
-        )
+
+    #     model_factory = FactoryLinearRegressor(
+    #         in_features=self.size_index,
+    #         out_features=1,
+    #         device=str(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+    #     )
+
+
+    #     datamodel.train_datamodels(
+    #         model_factory=model_factory,
+    #         collection_name=collection_id,	
+    #         epochs=epochs,
+    #         train_batches=train_batches,
+    #         val_batches=val_batches,
+    #         val_size=val_size,
+    #         lr=lr,
+    #         patience=patience,
+    #         log = self.log,
+    #         log_config=log_config,
+    #         log_epochs=log_epochs,
+    #         run_id=self.model_run_id,
+    #         checkpoint=checkpoint,
+    #         start_idx=start_idx,
+    #         end_idx=end_idx
+    #     )
 
         
 

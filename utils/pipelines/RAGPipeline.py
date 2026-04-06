@@ -213,7 +213,6 @@ class RAGPipeline:
 
     def get_rag_generations(self, 
                             model: None | BatchModel | BaseLLM = None,
-                            generation_path: str = "generations/rag_generations.json",
                             retrieval_path: str = "retrieval/rag_retrieval_indexes.json"
 
                         ):
@@ -228,10 +227,11 @@ class RAGPipeline:
         """
 
         ## Fix root path in parameters
-        generation_path = f"{self.root_path}/{generation_path}"
         retrieval_path = f"{self.root_path}/{retrieval_path}"
 
         wiki = pl.read_ipc(self.wiki_path).with_row_index("idx")
+        # Create a dict for fast lookups: idx -> (title, text)
+        wiki_dict = {row['idx']: (row['title'], row['text']) for row in wiki.iter_rows(named=True)}
         questions = pl.read_ipc(self.questions_path)
         ## Load retrieval data
         with open(retrieval_path, "r") as f:
@@ -276,20 +276,20 @@ class RAGPipeline:
         for idx in range(len(retrieval_data)):
 
             top_k = retrieval_data[f"{idx}"][0:self.k]
-            docs = wiki.filter(pl.col("idx").is_in(top_k))
-
 
             ## Generate prompt
             prompt = "Documents: \n"
             for doc_idx in range(len(top_k)-1, -1, -1):
                 if top_k[doc_idx] >= 0:
                     ## some documents can't find k documents and fill with -1
-                    prompt += f"Document[{self.k-doc_idx}](Title: {docs.filter(pl.col('idx')==top_k[doc_idx])['title'].to_list()[0]}){docs.filter(pl.col('idx')==top_k[doc_idx])['text'].to_numpy().flatten()[0]}\n\n"
+                    title, text = wiki_dict[top_k[doc_idx]]
+                    prompt += f"Document[{self.k-doc_idx}](Title: {title}){text}\n\n"
 
             prompt += f"Question: {questions[idx]['question'].to_numpy().flatten()[0]}\nAnswer: "
             
             if self.batch_size > 1:
                 if len(batch_list) < self.batch_size:
+                    print(f"DEBUG: Adding question {idx} to batch list. Current batch size: {len(batch_list)}")
                     batch_list.append((idx, prompt))
                 
                 if len(batch_list) == self.batch_size or idx == (len(questions) - 1):

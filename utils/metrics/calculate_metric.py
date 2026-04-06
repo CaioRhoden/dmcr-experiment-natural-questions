@@ -89,3 +89,53 @@ def calculate_agg_metric(
         df_results.write_ipc(saving_path, compression="zstd")
     else:
         return df_results
+
+
+def calculate_agg_metric_from_dataframes(
+        metrics: list[str],
+        generations_df: pl.DataFrame,
+        reference_path: str,
+        generation_column: str = "answer",
+        agg: Callable[[np.ndarray], float] = np.mean
+) -> pl.DataFrame | None:
+    """
+    Calculate aggregated Rouge-L and/or SQuAD V2 metrics for generations from dataframes.
+
+    Args:
+        metrics (list[str]): List of metrics to calculate ("rouge_l", "squad_v2_best_f1", "squad_v2_best_exact").
+        generations_df (pl.DataFrame): Polars DataFrame containing generations.
+        reference_path (str): Path to polars IPC file containing reference answers.
+        generation_column (str): Column name in generations_df containing the generation text (default: "answer").
+        saving_path (str | None): Path to save results in IPC format. If None, returns DataFrame.
+        agg (Callable): Aggregation function (default: torch.mean).
+
+    Returns:
+        pl.DataFrame | None: Results DataFrame if saving_path is None, else None.
+    """
+
+    questions = pl.read_ipc(reference_path)
+    results = {"idx": [], "value": [], "metric": []}
+    
+    for metric_name in metrics:
+        print(f"Calculating {metric_name}...")
+        evaluator = _get_evaluator(metric_name)
+        
+        generations = generations_df.select(pl.col(generation_column)).to_numpy()
+        for idx, generation_set in enumerate(generations):
+            reference = questions[idx]["answers"].to_numpy()[0].tolist()
+            
+            metric_scores = agg(np.array([
+                    evaluator.evaluate(
+                        np.array([reference]),
+                        np.array([[str(generation)]])
+                    )
+                for generation in generation_set
+            ], dtype=np.float32))
+            results["idx"].append(idx)
+            results["value"].append(metric_scores)
+            results["metric"].append(metric_name)
+        
+        
+
+    df_results = pl.DataFrame(results)
+    return df_results
