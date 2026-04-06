@@ -20,27 +20,55 @@ conda activate nq
 export WANDB_MODE="offline"
 
 
-echo "-----------------------------------------------"
-echo "RUNNING PRE_COLLECTIONS TRAIN "
+# echo "-----------------------------------------------"
+# echo "RUNNING PRE_COLLECTIONS TRAIN "
+# python run_datamodels.py \
+#     --seed $S \
+#     --run_type collections \
+#     --start_idx 0 \
+#     --end_idx 1000000 \
+#     --checkpoint 50000 \
+#     --num_subprocesses 4 \
+#     --evaluator Rouge-L \
+#     --mode train
+
+
+# echo "-----------------------------------------------"
+# echo "RUNNING PRE_COLLECTIONS TRAIN "
+# python run_datamodels.py \
+#     --seed $S \
+#     --run_type collections \
+#     --start_idx 0 \
+#     --end_idx 100000 \
+#     --checkpoint 50000 \
+#     --num_subprocesses 2\
+#     --evaluator Rouge-L \
+#     --mode test
+
+
+
+echo "RUNNING COLLECTIONS TRAIN"
 python run_datamodels.py \
     --seed $S \
     --run_type collections \
     --start_idx 0 \
     --end_idx 1000000 \
     --checkpoint 50000 \
+    --batch_size 50000 \
     --num_subprocesses 4 \
+    --root_path runs_opt \
     --evaluator Rouge-L \
     --mode train
 
-
-echo "-----------------------------------------------"
-echo "RUNNING PRE_COLLECTIONS TRAIN "
+    
 python run_datamodels.py \
     --seed $S \
     --run_type collections \
     --start_idx 0 \
     --end_idx 100000 \
     --checkpoint 50000 \
-    --num_subprocesses 2\
+    --batch_size 50000 \
+    --num_subprocesses 2 \
     --evaluator Rouge-L \
+    --root_path runs_opt \
     --mode test

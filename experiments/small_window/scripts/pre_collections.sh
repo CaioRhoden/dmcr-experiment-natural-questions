@@ -52,6 +52,41 @@ S=${SEEDS[$S_ID]}
 
 
 
+# INST="You are given a question and you MUST respond by EXTRACTING the answer (max 5 tokens) from one of the provided documents. If none of the documents contain the answer, respond with NO-RES."
+
+    
+# echo "-----------------------------------------------"
+# echo "RUNNING SETUP"
+# python run_datamodels.py \
+#     --seed $S \
+#     --root_path runs_opt \
+#     --run_type setup
+
+# echo "-----------------------------------------------"
+# echo "RUNNING PRE_COLLECTIONS TRAIN "
+# python run_datamodels.py \
+#     --seed $S \
+#     --run_type pre_collections \
+#     --start_idx 0 \
+#     --root_path runs_opt \
+#     --end_idx 2000 \
+#     --checkpoint 250 \
+#     --instruction "$INST" \
+#     --mode train
+
+
+# echo "RUNNING PRE_COLLECTIONS TEST"
+# python run_datamodels.py \
+#     --seed $S \
+#     --run_type pre_collections \
+#     --root_path runs_opt \
+#     --start_idx 0 \
+#     --end_idx 200 \
+#     --checkpoint 200 \
+#     --instruction "$INST" \
+#     --mode test
+
+    
 INST="You are given a question and you MUST respond by EXTRACTING the answer (max 5 tokens) from one of the provided documents. If none of the documents contain the answer, respond with NO-RES."
 
     
@@ -59,7 +94,7 @@ echo "-----------------------------------------------"
 echo "RUNNING SETUP"
 python run_datamodels.py \
     --seed $S \
-    --root_path runs_opt \
+    --root_path datamodels_runs/extraction \
     --run_type setup
 
 echo "-----------------------------------------------"
@@ -68,10 +103,10 @@ python run_datamodels.py \
     --seed $S \
     --run_type pre_collections \
     --start_idx 0 \
-    --root_path runs_opt \
+    --root_path datamodels_runs/extraction \
     --end_idx 2000 \
     --checkpoint 250 \
-    --instruction "$INST" \
+    --instruction extraction \
     --mode train
 
 
@@ -79,11 +114,9 @@ echo "RUNNING PRE_COLLECTIONS TEST"
 python run_datamodels.py \
     --seed $S \
     --run_type pre_collections \
-    --root_path runs_opt \
+    --root_path datamodels_runs/extraction \
     --start_idx 0 \
     --end_idx 200 \
     --checkpoint 200 \
-    --instruction "$INST" \
+    --instruction extraction \
     --mode test
-
-    
