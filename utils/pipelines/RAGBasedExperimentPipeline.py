@@ -320,8 +320,6 @@ class RAGBasedExperimentPipeline:
                         format_input:  Callable | None = None
       ):
 
-
-
         config = DatamodelIndexBasedConfig(
             k = self.k,
             num_models= self.num_models,
@@ -343,6 +341,9 @@ class RAGBasedExperimentPipeline:
 
         elif self.evaluator == "SquadV2":
             evaluator = SquadV2Evaluator("best_f1")
+        
+        elif self.evaluator == "SquadV2-EM":
+            evaluator = SquadV2Evaluator("best_exact")
 
 
         elif self.evaluator == "Judge":
