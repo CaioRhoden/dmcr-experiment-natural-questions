@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --time=48:00:00
 #SBATCH --mail-user="c214129@dac.unicamp.br"
-#SBATCH --array=20-28
+#SBATCH --array=0
 #SBATCH --partition=rtx5000,rtx8000
 #SBATCH --mail-type=BEGIN,END,FAIL
 
@@ -15,8 +15,8 @@ conda activate nq
 export WANDB_MODE="offline"
 export VLLM_WORKER_MULTIPROC_METHOD=spawn
 
-INIT=(5900000 6200000 6450000 6950000 7200000)
-END=(6000000 6250000 6500000 7000000 7220000)
+INIT=(7200000)
+END=(7220000)
 
     
 # echo "-----------------------------------------------"
@@ -48,7 +48,7 @@ python run_datamodels.py \
     --run_type collections \
     --start_idx ${INIT[$SLURM_ARRAY_TASK_ID]} \
     --end_idx ${END[$SLURM_ARRAY_TASK_ID]} \
-    --checkpoint 50000 \
+    --checkpoint 20000 \
     --num_subprocesses 1 \
     --evaluator Rouge-L \
     --mode train
