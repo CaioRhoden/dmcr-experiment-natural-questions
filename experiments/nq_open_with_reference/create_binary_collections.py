@@ -83,6 +83,20 @@ def main() -> None:
 
     unify_and_process_runs(
         runs_dir=Path("runs"),
+        output_dir=Path("binary_collections/rougel_binary_collection"),
+        pattern="default_collection",
+    )
+
+    unify_and_process_runs(
+        runs_dir=Path("runs"),
+        output_dir=Path("binary_collections/rougel_collection"),
+        pattern="default_collection",
+        processing=False,
+    )
+
+
+    unify_and_process_runs(
+        runs_dir=Path("runs"),
         output_dir=Path("binary_collections/f1_binary_collection"),
         pattern="f1_collection",
     )
@@ -98,6 +112,12 @@ def main() -> None:
         runs_dir=Path("runs"),
         output_dir=Path("binary_collections/em_collection"),
         pattern="em_collection",
+    )
+
+        unify_and_process_runs(
+        runs_dir=Path("runs"),
+        output_dir=Path("binary_collections/f1_binary_collection"),
+        pattern="f1_collection",
     )
 
 

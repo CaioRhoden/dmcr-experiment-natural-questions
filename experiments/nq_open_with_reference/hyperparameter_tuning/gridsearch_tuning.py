@@ -45,7 +45,7 @@ PARAM_GRID = [
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="GridSearch for binary classification embeddings.")
-    parser.add_argument("--subfolder", choices=["em_collection", "f1_binary_collection"], required=True,
+    parser.add_argument("--subfolder", choices=["em_collection", "f1_binary_collection", "rougel_binary_collection"], required=True,
                         help="Which binary collection to use.")
     return parser.parse_args()
 
@@ -187,22 +187,21 @@ def main() -> None:
     for model_idx, result in enumerate(results):
         if "best_params" in result:
             wandb.log({
-                f"model_{model_idx}_best_params": str(result["best_params"]),
-                f"model_{model_idx}_best_score": result["best_score"],
+                f"model_gridsearch_{model_idx}_best_params": str(result["best_params"]),
+                f"model_gridsearch_{model_idx}_best_score": result["best_score"],
                 "model_index": model_idx,
             })
         else:
             wandb.log({
-                f"model_{model_idx}_status": result.get("skipped", "unknown"),
+                f"model_gridsearch_{model_idx}_status": result.get("skipped", "unknown"),
                 "model_index": model_idx,
             })
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    out_path = OUTPUT_DIR / f"best_params_{args.subfolder}.json"
+    out_path = OUTPUT_DIR / f"best_params_gridsearch_{args.subfolder}.json"
 
     payload = {
         "subfolder": args.subfolder,
-        "exp_index": args.exp_index,
         "num_splits": len(results),
         "max_workers": max_workers,
         "results": results,
