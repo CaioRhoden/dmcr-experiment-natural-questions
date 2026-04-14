@@ -49,6 +49,8 @@ class DatamodelsConfig:
     '''Identifier for the collection.'''
     root_path: str = "runs"
     '''Root path for saving results and logs.'''
+    language_model_path: str = "models/Llama-3.2-3B-Instruct"
+    '''Path to the language model to be used in the pipeline.'''
 
     
     # RAG Based configs Config Fields
@@ -63,7 +65,7 @@ class DatamodelsConfig:
     evaluator: str = "Rouge-L"
     '''Evaluator to use.'''
     
-    train_samples: int = 3000
+    train_samples: int = 2000
     '''Number of training samples.'''
     test_samples: int = 200
     '''Number of testing samples.'''
@@ -97,7 +99,7 @@ def initiate_pipeline(args: DatamodelsConfig) -> ParallelRAGBasedPipeline:
     questions_path = f"{root}/data/nq_open/processed/dev.feather"
 
     wiki_path = f"{root}/data/wiki_dump2018_nq_open/processed/wiki.feather"
-    language_model_path = f"{root}/models/Llama-3.2-3B-Instruct"
+    language_model_path = f"{root}/{args.language_model_path}"
     retrieval_path = f"{args.root_path}/retrieval/rag_retrieval_indexes.json"
     embedder_path = f"{root}/models/bge-base-en-v1.5"
     vector_db_path = f"{root}/data/indices/bge_index.faiss"
