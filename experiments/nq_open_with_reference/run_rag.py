@@ -84,7 +84,7 @@ def initiate_pipeline(args: RagConfig) -> RAGPipeline:
         size_index=args.size_index,
         lm_configs=args.lm_configs,
         instruction=INSTRUCTIONS_DICT[args.instruction],
-        root_path=f"runs",
+        root_path=args.root_path,
         tags = args.tags,
         log=args.log,
         batch_size=3610,

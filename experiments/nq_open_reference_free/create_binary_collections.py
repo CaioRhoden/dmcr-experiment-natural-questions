@@ -7,7 +7,7 @@ from pathlib import Path
 
 def voting_to_binary(df: pl.DataFrame) -> pl.DataFrame:
     """Convert 'evaluation' column to binary (1 if > 0, else 0)."""
-    return df.with_columns((pl.col("evaluation").is_in([0.1, 0.066667])).cast(pl.Int32).alias("evaluation"))
+    return df.with_columns((pl.col("evaluation").is_in([1.0, 0.666667])).cast(pl.Int32).alias("evaluation"))
 
 def to_binary(df: pl.DataFrame) -> pl.DataFrame:
     """Convert 'evaluation' column to binary (1 if > 0, else 0)."""
@@ -20,9 +20,7 @@ def read_ipc(path: Path) -> pl.DataFrame:
     return pl.read_ipc(path, memory_map=False)
 
 
-def write_ipc(df: pl.DataFrame, path: Path) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    df.write_ipc(path, compression="zstd")
+
 
 
 def _read_feather_files(file_paths) -> list[pl.DataFrame]:
@@ -36,70 +34,54 @@ def _read_feather_files(file_paths) -> list[pl.DataFrame]:
     return dfs
 
 
-def unify_and_process_runs(runs_dir: Path, output_dir: Path, pattern=None, processing=True) -> None:
+def unify_and_process_runs(target_dir: Path, output_dir: Path, processing=False) -> None:
     """Unify checkpoints per split for each experiment and save binary collections."""
-    pattern = pattern or "None"
     
-
-    collections_path = runs_dir / "datamodels" / "collections"
+        
+    # Get filtered feather files matching pattern
+    feather_files = [
+        f for f in sorted(target_dir.glob("*.feather"))
+    ]
     
-    for split in ["train", "test"]:
-        split_path = collections_path / split
-        if not split_path.exists():
-            continue
-        
-        # Get filtered feather files matching pattern
-        feather_files = [
-            f for f in sorted(split_path.glob("*.feather"))
-            if pattern in f.name
-        ]
-        if not feather_files:
-            continue
+    # Read, unify, and save
+    dfs = _read_feather_files(feather_files)
+    
+    
+    if processing:
+        unified = voting_to_binary(pl.concat(dfs, how="vertical"))
 
-        
-        # Read, unify, and save
-        dfs = _read_feather_files(feather_files)
-        if not dfs:
-            continue
-        
-        
-        if processing:
-            if pattern == "Voting":
-                unified = voting_to_binary(pl.concat(dfs, how="vertical"))
-            else:
-                unified = to_binary(pl.concat(dfs, how="vertical"))
+    else:
+        unified = pl.concat(dfs, how="vertical")
 
-        else:
-            unified = pl.concat(dfs, how="vertical")
+    os.makedirs(output_dir, exist_ok=True)
 
-        os.makedirs(output_dir, exist_ok=True)
-
-        out_path = output_dir / f"{split}.feather"
-        write_ipc(unified, out_path)
+    out_path = "train.feather"
+    unified.write_ipc(output_dir / out_path)
 
 
 
 def main() -> None:
 
     # unify_and_process_runs(
-    #     runs_dir=Path("runs"),
-    #     output_dir=Path("binary_collections/f1_binary_collection"),
-    #     pattern="f1_collection",
+    #     target_dir=Path("judge_collections/runs/naive"),
+    #     output_dir=Path("binary_collections/naive"),
     # )
 
     # unify_and_process_runs(
-    #     runs_dir=Path("runs"),
-    #     output_dir=Path("binary_collections/f1_collection"),
-    #     pattern="f1_collection",
-    #     processing=False,
+    #     target_dir=Path("judge_collections/runs/pairwise_rag_judge"),
+    #     output_dir=Path("binary_collections/pairwise_rag"),
     # )
 
     # unify_and_process_runs(
-    #     runs_dir=Path("runs"),
-    #     output_dir=Path("binary_collections/em_collection"),
-    #     pattern="em_collection",
+    #     target_dir=Path("judge_collections/runs/pairwise_zeroshot_judge"),
+    #     output_dir=Path("binary_collections/pairwise_zeroshot"),
     # )
 
+    unify_and_process_runs(
+        target_dir=Path("judge_collections/runs/voting_naive"),
+        output_dir=Path("binary_collections/voting_naive"),
+        processing=True,
+    )   
 
 
 if __name__ == "__main__":

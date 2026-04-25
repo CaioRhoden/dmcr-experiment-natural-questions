@@ -10,7 +10,8 @@ set_random_seed(42)
 root = Path(__file__).parent.parent.parent
 @dataclass
 class ZeroShotConfig:
-    log: bool = True    
+    log: bool = True
+    root_path: str = "runs"
 
         
         
@@ -28,7 +29,7 @@ if __name__ == "__main__":
         },
         model_run_id="zeroshot",
         instruction="You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens",
-        root_path=f"runs",
+        root_path=args.root_path,
         project_log="nq_open_reference",
         tags = ["zeroshot"],
         log=True,
