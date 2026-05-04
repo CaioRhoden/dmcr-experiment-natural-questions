@@ -339,7 +339,7 @@ def run_judge_collections_pipeline(config: JudgeCollectionsConfig):
         # Save batch
         batch_file = _get_batch_filename(config, batch_idx)
         print(f"  Saving batch to {batch_file}...")
-        batch_results.write_ipc(batch_file)
+        batch_results.write_ipc(batch_file, compression="zstd")
         
         # Log batch progress to wandb
         batch_elapsed_time = time.time() - batch_start_time
@@ -350,15 +350,6 @@ def run_judge_collections_pipeline(config: JudgeCollectionsConfig):
             "batch_size_processed": len(batch_predictions),
             "predictions_processed": config.start_idx + end_idx,
         })
-    
-    # Combine all batches
-    print("\n" + "="*60)
-    combined_df = _combine_batch_files(config, num_batches)
-    
-    # Save combined results
-    combined_path = _get_combined_filename(config)
-    print(f"Saving combined results to {combined_path}...")
-    combined_df.write_ipc(combined_path)
     
     # Log final results to wandb
     total_elapsed_time = time.time() - pipeline_start_time
