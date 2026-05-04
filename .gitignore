@@ -194,3 +194,12 @@ experiments/zero_shot_low_performance/proxy_results/llama3.2-3b/rag_metrics.feat
 experiments/zero_shot_low_performance/proxy_results/llama3.2-3b/baseline_metrics.feather
 experiments/zero_shot_low_performance/proxy_results/llama3.2-3b/datamodels_metrics.feather
 experiments/zero_shot_low_performance/proxy_results/llama3.2-3b/rag_metrics.feather
+experiments/nq_open_reference_free/judge_collections/runs/list.py
+experiments/nq_open_reference_free/judge_collections/runs/list.py
+experiments/nq_open_reference_free/binary_collections/naive/train.feather
+experiments/nq_open_reference_free/binary_collections/pairwise_rag/train.feather
+experiments/nq_open_reference_free/binary_collections/pairwise_zeroshot/train.feather
+experiments/nq_open_reference_free/binary_collections/voting_naive/train.feather
+experiments/nq_open_reference_free/reference_collections/llama_em.feather
+experiments/nq_open_reference_free/reference_collections/llama_f1.feather
+experiments/nq_open_reference_free/reference_collections/llama_rougel.feather

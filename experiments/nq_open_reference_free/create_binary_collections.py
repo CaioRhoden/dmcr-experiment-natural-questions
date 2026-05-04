@@ -77,11 +77,12 @@ def main() -> None:
     #     output_dir=Path("binary_collections/pairwise_zeroshot"),
     # )
 
-    unify_and_process_runs(
-        target_dir=Path("judge_collections/runs/voting_naive"),
-        output_dir=Path("binary_collections/voting_naive"),
-        processing=True,
-    )   
+    # unify_and_process_runs(
+    #     target_dir=Path("judge_collections/runs/voting_naive"),
+    #     output_dir=Path("binary_collections/voting_naive"),
+    #     processing=True,
+    # ) 
+    # 
 
 
 if __name__ == "__main__":
