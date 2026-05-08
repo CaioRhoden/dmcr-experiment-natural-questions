@@ -13,7 +13,6 @@ from pathlib import Path
 import wandb
 root = Path(__file__).parent.parent.parent
 
-MODELS_PATH = f"{root}/models/Llama-3.2-3B-Instruct"
 
 JDUGES = {
     "PromptJudge": PromptJudge,
@@ -33,11 +32,14 @@ class JudgeCollectionsConfig:
     prompt_instruction: Literal["naive_judge", "recall_naive_judge", "pairwise_judge", "recall_pairwise_judge"] = "naive_judge"
     '''Prompt instructions to use for the judge. Options: "naive_judge", "recall_naive_judge", "pairwise_judge", "recall_pairwise_judge" from the "judge_prompts.json'''
 
+    model_path: str = "models/Llama-3.2-3B-Instruct"
+    '''Path to the language model to be used as a judge'''
+
     pairwise_rag: bool = False
     '''Whether to use RAG-based retrieval for the pairwise judge. Only applicable if judge_type is "PairwiseJudge".'''
 
     saving_dir: str = "judge_collections"
-    '''Path to save the results.'''
+    '''Path to save the results. Batch files are saved as batch_{collection_start:04d}_{collection_end:04d}.feather.'''
 
     regex_pattern: str =  r'\[(\d+)\]'
     '''Regex pattern to extract scores from model output.'''
@@ -45,17 +47,18 @@ class JudgeCollectionsConfig:
     mode: str = "train"
     '''Whether to run on "train" or "test" pre-collections.'''
 
-    batch_size: int = 541500
-    '''Batch size for processing predictions. Adjust based on available memory.'''
+    batch_size: int = 250
+    '''Number of collections to process per batch file. Each batch file will contain predictions from batch_size collections.'''
 
     n_generations: int = 1
     '''Number of generations by judge'''
 
-    start_idx: int = 0
-    '''Starting index for predictions to process. Must be divisible by the number of questions.'''
+    start_collection_idx: int = 0
+    '''Starting collection index to process (inclusive). Collections are ordered by collection_idx.'''
 
-    end_idx: int | None = 7220000
-    '''Ending index for predictions to process. Must be divisible by the number of questions. If None, processes all predictions.'''
+    end_collection_idx: int | None = None
+    '''Ending collection index to process (inclusive). If None, processes all collections from start_collection_idx to the end.'''
+    
     runs_path: str = f"runs"
     
 def _get_zero_shot_generations(runs_path: str) -> list[str]:
@@ -98,44 +101,52 @@ def _load_judge_prompts() -> dict:
     else:
         raise FileNotFoundError(f"Judge prompts file not found at {prompts_path}. Please create a judge_prompts.json file with the necessary prompts.")
 
-def _get_batch_filename(config: JudgeCollectionsConfig, batch_idx: int) -> str:
+def _get_batch_filename(config: JudgeCollectionsConfig, collection_start_idx: int, collection_end_idx: int) -> str:
     '''
-    Generate a filename for a batch.
-    '''
-    return os.path.join(config.saving_dir, f"batch_{batch_idx:04d}.feather")
-
-def _get_combined_filename(config: JudgeCollectionsConfig) -> str:
-    '''
-    Generate the combined filename.
-    '''
-    return os.path.join(config.saving_dir, f"results_combined.feather")
-
-def _combine_batch_files(config: JudgeCollectionsConfig, num_batches: int) -> pl.DataFrame:
-    '''
-    Combine all batch files into a single DataFrame.
+    Generate a filename for a batch based on collection indices.
     
     Args:
         config: Configuration object
-        num_batches: Number of batches to combine
-        
-    Returns:
-        Combined DataFrame
+        collection_start_idx: Starting collection index (inclusive)
+        collection_end_idx: Ending collection index (inclusive)
     '''
-    print("Combining all batches...")
-    combined_results = []
+    return os.path.join(config.saving_dir, f"batch_{collection_start_idx:04d}_{collection_end_idx:04d}.feather")
+
+# def _get_combined_filename(config: JudgeCollectionsConfig) -> str:
+#     '''
+#     Generate the combined filename.
+#     '''
+#     return os.path.join(config.saving_dir, f"results_combined.feather")
+
+# def _combine_batch_files(config: JudgeCollectionsConfig) -> pl.DataFrame:
+#     '''
+#     Combine all batch files into a single DataFrame.
     
-    for batch_idx in range(num_batches):
-        batch_file = _get_batch_filename(config, batch_idx)
-        if os.path.exists(batch_file):
-            combined_results.append(pl.read_ipc(batch_file))
-            print(f"  Loaded batch {batch_idx}")
-        else:
-            print(f"  Warning: Batch file {batch_file} not found")
+#     Args:
+#         config: Configuration object
+        
+#     Returns:
+#         Combined DataFrame
+#     '''
+#     print("Combining all batches...")
+#     combined_results = []
     
-    if combined_results:
-        return pl.concat(combined_results, how="vertical")
-    else:
-        raise RuntimeError("No batch files found to combine")
+#     # Find all batch files matching the pattern batch_*.feather
+#     batch_pattern = os.path.join(config.saving_dir, "batch_*.feather")
+#     batch_files = sorted([f for f in os.listdir(config.saving_dir) if f.startswith("batch_") and f.endswith(".feather")])
+    
+#     if not batch_files:
+#         raise RuntimeError(f"No batch files found matching pattern '{batch_pattern}'")
+    
+#     for batch_file_name in batch_files:
+#         batch_file_path = os.path.join(config.saving_dir, batch_file_name)
+#         combined_results.append(pl.read_ipc(batch_file_path))
+#         print(f"  Loaded {batch_file_name}")
+    
+#     if combined_results:
+#         return pl.concat(combined_results, how="vertical")
+#     else:
+#         raise RuntimeError("No batch files found to combine")
 
 def _run_judge_evaluations(
     config: JudgeCollectionsConfig,
@@ -153,7 +164,7 @@ def _run_judge_evaluations(
     '''
     # Initialize model
     model = GenericVLLMBatch(
-        path=MODELS_PATH,
+        path=f"{root}/{config.model_path}",
         vllm_kwargs={
             "max_model_len": 32768,
             "tensor_parallel_size": 1,
@@ -250,12 +261,23 @@ def run_judge_collections_pipeline(config: JudgeCollectionsConfig):
     pre_collections = _get_pre_collections(f"{config.runs_path}/datamodels/pre_collections/{config.mode}")
     questions = pl.read_ipc(f"{root}/data/nq_open/processed/dev.feather").with_row_index("test_idx")
 
-
-    ## Guarantee that it's possible to compute the Pairwise judges
-    assert config.batch_size%len(questions) == 0, f"Batch size {config.batch_size} must be a multiple of the number of questions {len(questions)} to ensure proper alignment for PairwiseJudge."
-    assert config.start_idx % len(questions) == 0, f"start_idx {config.start_idx} must be divisible by the number of questions {len(questions)}."
-    assert config.end_idx % len(questions) == 0, f"end_idx {config.end_idx} must be divisible by the number of questions {len(questions)}."
-    assert config.start_idx < config.end_idx, f"start_idx {config.start_idx} must be less than end_idx {config.end_idx}."
+    # Get unique collection indices
+    unique_collection_indices = sorted(pre_collections["collection_idx"].unique().to_list())
+    max_collection_idx = unique_collection_indices[-1]
+    
+    # Validate and set collection index ranges
+    assert config.start_collection_idx >= 0, f"start_collection_idx {config.start_collection_idx} must be >= 0."
+    assert config.start_collection_idx <= max_collection_idx, f"start_collection_idx {config.start_collection_idx} must be <= max collection index {max_collection_idx}."
+    
+    if config.end_collection_idx is None:
+        config.end_collection_idx = max_collection_idx
+    
+    assert config.end_collection_idx >= config.start_collection_idx, f"end_collection_idx {config.end_collection_idx} must be >= start_collection_idx {config.start_collection_idx}."
+    assert config.end_collection_idx <= max_collection_idx, f"end_collection_idx {config.end_collection_idx} must be <= max collection index {max_collection_idx}."
+    
+    # Filter collection indices to the specified range
+    selected_collection_indices = [c for c in unique_collection_indices if config.start_collection_idx <= c <= config.end_collection_idx]
+    num_collections = len(selected_collection_indices)
 
     print("Loading judge prompts...")
     judge_prompts = _load_judge_prompts()
@@ -270,55 +292,41 @@ def run_judge_collections_pipeline(config: JudgeCollectionsConfig):
         how="left"
     )
     
-    ## set all questions - one question per prediction (matched via test_idx)
-    all_questions = pre_collections["question"].to_list()
-
-    ## ASSUMES ONLY ONE GENERATION PER QUESTIONS 
-    all_predictions = [str(pred[0]) for pred in pre_collections["predicted_output"].to_list()]
-
-
-    # Set end_idx to total predictions if not specified
-    if config.end_idx is None:
-        config.end_idx = len(all_predictions)
-
-
-    # Slice predictions to the specified range
-    sliced_predictions = all_predictions[config.start_idx:config.end_idx]
-    sliced_questions = all_questions[config.start_idx:config.end_idx]
-    sliced_pre_collections = pre_collections.slice(config.start_idx, config.end_idx - config.start_idx)
-
-    # Calculate number of batches
-    num_batches = (len(sliced_predictions) + config.batch_size - 1) // config.batch_size
-    print(f"Processing {len(sliced_predictions)} predictions (from index {config.start_idx} to {config.end_idx}) in {num_batches} batch(es) of size {config.batch_size}")
+    # Calculate number of batches based on collections
+    num_batches = (num_collections + config.batch_size - 1) // config.batch_size
+    print(f"Processing {num_collections} collections (from {config.start_collection_idx} to {config.end_collection_idx}) in {num_batches} batch(es) of size {config.batch_size}")
     
     # Log initial config to wandb
     wandb.log({
-        "total_predictions": len(sliced_predictions),
+        "start_collection_idx": config.start_collection_idx,
+        "end_collection_idx": config.end_collection_idx,
+        "num_collections": num_collections,
         "num_batches": num_batches,
-        "batch_size": config.batch_size,
-        "start_idx": config.start_idx,
-        "end_idx": config.end_idx,
+        "batch_size_collections": config.batch_size,
+        "n_generations": config.n_generations,
     })
     
-    # Process predictions in batches
+    # Process collections in batches
     batch_start_time = time.time()
     for batch_idx in range(num_batches):
-        start_idx = batch_idx * config.batch_size
+        # Determine the range of collections for this batch
+        batch_collection_start_offset = batch_idx * config.batch_size
+        batch_collection_end_offset = min((batch_idx + 1) * config.batch_size, num_collections)
         
-        # Adjust batch size for last batch: use remaining items if less than batch_size,
-        # but ensure divisibility by number of questions
-        remaining = len(sliced_predictions) - start_idx
-        effective_batch_size = config.batch_size
-        if remaining < config.batch_size:
-            effective_batch_size = (remaining // len(questions)) * len(questions)
+        batch_collection_indices = selected_collection_indices[batch_collection_start_offset:batch_collection_end_offset]
+        collection_start = batch_collection_indices[0]
+        collection_end = batch_collection_indices[-1]
         
-        end_idx = start_idx + effective_batch_size
+        # Filter pre_collections to only include rows for the selected collection indices
+        batch_pre_collections = pre_collections.filter(
+            pl.col("collection_idx").is_in(batch_collection_indices)
+        )
         
-        batch_predictions = sliced_predictions[start_idx:end_idx]
-        batch_questions = sliced_questions[start_idx:end_idx]
-        batch_pre_collections = sliced_pre_collections.slice(start_idx, end_idx - start_idx)
+        # Extract predictions and questions for this batch
+        batch_predictions = [str(pred[0]) for pred in batch_pre_collections["predicted_output"].to_list()]
+        batch_questions = batch_pre_collections["question"].to_list()
         
-        print(f"\nBatch {batch_idx + 1}/{num_batches} (samples {config.start_idx + start_idx}-{config.start_idx + end_idx - 1})...")
+        print(f"\nBatch {batch_idx + 1}/{num_batches} (collections {collection_start}-{collection_end}, {len(batch_collection_indices)} collections, {len(batch_predictions)} predictions)...")
         
         judge_class = JDUGES[config.judge_type]
         print(f"  Running {config.judge_type} evaluations...")
@@ -337,7 +345,7 @@ def run_judge_collections_pipeline(config: JudgeCollectionsConfig):
         ).explode("evaluation")
         
         # Save batch
-        batch_file = _get_batch_filename(config, batch_idx)
+        batch_file = _get_batch_filename(config, collection_start, collection_end)
         print(f"  Saving batch to {batch_file}...")
         batch_results.write_ipc(batch_file, compression="zstd")
         
@@ -347,8 +355,10 @@ def run_judge_collections_pipeline(config: JudgeCollectionsConfig):
             "batch_idx": batch_idx + 1,
             "batch_num_batches": num_batches,
             "batch_elapsed_time_sec": batch_elapsed_time,
-            "batch_size_processed": len(batch_predictions),
-            "predictions_processed": config.start_idx + end_idx,
+            "batch_collection_start": collection_start,
+            "batch_collection_end": collection_end,
+            "batch_num_collections": len(batch_collection_indices),
+            "batch_num_predictions": len(batch_predictions),
         })
     
     # Log final results to wandb
@@ -356,7 +366,7 @@ def run_judge_collections_pipeline(config: JudgeCollectionsConfig):
     wandb.log({
         "total_elapsed_time_sec": total_elapsed_time,
         "total_batches_processed": num_batches,
-        "total_predictions_processed": len(sliced_predictions),
+        "total_collections_processed": num_collections,
     })
     
     print(f"Total time elapsed: {total_elapsed_time:.2f} seconds")
