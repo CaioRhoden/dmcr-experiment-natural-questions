@@ -49,13 +49,17 @@ class RagConfig:
     tags: list[str] = field(default_factory=lambda: ["rag"])
     '''List of tags for the experiment.'''
 
-    root_path: str = "runs"
+    root_path: str = "runs/llama"
+    '''Root path for saving results and logs.'''
 
     ## Config
     only_generate: bool = False
     '''Whether to only run the generation step.'''
     only_retrieval: bool = False
     '''Whether to only run the retrieval step.'''
+    language_model_path: str = "models/Llama-3.2-3B-Instruct"
+    '''Path to the language model to be used in the pipeline.'''
+
 
 
 
@@ -77,7 +81,7 @@ def initiate_pipeline(args: RagConfig) -> RAGPipeline:
         embedder_path=f"{root}/models/bge-base-en-v1.5",
         vector_db_path=f"{root}/data/indices/bge_index.faiss",
         questions_path=f"{root}/data/nq_open/processed/dev.feather",
-        language_model_path=f"{root}/models/Llama-3.2-3B-Instruct",
+        language_model_path=f"{root}/{args.language_model_path}",
         project_log=args.project_log,
         model_run_id=args.model_run_id,
         k=args.k,

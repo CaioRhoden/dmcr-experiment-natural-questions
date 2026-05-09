@@ -12,6 +12,7 @@ root = Path(__file__).parent.parent.parent
 class ZeroShotConfig:
     log: bool = True
     root_path: str = "runs"
+    language_model_path: str = "models/Llama-3.2-3B-Instruct"
 
         
         
@@ -21,7 +22,7 @@ if __name__ == "__main__":
     ## Load dataclass as args
     baseline = ZeroShotBaselinePipeline(
         questions_path=f"{root}/data/nq_open/processed/dev.feather",
-        language_model_path=f"{root}/models/Llama-3.2-3B-Instruct",
+        language_model_path=f"{root}/{args.language_model_path}",
         lm_configs={
             "temperature": 0.7,
             "top_p": 0.9,
