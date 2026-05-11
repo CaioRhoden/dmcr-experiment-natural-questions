@@ -81,44 +81,107 @@ def unify_and_process_runs(runs_dir: Path, output_dir: Path, pattern=None, proce
 
 def main() -> None:
 
-    unify_and_process_runs(
-        runs_dir=Path("runs"),
-        output_dir=Path("binary_collections/rougel_binary_collection"),
-        pattern="default_collection",
-    )
+    ##"llama" runs
+    # unify_and_process_runs(
+    #     runs_dir=Path("runs/llama"),
+    #     output_dir=Path("processed_collections/rougel_binary_collection"),
+    #     pattern="default_collection",
+    # )
+
+    # unify_and_process_runs(
+    #     runs_dir=Path("runs/llama"),
+    #     output_dir=Path("processed_collections/rougel_collection"),
+    #     pattern="default_collection",
+    #     processing=False,
+    # )
+
+
+    # unify_and_process_runs(
+    #     runs_dir=Path("runs/llama"),
+    #     output_dir=Path("processed_collections/f1_binary_collection"),
+    #     pattern="f1_collection",
+    # )
+
+    # unify_and_process_runs(
+    #     runs_dir=Path("runs/llama"),
+    #     output_dir=Path("processed_collections/f1_collection"),
+    #     pattern="f1_collection",
+    #     processing=False,
+    # )
+
+    # unify_and_process_runs(
+    #     runs_dir=Path("runs/llama"),
+    #     output_dir=Path("processed_collections/em_collection"),
+    #     pattern="em_collection",
+    # )
+
+    ## "llama_default" runs
+
 
     unify_and_process_runs(
-        runs_dir=Path("runs"),
-        output_dir=Path("binary_collections/rougel_collection"),
-        pattern="default_collection",
-        processing=False,
-    )
-
-
-    unify_and_process_runs(
-        runs_dir=Path("runs"),
-        output_dir=Path("binary_collections/f1_binary_collection"),
+        runs_dir=Path("runs/llama_default"),
+        output_dir=Path("processed_collections/llama_default/f1_binary_collection"),
         pattern="f1_collection",
     )
 
     unify_and_process_runs(
-        runs_dir=Path("runs"),
-        output_dir=Path("binary_collections/f1_collection"),
+        runs_dir=Path("runs/llama_default"),
+        output_dir=Path("processed_collections/llama_default/f1_collection"),
         pattern="f1_collection",
         processing=False,
     )
 
     unify_and_process_runs(
-        runs_dir=Path("runs"),
-        output_dir=Path("binary_collections/em_collection"),
+        runs_dir=Path("runs/llama_default"),
+        output_dir=Path("processed_collections/llama_default/em_collection"),
         pattern="em_collection",
     )
 
-        unify_and_process_runs(
-        runs_dir=Path("runs"),
-        output_dir=Path("binary_collections/f1_binary_collection"),
+    ## "qwen" runs
+
+
+    # unify_and_process_runs(
+    #     runs_dir=Path("runs/llama_default"),
+    #     output_dir=Path("processed_collections/f1_binary_collection"),
+    #     pattern="f1_collection",
+    # )
+
+    # unify_and_process_runs(
+    #     runs_dir=Path("runs/llama_default"),
+    #     output_dir=Path("processed_collections/f1_collection"),
+    #     pattern="f1_collection",
+    #     processing=False,
+    # )
+
+    # unify_and_process_runs(
+    #     runs_dir=Path("runs/llama_default"),
+    #     output_dir=Path("processed_collections/em_collection"),
+    #     pattern="em_collection",
+    # )
+
+    ## "qwen_default" runs
+
+
+    unify_and_process_runs(
+        runs_dir=Path("runs/qwen_default"),
+        output_dir=Path("processed_collections/qwen_default/f1_binary_collection"),
         pattern="f1_collection",
     )
+
+    unify_and_process_runs(
+        runs_dir=Path("runs/qwen_default"),
+        output_dir=Path("processed_collections/qwen_default/f1_collection"),
+        pattern="f1_collection",
+        processing=False,
+    )
+
+    unify_and_process_runs(
+        runs_dir=Path("runs/qwen_default"),
+        output_dir=Path("processed_collections/qwen_default/em_collection"),
+        pattern="em_collection",
+    )
+
+
 
 
 
