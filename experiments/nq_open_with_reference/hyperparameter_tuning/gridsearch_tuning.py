@@ -17,8 +17,8 @@ except Exception:
     set_random_seed = None
 
 OUTPUT_DIR = Path("")
-COLLECTIONS_DIR = Path("../processed_collections")
-DEFAULT_WORKERS = 20
+INPUT_DIR = Path("../processed_collections")
+DEFAULT_WORKERS = 10
 
 # Matches the notebook search space
 PARAM_GRID = [
@@ -45,8 +45,8 @@ PARAM_GRID = [
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="GridSearch for binary classification embeddings.")
-    parser.add_argument("--subfolder", choices=["em_collection", "f1_binary_collection", "rougel_binary_collection"], required=True,
-                        help="Which binary collection to use.")
+    parser.add_argument("--subfolder", choices=["em_collection", "f1_binary_collection", "rougel_binary_collection"], required=True, help="Which binary collection to use.")
+    parser.add_argument("--collection", choices=["llama", "llama_default", "qwen", "qwen_default"], type=str, default="", help="Directory to save the best params JSON file.")
     return parser.parse_args()
 
 
@@ -57,8 +57,8 @@ def ensure_seed(seed: int = 42) -> None:
         np.random.seed(seed)
 
 
-def load_train_data(subfolder: str) -> Tuple[np.ndarray, np.ndarray]:
-    path = COLLECTIONS_DIR / subfolder / "train.feather"
+def load_train_data(subfolder: str, collection_dir: str) -> Tuple[np.ndarray, np.ndarray]:
+    path = INPUT_DIR / collection_dir / subfolder / "train.feather"
     if not path.exists():
         raise FileNotFoundError(f"Could not find data at {path}")
 
@@ -170,14 +170,16 @@ def main() -> None:
 
     max_workers = min(DEFAULT_WORKERS, os.cpu_count() or 1, DEFAULT_WORKERS)
 
-    X, y = load_train_data(args.subfolder)
+    X, y = load_train_data(args.subfolder, args.collection)
     X_splits, y_splits = split_interleaved(X, y, num_arrays=3610)
 
     # Parallel Optuna optimization over the 3610 slices, capped at 10 workers
+    print(f"Starting parallel GridSearch with up to {max_workers} workers...")
     results = Parallel(n_jobs=max_workers, prefer="processes")(
         delayed(run_grid_search_single)(X_splits[i], y_splits[i]) for i in range(len(X_splits))
     )
 
+    print("Completed all GridSearch runs. Processing results...")
     # Normalize numpy types for JSON serialization
     for entry in results:
         if "best_params" in entry:
@@ -198,7 +200,7 @@ def main() -> None:
             })
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    out_path = OUTPUT_DIR / f"best_params_gridsearch_{args.subfolder}.json"
+    out_path = OUTPUT_DIR / args.collection / f"best_params_gridsearch_{args.subfolder}.json"
 
     payload = {
         "subfolder": args.subfolder,
