@@ -652,8 +652,26 @@ class RAGBasedExperimentPipeline:
     def get_datamodels_generations(
             self,
             datamodels_generation_name,
-            model_run_id
+            model_run_id,
+            extract_flag:bool = False
         ):
+
+        def extract_response(text: str):
+            pattern1 = r"response:\s*\[+(.*?)\]+"
+            pattern2 = r"no-res"
+            pattern3 = r"response:\s*(.*)"
+            
+            match1= re.search(pattern1, text.lower())
+            match2 = re.search(pattern2, text.lower())
+            match3 = re.search(pattern3, text.lower())
+            if match1:
+                return match1.group(1).strip()
+            elif match2:
+                return "NO-RES"
+            elif match3:
+                return match3.group(1).strip()
+            else:
+                return " ".join(text.strip().split(" ")[:15])
 
 
         ## Setup variables
@@ -738,7 +756,8 @@ class RAGBasedExperimentPipeline:
                     for i, _q in enumerate(batch_list):
                         generations[f"{_q[0]}"] = []
                         for gen in range(outputs[i].__len__()):
-                            generations[f"{_q[0]}"].append(str(outputs[i][gen]["generated_text"]))
+                            response = extract_response(outputs[i][gen]["generated_text"]) if extract_flag else str(outputs[i][gen]["generated_text"])
+                            generations[f"{_q[0]}"].append(response)
                     batch_list = []
                 
                     with open(f"{self.root_path}/generations/{datamodels_generation_name}.json", "w") as f:
