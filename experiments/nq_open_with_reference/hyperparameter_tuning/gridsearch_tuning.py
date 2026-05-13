@@ -18,7 +18,7 @@ except Exception:
 
 OUTPUT_DIR = Path("")
 INPUT_DIR = Path("../processed_collections")
-DEFAULT_WORKERS = 10
+DEFAULT_WORKERS = 20
 
 # Matches the notebook search space
 PARAM_GRID = [

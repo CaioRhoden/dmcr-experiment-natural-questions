@@ -103,11 +103,12 @@ if __name__ == "__main__":
 
     pipeline = initiate_pipeline(args)
     pipeline.setup()
+    extract_flag = True if args.instruction == "extraction" else False
 
     if args.only_retrieval:
         pipeline.get_rag_retrieval()
     elif args.only_generate:
-        pipeline.get_rag_generations()
+        pipeline.get_rag_generations(extract_flag=extract_flag)
     else:
         pipeline.get_rag_retrieval()
-        pipeline.get_rag_generations()
+        pipeline.get_rag_generations(extract_flag=extract_flag)

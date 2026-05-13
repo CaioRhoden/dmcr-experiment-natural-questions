@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=f1_nq_open_collections
-#SBATCH --output=/home/caio.rhoden/slurm/%j_f1_nq_open_collections.out
-#SBATCH --error=/home/caio.rhoden/slurm/%j_f1_nq_open_collections.err
+#SBATCH --job-name=qwen_f1_nq_open_collections
+#SBATCH --output=/home/caio.rhoden/slurm/%j_qwen_f1_nq_open_collections.out
+#SBATCH --error=/home/caio.rhoden/slurm/%j_qwen_f1_nq_open_collections.err
 #SBATCH --mem=30G
 #SBATCH --cpus-per-task=2
 #SBATCH --time=12:00:00
@@ -14,26 +14,96 @@ conda activate nq
 export WANDB_MODE="offline"
 
 
-echo "RUNNING PRE_COLLECTIONS TEST"
-python run_datamodels.py \
-    --run_type collections \
-    --start_idx 0 \
-    --end_idx 7220000 \
-    --checkpoint 100000 \
-    --evaluator SquadV2 \
-    --num_subprocesses 1 \
-    --collection_id f1_collection \
-    --root_path runs_default \
-    --mode train
+# echo "RUNNING PRE_COLLECTIONS TEST"
+# python run_datamodels.py \
+#     --run_type collections \
+#     --start_idx 0 \
+#     --end_idx 7220000 \
+#     --checkpoint 100000 \
+#     --evaluator SquadV2 \
+#     --num_subprocesses 1 \
+#     --collection_id f1_collection \
+#     --root_path runs/llama \
+#     --mode train
+
+# echo "RUNNING PRE_COLLECTIONS TEST"
+# python run_datamodels.py \
+#     --run_type collections \
+#     --start_idx 0 \
+#     --end_idx 722000 \
+#     --checkpoint 100000 \
+#     --evaluator SquadV2 \
+#     --collection_id f1_collection \
+#     --root_path runs/llama \
+#     --mode test
+
+
+# echo "RUNNING PRE_COLLECTIONS TEST"
+# python run_datamodels.py \
+#     --run_type collections \
+#     --start_idx 0 \
+#     --end_idx 7220000 \
+#     --checkpoint 100000 \
+#     --evaluator SquadV2 \
+#     --num_subprocesses 1 \
+#     --collection_id f1_collection \
+#     --root_path runs/llama_default \
+#     --mode train
+
+# echo "RUNNING PRE_COLLECTIONS TEST"
+# python run_datamodels.py \
+#     --run_type collections \
+#     --start_idx 0 \
+#     --end_idx 722000 \
+#     --checkpoint 722000 \
+#     --evaluator SquadV2 \
+#     --collection_id f1_collection \
+#     --root_path runs/llama_default \
+#     --mode test
+
+
+# echo "RUNNING PRE_COLLECTIONS TEST"
+# python run_datamodels.py \
+#     --run_type collections \
+#     --start_idx 0 \
+#     --end_idx 7220000 \
+#     --checkpoint 100000 \
+#     --evaluator SquadV2 \
+#     --num_subprocesses 1 \
+#     --collection_id f1_collection \
+#     --root_path runs/qwen \
+#     --mode train
 
 echo "RUNNING PRE_COLLECTIONS TEST"
 python run_datamodels.py \
     --run_type collections \
     --start_idx 0 \
     --end_idx 722000 \
-    --checkpoint 100000 \
+    --checkpoint 722000 \
     --evaluator SquadV2 \
     --collection_id f1_collection \
-    --root_path runs_default \
+    --root_path runs/qwen \
     --mode test
 
+# echo "RUNNING PRE_COLLECTIONS TEST"
+# python run_datamodels.py \
+#     --run_type collections \
+#     --start_idx 0 \
+#     --end_idx 7220000 \
+#     --checkpoint 100000 \
+#     --evaluator SquadV2 \
+#     --num_subprocesses 1 \
+#     --collection_id f1_collection \
+#     --root_path runs/qwen_default \
+#     --mode train
+
+# echo "RUNNING PRE_COLLECTIONS TEST"
+# python run_datamodels.py \
+#     --run_type collections \
+#     --start_idx 0 \
+#     --end_idx 722000 \
+#     --checkpoint 722000\
+#     --evaluator SquadV2 \
+#     --collection_id f1_collection \
+#     --root_path runs/qwen_default \
+#     --mode test

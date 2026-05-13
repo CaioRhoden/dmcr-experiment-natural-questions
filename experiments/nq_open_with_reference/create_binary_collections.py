@@ -118,68 +118,68 @@ def main() -> None:
     ## "llama_default" runs
 
 
-    unify_and_process_runs(
-        runs_dir=Path("runs/llama_default"),
-        output_dir=Path("processed_collections/llama_default/f1_binary_collection"),
-        pattern="f1_collection",
-    )
-
-    unify_and_process_runs(
-        runs_dir=Path("runs/llama_default"),
-        output_dir=Path("processed_collections/llama_default/f1_collection"),
-        pattern="f1_collection",
-        processing=False,
-    )
-
-    unify_and_process_runs(
-        runs_dir=Path("runs/llama_default"),
-        output_dir=Path("processed_collections/llama_default/em_collection"),
-        pattern="em_collection",
-    )
-
-    ## "qwen" runs
-
-
     # unify_and_process_runs(
     #     runs_dir=Path("runs/llama_default"),
-    #     output_dir=Path("processed_collections/f1_binary_collection"),
+    #     output_dir=Path("processed_collections/llama_default/f1_binary_collection"),
     #     pattern="f1_collection",
     # )
 
     # unify_and_process_runs(
     #     runs_dir=Path("runs/llama_default"),
-    #     output_dir=Path("processed_collections/f1_collection"),
+    #     output_dir=Path("processed_collections/llama_default/f1_collection"),
     #     pattern="f1_collection",
     #     processing=False,
     # )
 
     # unify_and_process_runs(
     #     runs_dir=Path("runs/llama_default"),
-    #     output_dir=Path("processed_collections/em_collection"),
+    #     output_dir=Path("processed_collections/llama_default/em_collection"),
     #     pattern="em_collection",
     # )
 
-    ## "qwen_default" runs
+    ## "qwen" runs
 
 
     unify_and_process_runs(
-        runs_dir=Path("runs/qwen_default"),
-        output_dir=Path("processed_collections/qwen_default/f1_binary_collection"),
+        runs_dir=Path("runs/qwen"),
+        output_dir=Path("processed_collections/qwen/f1_binary_collection"),
         pattern="f1_collection",
     )
 
     unify_and_process_runs(
-        runs_dir=Path("runs/qwen_default"),
-        output_dir=Path("processed_collections/qwen_default/f1_collection"),
+        runs_dir=Path("runs/qwen"),
+        output_dir=Path("processed_collections/qwen/f1_collection"),
         pattern="f1_collection",
         processing=False,
     )
 
     unify_and_process_runs(
-        runs_dir=Path("runs/qwen_default"),
-        output_dir=Path("processed_collections/qwen_default/em_collection"),
+        runs_dir=Path("runs/qwen"),
+        output_dir=Path("processed_collections/qwen/em_collection"),
         pattern="em_collection",
     )
+
+    ## "qwen_default" runs
+
+
+    # unify_and_process_runs(
+    #     runs_dir=Path("runs/qwen_default"),
+    #     output_dir=Path("processed_collections/qwen_default/f1_binary_collection"),
+    #     pattern="f1_collection",
+    # )
+
+    # unify_and_process_runs(
+    #     runs_dir=Path("runs/qwen_default"),
+    #     output_dir=Path("processed_collections/qwen_default/f1_collection"),
+    #     pattern="f1_collection",
+    #     processing=False,
+    # )
+
+    # unify_and_process_runs(
+    #     runs_dir=Path("runs/qwen_default"),
+    #     output_dir=Path("processed_collections/qwen_default/em_collection"),
+    #     pattern="em_collection",
+    # )
 
 
 
