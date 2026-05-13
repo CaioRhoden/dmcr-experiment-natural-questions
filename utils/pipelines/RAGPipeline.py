@@ -4,6 +4,7 @@ from html import parser
 from tracemalloc import start
 from typing import Optional, Literal
 from unittest.mock import Base
+import re
 import polars as pl
 import os
 import torch
@@ -80,6 +81,23 @@ class RAGPipeline:
         if self.seed is not None:
             set_random_seed(self.seed)
 
+    def extract_response(self, text: str):
+        pattern1 = r"response:\s*\[+(.*?)\]+"
+        pattern2 = r"no-res"
+        pattern3 = r"response:\s*(.*)"
+        
+        match1= re.search(pattern1, text.lower())
+        match2 = re.search(pattern2, text.lower())
+        match3 = re.search(pattern3, text.lower())
+        if match1:
+            return match1.group(1).strip()
+        elif match2:
+            return "NO-RES"
+        elif match3:
+            return match3.group(1).strip()
+        else:
+            return " ".join(text.strip().split(" ")[:15])
+
 
     def setup(self):
 
@@ -99,7 +117,7 @@ class RAGPipeline:
         if not os.path.exists(f"{self.root_path}/logs"):
             os.mkdir(f"{self.root_path}/logs")
 
-    def _parse_generation_output(self, output: list) -> str:
+    def _parse_generation_output(self, output: list, extract_flag: bool = False) -> str:
         """
         Parse the output of the generation model, analyze if is it "enable_thinking"
 
@@ -118,6 +136,10 @@ class RAGPipeline:
                 parsed_output = str(out["generated_text"].split("</think>")[-1].strip())
             else:
                 parsed_output = str(out["generated_text"])
+            
+            if extract_flag:
+                parsed_output = self.extract_response(parsed_output)
+                
             results.append(parsed_output)
 
         return results
@@ -213,8 +235,8 @@ class RAGPipeline:
 
     def get_rag_generations(self, 
                             model: None | BatchModel | BaseLLM = None,
-                            retrieval_path: str = "retrieval/rag_retrieval_indexes.json"
-
+                            retrieval_path: str = "retrieval/rag_retrieval_indexes.json",
+                            extract_flag: bool = False
                         ):
         """
         Get RAG generations for the given batch model language model.
@@ -289,7 +311,6 @@ class RAGPipeline:
             
             if self.batch_size > 1:
                 if len(batch_list) < self.batch_size:
-                    print(f"DEBUG: Adding question {idx} to batch list. Current batch size: {len(batch_list)}")
                     batch_list.append((idx, prompt))
                 
                 if len(batch_list) == self.batch_size or idx == (len(questions) - 1):
@@ -300,7 +321,7 @@ class RAGPipeline:
                         config_params=self.lm_configs
                     )
                     for i, _q in enumerate(batch_list):
-                        generations[f"{_q[0]}"] = self._parse_generation_output(outputs[i])
+                        generations[f"{_q[0]}"] = self._parse_generation_output(outputs[i], extract_flag=extract_flag)
                     batch_list = []
                 
                     if self.model_run_id is None:
@@ -321,7 +342,7 @@ class RAGPipeline:
                     config_params=self.lm_configs
                 )
 
-                generations[f"{idx}"] = self._parse_generation_output(outputs)
+                generations[f"{idx}"] = self._parse_generation_output(outputs, extract_flag=extract_flag)
 
                 if self.model_run_id is None:
                     path = f"{self.root_path}/generations/rag_generations.json"
