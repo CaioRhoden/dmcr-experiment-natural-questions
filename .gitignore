@@ -203,3 +203,4 @@ experiments/nq_open_reference_free/binary_collections/voting_naive/train.feather
 experiments/nq_open_reference_free/reference_collections/llama_em.feather
 experiments/nq_open_reference_free/reference_collections/llama_f1.feather
 experiments/nq_open_reference_free/reference_collections/llama_rougel.feather
+experiments/nq_open_reference_free/processed_collections/*
