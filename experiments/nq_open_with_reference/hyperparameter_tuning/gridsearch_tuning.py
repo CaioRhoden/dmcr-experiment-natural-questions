@@ -107,7 +107,7 @@ def run_grid_search_single(X_subset: np.ndarray, y_subset: np.ndarray) -> Dict:
     search = GridSearchCV(
         estimator=model,
         param_grid=PARAM_GRID,
-        scoring="roc_auc",
+        scoring="f1",
         cv=cv_splitter,
         n_jobs=1,
         verbose=0,
