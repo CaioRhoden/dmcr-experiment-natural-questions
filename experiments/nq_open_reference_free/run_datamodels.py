@@ -180,8 +180,10 @@ if __name__ == "__main__":
         sys.exit(0)
 
     elif args.run_type == "generation":
-
-        pipeline.get_datamodels_generations(f"{args.model_run_id}",f"{args.model_run_id}")
+        if args.instruction == "extraction":
+            pipeline.get_datamodels_generations(f"{args.model_run_id}",f"{args.model_run_id}",extract_flag=True)
+        else:
+            pipeline.get_datamodels_generations(f"{args.model_run_id}",f"{args.model_run_id}")
         pipeline.get_datamodels_retrieval(f"{args.model_run_id}")
         sys.exit(0)
 
