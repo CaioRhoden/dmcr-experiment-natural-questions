@@ -47,6 +47,10 @@ class DatamodelsConfig:
     '''Language model configuration parameters.'''
     collection_id: str = "default_collection"
     '''Identifier for the collection.'''
+    root_path: str = "runs/llama"
+    '''Root path for saving results and logs.'''
+    language_model_path: str = "models/Llama-3.2-3B-Instruct"
+    '''Path to the language model to be used in the pipeline.'''
 
     
     # RAG Based configs Config Fields
@@ -95,8 +99,8 @@ def initiate_pipeline(args: DatamodelsConfig) -> ParallelRAGBasedPipeline:
     questions_path = f"{root}/data/nq_open/processed/dev.feather"
 
     wiki_path = f"{root}/data/wiki_dump2018_nq_open/processed/wiki.feather"
-    language_model_path = f"{root}/models/Llama-3.2-3B-Instruct"
-    retrieval_path = f"runs/retrieval/rag_retrieval_indexes.json"
+    language_model_path = f"{root}/{args.language_model_path}"
+    retrieval_path = f"{args.root_path}/retrieval/rag_retrieval_indexes.json"
     embedder_path = f"{root}/models/bge-base-en-v1.5"
     vector_db_path = f"{root}/data/indices/bge_index.faiss"
 
@@ -118,7 +122,7 @@ def initiate_pipeline(args: DatamodelsConfig) -> ParallelRAGBasedPipeline:
         instruction=INSTRUCTIONS_DICT[args.instruction],
         train_samples=args.train_samples,
         test_samples=args.test_samples,
-        root_path="runs",
+        root_path=args.root_path,
         batch_size=3610,
         tags=args.tags,
         lm_configs=args.lm_configs,
