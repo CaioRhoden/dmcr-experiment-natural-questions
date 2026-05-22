@@ -1,0 +1,29 @@
+#!/bin/bash
+#SBATCH --job-name=voting_grid_search
+#SBATCH --output=/home/caio.rhoden/slurm/%j_voting_grid_search.out
+#SBATCH --error=/home/caio.rhoden/slurm/%j_voting_grid_search.err
+#SBATCH --mem=50G
+#SBATCH --cpus-per-task=22
+#SBATCH --time=48:00:00
+#SBATCH --mail-user="c214129@dac.unicamp.br"
+#SBATCH --mail-type=BEGIN,END,FAIL
+#SBATCH --partition=p5000,rtx5000,rtx8000,a5000,l40s,h100
+#SBATCH --array=3
+
+source ~/miniconda3/bin/activate
+conda activate nq
+export WANDB_MODE="offline"
+export VLLM_WORKER_MULTIPROC_METHOD=spawn
+
+FOLDERS=("naive" "pairwise_rag_judge" "pairwise_zeroshot_judge" "voting_naive")
+echo "RUNNING PARAM GRID SEARCH"
+cd hyperparameter_tuning
+# python tuning.py --subfolder em_collection
+# python tuning.py --subfolder f1_binary_collection
+# python tuning.py --subfolder rougel_binary_collection
+
+python gridsearch_tuning.py --collection llama --subfolder ${FOLDERS[$SLURM_ARRAY_TASK_ID]}
+python gridsearch_tuning.py --collection llama_default --subfolder ${FOLDERS[$SLURM_ARRAY_TASK_ID]}
+python gridsearch_tuning.py --collection qwen_default --subfolder ${FOLDERS[$SLURM_ARRAY_TASK_ID]}
+# python gridsearch_tuning.py --collection qwen --subfolder ${FOLDERS[$SLURM_ARRAY_TASK_ID]}
+# python gridsearch_tuning.py --subfolder rougel_binary_collection --collection ${FOLDERS[$SLURM_ARRAY_TASK_ID}]
