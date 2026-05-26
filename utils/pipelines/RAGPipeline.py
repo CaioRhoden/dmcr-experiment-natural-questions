@@ -43,6 +43,8 @@ class RAGPipeline:
         batch_size: int = 1,
         log: bool = False,
         language_model_path: str = "",
+        retrieval_type: str = "dpr",
+        bm25_path: Optional[str] = None,
         **kwargs, # Use kwargs to gracefully handle any extra fields
     ):
         
@@ -77,6 +79,8 @@ class RAGPipeline:
         self.attn_implementation: str = attn_implementation
         self.thinking = thinking
         self.language_model_path = language_model_path
+        self.retrieval_type = retrieval_type
+        self.bm25_path = bm25_path
 
         if self.seed is not None:
             set_random_seed(self.seed)
@@ -148,11 +152,12 @@ class RAGPipeline:
 
         ## Setup variables
         """
-        Load the faiss indices and iterate questions to get the l2 and ip retrieval data for each question.
+        Load the retrieval indices (FAISS for DPR or BM25) and iterate questions to get retrieval data.
         This function writes the retrieval data into retrieval_data.json in the retrieval folder.
 
         Parameters:
-        None
+        - nprobe (int): FAISS nprobe parameter (only used for DPR retrieval)
+        - retrieval_prefix (str): Prefix for output file names
 
         Returns:
         None
@@ -167,11 +172,18 @@ class RAGPipeline:
 
         df = pl.read_ipc(self.questions_path)
 
-        ### Load faiss indices
-        index = faiss.read_index(self.vector_db_path)
-        index.nprobe = int(nprobe)
-        # ip_index = faiss.read_index(IP_FAISS_INDEX_PATH)
-        embedder = FlagModel(self.embedder_path, devices=["cuda:0"], use_fp16=True, batch_size=1)
+        if self.retrieval_type == "dpr":
+            ### Load FAISS indices for DPR
+            index = faiss.read_index(self.vector_db_path)
+            index.nprobe = int(nprobe)
+            embedder = FlagModel(self.embedder_path, devices=["cuda:0"], use_fp16=True, batch_size=1)
+        elif self.retrieval_type == "bm25":
+            ### Load BM25 index
+            import pickle
+            with open(self.bm25_path, 'rb') as f:
+                bm25_index = pickle.load(f)
+        else:
+            raise ValueError(f"Unknown retrieval_type: {self.retrieval_type}. Must be 'dpr' or 'bm25'")
         
         if self.log:
             start_time = datetime.datetime.now()
@@ -181,11 +193,12 @@ class RAGPipeline:
                 name=f"RAG_retrieval_{self.model_run_id}",
                 id = f"RAG_retrieval_{self.model_run_id}_{start_time.strftime('%Y-%m-%d_%H-%M-%S')}",
                 config={
-                    "gpu": f"{torch.cuda.get_device_name(0)}",
+                    "gpu": f"{torch.cuda.get_device_name(0)}" if torch.cuda.is_available() else "cpu",
                     "size_index": self.size_index,
-                    "index": self.vector_db_path,
+                    "retrieval_type": self.retrieval_type,
+                    "index": self.vector_db_path if self.retrieval_type == "dpr" else self.bm25_path,
                     "questions_path": self.questions_path,
-                    "embedder_path": self.embedder_path,
+                    "embedder_path": self.embedder_path if self.retrieval_type == "dpr" else "N/A",
 
                 },
                 tags = self.tags.extend(["RAG", "retrieval"]),
@@ -201,19 +214,25 @@ class RAGPipeline:
         for idx in range(len(df)):
 
             question = df[idx]["question"].to_numpy().flatten()[0]
-            query_embedding = embedder.encode(
-                question,
-                convert_to_numpy=True,
-            )
-            query_embedding = query_embedding.astype('float32').reshape(1, -1)
-
-            ### Get l2 and ip neighbors
-            scores, ids = index.search(query_embedding, self.size_index)
-            # ip_ids, ip_scores = ip_index.search(query_embedding, 100)
-
-            retrieval_indexes[idx] = ids.tolist()[0]
-            retrieval_distances[idx] = scores.tolist()[0]
-            # retrieval_data["ip"][idx] = (ip_ids.tolist()[0], ip_scores.tolist()[0])
+            
+            if self.retrieval_type == "dpr":
+                ### DPR retrieval using FAISS
+                query_embedding = embedder.encode(
+                    question,
+                    convert_to_numpy=True,
+                )
+                query_embedding = query_embedding.astype('float32').reshape(1, -1)
+                scores, ids = index.search(query_embedding, self.size_index)
+                retrieval_indexes[idx] = ids.tolist()[0]
+                retrieval_distances[idx] = scores.tolist()[0]
+            elif self.retrieval_type == "bm25":
+                ### BM25 retrieval
+                scores = bm25_index.get_scores(question.split())
+                # Get top k indices and scores
+                top_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:self.size_index]
+                top_scores = [scores[i] for i in top_indices]
+                retrieval_indexes[idx] = top_indices
+                retrieval_distances[idx] = top_scores
 
         ## Save into json
         with open(f"{retrieval_path}", "w") as f:
