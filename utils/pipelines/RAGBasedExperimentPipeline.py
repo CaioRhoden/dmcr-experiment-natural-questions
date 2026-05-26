@@ -731,6 +731,7 @@ class RAGBasedExperimentPipeline:
 
         ## Iterate questions
         for r_idx in range(weights.size(0)):
+            print(f"Generating response for question {r_idx}")
 
             top_k = [retrieval_data[str(r_idx)][i] for i in k_indices[r_idx]]
             docs = wiki.filter(pl.col("idx").is_in(top_k))
@@ -745,9 +746,11 @@ class RAGBasedExperimentPipeline:
 
             if self.batch_size > 1 and isinstance(model, GenericInstructBatchHF| GenericVLLMBatch):
                 if len(batch_list) < self.batch_size:
+                    print(f"Adding question {r_idx} to batch")
                     batch_list.append((r_idx, prompt))
                 
                 if len(batch_list) == self.batch_size or r_idx == (len(retrieval_data) - 1):
+                    print(f"Generating batch of size {len(batch_list)}")
                     outputs = model.run(
                         [str(_q[1]) for _q in batch_list],
                         instruction=self.instruction,
