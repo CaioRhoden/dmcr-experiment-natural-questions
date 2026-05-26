@@ -11,7 +11,7 @@ root = Path(__file__).parent.parent.parent
 @dataclass
 class ZeroShotConfig:
     log: bool = True
-    root_path: str = "runs"
+    root_path: str = "runs/llama"
     language_model_path: str = "models/Llama-3.2-3B-Instruct"
 
         
