@@ -182,6 +182,7 @@ class RAGPipeline:
             import pickle
             with open(self.bm25_path, 'rb') as f:
                 bm25_index = pickle.load(f)
+            print("BM25 index loaded successfully.")
         else:
             raise ValueError(f"Unknown retrieval_type: {self.retrieval_type}. Must be 'dpr' or 'bm25'")
         
@@ -212,6 +213,7 @@ class RAGPipeline:
 
         ### Iterate questions
         for idx in range(len(df)):
+            print(f"Processing question {idx + 1}/{len(df)}...")
 
             question = df[idx]["question"].to_numpy().flatten()[0]
             

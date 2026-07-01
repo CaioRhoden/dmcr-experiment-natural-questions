@@ -14,3 +14,4 @@ rouge_score==0.1.2
 llama-index-embeddings-huggingface
 jupyter==1.1.1
 notebook==7.5.3
+rank-bm25==0.2.2
