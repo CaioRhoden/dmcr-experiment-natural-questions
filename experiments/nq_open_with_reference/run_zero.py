@@ -13,9 +13,10 @@ class ZeroShotConfig:
     log: bool = True
     root_path: str = "runs/llama"
     language_model_path: str = "models/Llama-3.2-3B-Instruct"
+    thinking: bool = False
+    max_new_tokens: int = 15
 
-        
-        
+
 if __name__ == "__main__":
     args = tyro.cli(ZeroShotConfig)
 
@@ -26,7 +27,7 @@ if __name__ == "__main__":
         lm_configs={
             "temperature": 0.7,
             "top_p": 0.9,
-            "max_new_tokens": 15,
+            "max_new_tokens": args.max_new_tokens,
         },
         model_run_id="zeroshot",
         instruction="You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens",
@@ -35,7 +36,8 @@ if __name__ == "__main__":
         tags = ["zeroshot"],
         log=True,
         seed=42,
-        batch_size=3610
+        batch_size=3610,
+        thinking=args.thinking,
     )
 
     baseline.generate_inferences()
