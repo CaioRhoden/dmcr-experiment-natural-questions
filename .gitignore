@@ -1,10 +1,18 @@
+#LFS 
+*.csv
+*.pkl
+*.json
+*.jsonl
+*.h5
+*.feather
+*.pt
+*.sh
+
 # Custom
 data
 /models
 logs
 batch_scripts/
-.csv
-.pkl
 wandb
 
 # Byte-compiled / optimized / DLL files
