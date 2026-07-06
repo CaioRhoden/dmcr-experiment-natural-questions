@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import re
 from typing import Optional, Literal
 
 import polars as pl
@@ -89,7 +90,10 @@ class ZeroShotBaselinePipeline:
         """
         parsed_output = []
         for out in output:
-            if self.thinking:
+            if self.thinking and "gpt-oss" in self.language_model_path:
+                final_match = re.search(r"assistantfinal(.*)", out["generated_text"], re.DOTALL)
+                text = final_match.group(1).strip() if final_match else None
+            elif self.thinking:
                 # Extract text after closing thinking tag for extended thinking models
                 text = str(out["generated_text"]).split("</think>")[-1].strip()
             else:
@@ -136,6 +140,7 @@ class ZeroShotBaselinePipeline:
         # Initialize model and tracking variables
         model = GenericVLLMBatch(
             self.language_model_path,
+            thinking=self.thinking,
             vllm_kwargs={"max_model_len": DEFAULT_MAX_MODEL_LEN},
         )
         generations = {}

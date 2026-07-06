@@ -194,7 +194,7 @@ def main() -> None:
     parser.add_argument(
         "model",
         type=str,
-        choices=["llama", "llama_default", "qwen", "qwen_default"],
+        choices=["llama", "llama_default", "qwen", "qwen_default", "llama_8b_instruction", "llama_8b_extraction"],
         help="Model to process (llama, llama_default, qwen, qwen_default)"
     )
     parser.add_argument(

@@ -134,7 +134,10 @@ class RAGPipeline:
         # Implement your parsing logic here
         results = []
         for out in output:
-            if self.thinking:
+            if self.thinking and "gpt-oss" in self.language_model_path:
+                final_match = re.search(r"assistantfinal(.*)", out["generated_text"], re.DOTALL)
+                parsed_output = final_match.group(1).strip() if final_match else str(out["generated_text"])
+            elif self.thinking:
                 # Example parsing logic for "enable_thinking"
                 # This is a placeholder; replace with actual logic as needed
                 parsed_output = str(out["generated_text"].split("</think>")[-1].strip())
@@ -182,6 +185,7 @@ class RAGPipeline:
             import pickle
             with open(self.bm25_path, 'rb') as f:
                 bm25_index = pickle.load(f)
+            print("BM25 index loaded successfully.")
         else:
             raise ValueError(f"Unknown retrieval_type: {self.retrieval_type}. Must be 'dpr' or 'bm25'")
         
@@ -212,6 +216,7 @@ class RAGPipeline:
 
         ### Iterate questions
         for idx in range(len(df)):
+            print(f"Processing question {idx + 1}/{len(df)}...")
 
             question = df[idx]["question"].to_numpy().flatten()[0]
             

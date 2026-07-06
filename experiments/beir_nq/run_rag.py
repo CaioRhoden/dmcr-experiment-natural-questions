@@ -6,13 +6,7 @@ from utils.pipelines.RAGPipeline import RAGPipeline
 from utils.set_random_seed import set_random_seed
 
 set_random_seed(42)
-DEFAULT_INSTRUCTION = "You are given a question and you MUST try to give a real SHORT ANSWER in 5 tokens"
-EXTRACTION_INSTRUCTION = "You are given a question and you MUST respond by EXTRACTING the answer (max 5 tokens) from one of the provided documents. If none of the documents contain the answer, respond with NO-RES. Begin your answer by providing a short explanation. Be as objective as possible. After providing your explanation, please generate your response by strictly following this format: \"RESPONSE: [[<response>]]\"."
-
-INSTRUCTIONS_DICT = {
-    "default": DEFAULT_INSTRUCTION,
-    "extraction": EXTRACTION_INSTRUCTION,
-}
+INSTRUCTION = "You are given a question and you MUST respond by EXTRACTING the answer (max 5 tokens) from one of the provided documents. If none of the documents contain the answer, respond with NO-RES. Begin your answer by providing a short explanation. Be as objective as possible. After providing your explanation, please generate your response by strictly following this format: \"RESPONSE: [[<response>]]\"."
 
 LM_CONFIGS = {
     "temperature": 0.7,
@@ -29,7 +23,7 @@ class RagConfig:
     '''
     log: bool = True
     # RAG Based configs Config Fields
-    project_log: str = "nq_open_reference"
+    project_log: str = "beir_nq"
     '''Project log name for wandb'''
     model_run_id: str = "rag"
     '''ID of the model run.'''
@@ -42,14 +36,11 @@ class RagConfig:
     end_idx: int|None = None
     '''Ending index for the questions to be processed. None means process all questions.'''
 
-    # Pre-collections Config Fields
-    instruction: Literal["default", "extraction"] = "default"
-    '''Instruction to be used for the language model.'''
     lm_configs: dict[str, float|int] = field(default_factory=lambda: LM_CONFIGS)
     tags: list[str] = field(default_factory=lambda: ["rag"])
     '''List of tags for the experiment.'''
 
-    root_path: str = "runs/llama"
+    root_path: str = "runs/qwen"
     '''Root path for saving results and logs.'''
 
     ## Config
@@ -57,10 +48,14 @@ class RagConfig:
     '''Whether to only run the generation step.'''
     only_retrieval: bool = False
     '''Whether to only run the retrieval step.'''
-    language_model_path: str = "models/Llama-3.2-3B-Instruct"
+    language_model_path: str = "models/Qwen3-4B-Instruct-2507"
     '''Path to the language model to be used in the pipeline.'''
-    thinking: bool = False
-    '''Whether to enable the thinking mode for the language model.'''
+    
+    ## Retrieval type and path config
+    retrieval_type: str = "bm25"
+    '''Type of retrieval to use: "dpr" or "bm25"'''
+    bm25_path: str = "data/beir_nq/processed/bm25_index.pkl"
+    '''Path to the BM25 index pickle file (only used when retrieval_type="bm25")'''
 
 
 
@@ -79,23 +74,24 @@ def initiate_pipeline(args: RagConfig) -> RAGPipeline:
 
     return RAGPipeline(
         retrieval_path=f"{root}/retrieval/rag_retrieval_indexes.json",
-        wiki_path=f"{root}/data/wiki_dump2018_nq_open/processed/wiki.feather",
+        wiki_path=f"{root}/data/beir_nq/processed/corpus.feather",
         embedder_path=f"{root}/models/bge-base-en-v1.5",
         vector_db_path=f"{root}/data/indices/bge_index.faiss",
-        questions_path=f"{root}/data/nq_open/processed/dev.feather",
+        questions_path=f"{root}/data/beir_nq/processed/queries.feather",
         language_model_path=f"{root}/{args.language_model_path}",
         project_log=args.project_log,
         model_run_id=args.model_run_id,
         k=args.k,
         size_index=args.size_index,
         lm_configs=args.lm_configs,
-        instruction=INSTRUCTIONS_DICT[args.instruction],
+        instruction=INSTRUCTION,
         root_path=args.root_path,
-        tags = args.tags,
+        tags=args.tags,
         log=args.log,
-        batch_size=3610,
+        batch_size=3452,
         seed=42,
-        thinking=args.thinking
+        retrieval_type=args.retrieval_type,
+        bm25_path=f"{root}/{args.bm25_path}",
     )
 
 
@@ -106,12 +102,11 @@ if __name__ == "__main__":
 
     pipeline = initiate_pipeline(args)
     pipeline.setup()
-    extract_flag = True if args.instruction == "extraction" else False
 
     if args.only_retrieval:
         pipeline.get_rag_retrieval()
     elif args.only_generate:
-        pipeline.get_rag_generations(extract_flag=extract_flag)
+        pipeline.get_rag_generations(extract_flag=True)
     else:
         pipeline.get_rag_retrieval()
-        pipeline.get_rag_generations(extract_flag=extract_flag)
+        pipeline.get_rag_generations(extract_flag=True)
