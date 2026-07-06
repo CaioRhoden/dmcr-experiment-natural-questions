@@ -91,7 +91,7 @@ class ZeroShotBaselinePipeline:
         parsed_output = []
         for out in output:
             if self.thinking and "gpt-oss" in self.language_model_path:
-                final_match = re.search(r"<\|channel\|>final<\|message\|>(.*?)(?:<\|return\|>|<\|end\|>)", raw_text, re.DOTALL)
+                final_match = re.search(r"assistantfinal(.*)", out["generated_text"], re.DOTALL)
                 text = final_match.group(1).strip() if final_match else None
             elif self.thinking:
                 # Extract text after closing thinking tag for extended thinking models

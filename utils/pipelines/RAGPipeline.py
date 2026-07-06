@@ -134,7 +134,10 @@ class RAGPipeline:
         # Implement your parsing logic here
         results = []
         for out in output:
-            if self.thinking:
+            if self.thinking and "gpt-oss" in self.language_model_path:
+                final_match = re.search(r"assistantfinal(.*)", out["generated_text"], re.DOTALL)
+                parsed_output = final_match.group(1).strip() if final_match else str(out["generated_text"])
+            elif self.thinking:
                 # Example parsing logic for "enable_thinking"
                 # This is a placeholder; replace with actual logic as needed
                 parsed_output = str(out["generated_text"].split("</think>")[-1].strip())

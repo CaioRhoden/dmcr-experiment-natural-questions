@@ -59,6 +59,8 @@ class RagConfig:
     '''Whether to only run the retrieval step.'''
     language_model_path: str = "models/Llama-3.2-3B-Instruct"
     '''Path to the language model to be used in the pipeline.'''
+    thinking: bool = False
+    '''Whether to enable the thinking mode for the language model.'''
 
 
 
@@ -93,6 +95,7 @@ def initiate_pipeline(args: RagConfig) -> RAGPipeline:
         log=args.log,
         batch_size=3610,
         seed=42,
+        thinking=args.thinking
     )
 
 
